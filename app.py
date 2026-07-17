@@ -162,7 +162,6 @@ def _normalizar(s: str) -> str:
         c for c in unicodedata.normalize('NFD', s)
         if unicodedata.category(c) != 'Mn'
     )
-    # Remove caracteres especiais comuns que podem diferir
     s = re.sub(r"['\-]", " ", s)
     s = re.sub(r"\s+", " ", s).strip()
     return s
@@ -176,7 +175,6 @@ def _carregar_municipios():
         )
         df.columns = [str(c).strip() for c in df.columns]
 
-        # Colunas fixas conforme estrutura real da planilha
         col_codigo = "Código"
         col_nome   = "Nome"
         col_uf     = "Estado"
@@ -196,8 +194,22 @@ def _carregar_municipios():
         return mapa, col_codigo, col_nome, col_uf
 
     except Exception as e:
-        st.session_state["_mun_error"] = str(e)
-        return {}, "", "", ""
+        return {}, "", "", str(e)
+
+
+# ── CARREGAMENTO INICIAL DOS MUNICÍPIOS (executado na inicialização do app) ───
+if "MUNICIPIOS_MAP" not in st.session_state:
+    _mapa, _col_cod, _col_nom, _col_uf = _carregar_municipios()
+    st.session_state["MUNICIPIOS_MAP"]    = _mapa
+    st.session_state["_mun_col_codigo"]   = _col_cod
+    st.session_state["_mun_col_nome"]     = _col_nom
+    st.session_state["_mun_col_uf"]       = _col_uf
+    st.session_state["_mun_cols"]         = list(_mapa.keys())[:5] if _mapa else []
+    if not _mapa:
+        st.session_state["_mun_error"] = _col_uf  # _col_uf contém o erro neste caso
+
+# Variável global segura — sempre definida
+MUNICIPIOS_MAP: dict = st.session_state.get("MUNICIPIOS_MAP", {})
 
 
 def buscar_codigo_municipio(municipio: str, uf: str) -> str:
@@ -208,28 +220,32 @@ def buscar_codigo_municipio(municipio: str, uf: str) -> str:
     if not municipio or not uf:
         return ""
 
-    mapa = st.session_state.get("MUNICIPIOS_MAP", MUNICIPIOS_MAP)
-    uf_n = _normalizar(uf)
+    # Sempre lê do session_state — nunca usa MUNICIPIOS_MAP global diretamente
+    mapa = st.session_state.get("MUNICIPIOS_MAP", {})
+    if not mapa:
+        return ""
 
-    # Lista de variações do nome do município para tentar
+    uf_n      = _normalizar(uf)
     nome_orig = _normalizar(municipio)
+
     variacoes = [nome_orig]
 
-    # Variação: remove "DO", "DE", "DA", "DOS", "DAS" iniciais
+    # Remove preposições iniciais
     nome_sem_prep = re.sub(r"^(DO|DE|DA|DOS|DAS)\s+", "", nome_orig).strip()
     if nome_sem_prep != nome_orig:
         variacoes.append(nome_sem_prep)
 
-    # Variação: substitui abreviações comuns
+    # Expande abreviações
     variacoes.append(nome_orig.replace("STO ", "SANTO ").replace("STA ", "SANTA "))
     variacoes.append(nome_orig.replace("SANTO ", "STO ").replace("SANTA ", "STA "))
 
+    # Busca exata por variações
     for v in variacoes:
         cod = mapa.get((uf_n, v), "")
         if cod:
             return str(cod)
 
-    # Busca parcial: procura nome que contenha o município ou vice-versa
+    # Busca parcial
     for (u, n), c in mapa.items():
         if u == uf_n and (nome_orig in n or n in nome_orig):
             return str(c)
