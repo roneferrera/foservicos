@@ -745,44 +745,63 @@ COLUNAS_LEIAUTE = [
 ]
 
 def montar_linha_dominio(r: dict, tipo_cod: int, cod_servico: int, codigo_empresa: int = 1) -> list:
-    cnpj_limpo   = limpar_cnpj(r.get("cnpj", ""))
-    cod_terceiro = r.get("codigo_terceiro", "")
-    if isinstance(cod_terceiro, int):
-        cod_terceiro = f"{cod_terceiro:04d}"
-    elif cod_terceiro is None:
-        cod_terceiro = ""
+    cnpj_limpo = limpar_cnpj(r.get("cnpj", ""))
+
+    # Codigo terceiro: sempre inteiro formatado 4 digitos
+    cod_terc_raw = r.get("codigo_terceiro", 0)
+    if isinstance(cod_terc_raw, int):
+        cod_terc_str = f"{cod_terc_raw:04d}"
+        i_terceiros  = cod_terc_raw
+    elif cod_terc_raw is None:
+        cod_terc_str = "0000"
+        i_terceiros  = 0
+    else:
+        s = str(cod_terc_raw).strip()
+        try:
+            i_terceiros  = int(s) if s else 0
+            cod_terc_str = f"{i_terceiros:04d}"
+        except Exception:
+            i_terceiros  = 0
+            cod_terc_str = "0000"
+
     cep       = re.sub(r"\D", "", str(r.get("cep", "") or ""))
     municipio = str(r.get("municipio", "") or "")
     uf        = str(r.get("uf", "") or "")
     cod_mun   = buscar_codigo_municipio(municipio, uf)
     data_ini  = _formatar_data(r.get("data_inicio", ""))
+
+    rat  = r.get("perc_acid_trabalho", 0) or 0
+    fpas = r.get("codigo_fpas", 0) or 0
+    gfip = str(r.get("codigo_gfip", "") or "115")
+    gps  = str(r.get("codigo_gps",  "") or "2100")
+
     return [
-        codigo_empresa, cod_servico, cnpj_limpo, 1,
-        cod_terceiro,
-        str(r.get("perc_acid_trabalho", "") or ""),
-        str(r.get("codigo_fpas", "") or ""),
-        str(r.get("cnae_codigo", "") or ""),
-        str(r.get("codigo_gfip", "") or ""),
-        str(r.get("codigo_gps", "") or ""),
+        codigo_empresa,   # 1  codi_emp
+        cod_servico,      # 2  i_servicos
+        cnpj_limpo,       # 3  cgc
+        1,                # 4  tipo_insc
+        cod_terc_str,     # 5  codigo_terceiro
+        rat,              # 6  perc_acid_trabalho
+        fpas,             # 7  codigo_fpas
+        str(r.get("cnae_codigo", "") or ""),  # 8  codigo_atividade
+        gfip,             # 9  codigo_gfip
+        gps,              # 10 codigo_gps
         str(r.get("razao_social", "") or ""),
         str(r.get("logradouro", "") or ""),
         str(r.get("numero", "") or ""),
         str(r.get("bairro", "") or ""),
         cep, municipio, uf,
-        cod_servico, 1, tipo_cod, cod_mun, data_ini, 1, cod_servico, "",
+        cod_servico,      # 18 i_filiais
+        1,                # 19 sequencia_gps
+        tipo_cod,         # 20 tipo
+        cod_mun,          # 21 codigo_municipio
+        data_ini,         # 22 DATA_INICIO
+        1,                # 23 SITUACAO
+        cod_servico,      # 24 CODIGO_ESOCIAL
+        "",               # 25 origem_reg
     ]
 
-def gerar_txt_leiaute(linhas: list) -> bytes:
-    linhas_txt = []
-    for campos in linhas:
-        row = [str(v) if v is not None else "" for v in campos]
-        while len(row) < 25: row.append("")
-        linhas_txt.append("\t".join(row[:25]))
-    return ("\r\n".join(linhas_txt) + "\r\n").encode("utf-8")
 
-# ──────────────────────────────────────────────────────────────────────────────
-# LEIAUTE FOVIGENCIAS_SERVICOS
-# ──────────────────────────────────────────────────────────────────────────────
 def montar_linha_vigencia(
     r: dict,
     cod_servico: int,
@@ -794,32 +813,35 @@ def montar_linha_vigencia(
 ) -> list:
     cnpj_limpo = limpar_cnpj(r.get("cnpj", ""))
 
-    cod_terc_raw = r.get("codigo_terceiro", "")
+    # Codigo terceiro: mesma logica do foservicos — sempre 4 digitos
+    cod_terc_raw = r.get("codigo_terceiro", 0)
     if isinstance(cod_terc_raw, int):
-        cod_terc_str = str(cod_terc_raw)
+        cod_terc_str = f"{cod_terc_raw:04d}"
         i_terceiros  = cod_terc_raw
     elif cod_terc_raw is None:
-        cod_terc_str = "0"
+        cod_terc_str = "0000"
         i_terceiros  = 0
     else:
         s = str(cod_terc_raw).strip()
-        cod_terc_str = s if s else "0"
         try:
-            i_terceiros = int(s) if s else 0
+            i_terceiros  = int(s) if s else 0
+            cod_terc_str = f"{i_terceiros:04d}"
         except Exception:
-            i_terceiros = 0
+            i_terceiros  = 0
+            cod_terc_str = "0000"
 
-    entidades  = r.get("entidades", []) or []
-    perc_terc  = sum(e.get("aliquota", 0) for e in entidades)
+    entidades = r.get("entidades", []) or []
+    perc_terc = sum(e.get("aliquota", 0) for e in entidades)
 
-    rat      = r.get("perc_acid_trabalho", 0) or 0
-    fpas     = r.get("codigo_fpas", 0) or 0
-    gfip     = r.get("codigo_gfip", "") or "115"
-    gps      = r.get("codigo_gps",  "") or "2100"
-    endereco = str(r.get("logradouro", "") or "")
-    numero   = str(r.get("numero", "")    or "0")
-    bairro   = str(r.get("bairro", "")   or "")
-    cep      = re.sub(r"\D", "", str(r.get("cep", "") or ""))
+    rat  = r.get("perc_acid_trabalho", 0) or 0
+    fpas = r.get("codigo_fpas", 0) or 0
+    gfip = str(r.get("codigo_gfip", "") or "115")
+    gps  = str(r.get("codigo_gps",  "") or "2100")
+
+    endereco  = str(r.get("logradouro", "") or "")
+    numero    = str(r.get("numero", "")    or "0")
+    bairro    = str(r.get("bairro", "")    or "")
+    cep       = re.sub(r"\D", "", str(r.get("cep", "") or ""))
     municipio = str(r.get("municipio", "") or "")
     uf        = str(r.get("uf", "")        or "")
 
@@ -827,96 +849,96 @@ def montar_linha_vigencia(
     cnae_num = re.sub(r"\D", "", cnae_fmt)
 
     return [
-        codigo_empresa,          # codi_emp
-        cod_servico,             # i_servicos
-        vigencia,                # VIGENCIA  DD/MM/AAAA
-        descricao_vigencia,      # DESCRICAO
-        cnpj_limpo,              # cgc
-        1,                       # tipo_insc
-        cod_terc_str,            # codigo_terceiro
-        perc_terc,               # perc_terceiro
-        0,                       # perc_inss_empresa
-        rat,                     # perc_acid_trabalho
-        0,                       # codigo_sat
-        0,                       # perc_autonomos
-        fpas,                    # codigo_fpas
-        0,                       # codigo_atividade
-        gfip,                    # codigo_gfip
-        gps,                     # codigo_gps
-        0,                       # i_bancos
-        0,                       # numero_fgts
-        endereco,                # endereco
-        numero,                  # numero
-        bairro,                  # bairro
-        cep,                     # cep
-        municipio,               # cidade
-        uf,                      # estado
-        1,                       # i_filiais
-        0,                       # sequencia_gps
-        0,                       # filantropia
-        0,                       # origem_reg
-        tipo_cod,                # tipo
-        0,                       # codi_mun
-        cod_mun,                 # codigo_municipio
-        0,                       # I_FPAS
-        0,                       # CALCULA_INSS_EMPRESA_LEI_12546
-        0,                       # TIPO_SERVICO_TOMADOR
-        0,                       # TIPO_ENDERECO
-        "",                      # COMPLEMENTO
-        0,                       # TIPO_INSCRICAO_CONTRATANTE_EMPREITADA_PARCIAL
-        "",                      # INSCRICAO_CONTRATANTE_EMPREITADA_PARCIAL
-        "",                      # NOME_CONTRATANTE_EMPREITADA_PARCIAL
-        0,                       # TIPO_INSCRICAO_PROPRIETARIO_CEI_EMPREITADA_PARCIAL
-        "",                      # INSCRICAO_PROPRIETARIO_CEI_EMPREITADA_PARCIAL
-        "",                      # NOME_PROPRIETARIO_CEI_EMPREITADA_PARCIAL
-        cnae_num,                # I_CNAE20
-        1,                       # TIPO_INFORMACAO_ALIQUOTA_ACIDENTE_TRABALHO
-        0,                       # I_PROCESSO
-        0,                       # I_SCP
-        "",                      # DDD
-        "",                      # TELEFONE
-        COMP_FIM,                # COMPETENCIA_FIM_VIGENCIA  DD/MM/AAAA
-        0,                       # TIPO_LOTACAO_ESOCIAL
-        0,                       # I_PROCESSO_TERCEIROS
-        "",                      # CAEPF
-        0,                       # TIPO_CAEPF
-        0,                       # REGISTRO_PONTO
-        1,                       # CONTRATACAO_APRENDIZ
-        0,                       # I_PROCESSO_CONTRATACAO_APRENDIZ
-        0,                       # REALIZA_CONTRATACAO_APRENDIZ_INTERMEDIO
-        "",                      # CODIGO_SUSPENSAO_PROCESSO_RAT
-        0,                       # SOMA_CODIGOS_SUSPENSAO_TERCEIROS
-        perc_terc,               # PERCENTUAL_TERCEIRO_BRUTO
-        0,                       # I_DADOS_EVENTOS_ESOCIAL_S_1005
-        0,                       # I_LOTE_ESOCIAL_S_1005
-        0,                       # STATUS_ESOCIAL_S_1005
-        1,                       # ENVIAR_ESOCIAL_S_1005
-        0,                       # INCLUSAO_VALIDADA_ESOCIAL_S_1005
-        0,                       # GERAR_RETIFICACAO_ESOCIAL_S_1005
-        0,                       # I_DADOS_EVENTOS_ESOCIAL_S_1020
-        0,                       # I_LOTE_ESOCIAL_S_1020
-        0,                       # STATUS_ESOCIAL_S_1020
-        1,                       # ENVIAR_ESOCIAL_S_1020
-        0,                       # INCLUSAO_VALIDADA_ESOCIAL_S_1020
-        0,                       # GERAR_RETIFICACAO_ESOCIAL_S_1020
-        cnae_num,                # I_CNAE_ESOCIAL
-        i_terceiros,             # I_TERCEIROS
-        0,                       # PROCESSAR_EXCLUSAO_ESOCIAL_S_1005
-        0,                       # PROCESSAR_EXCLUSAO_ESOCIAL_S_1020
-        1,                       # ORIGEM_ALTERACAO
-        0,                       # I_DADOS_EVENTOS_ESOCIAL_S_1080
-        0,                       # I_LOTE_ESOCIAL_S_1080
-        0,                       # STATUS_ESOCIAL_S_1080
-        1,                       # ENVIAR_ESOCIAL_S_1080
-        0,                       # INCLUSAO_VALIDADA_ESOCIAL_S_1080
-        0,                       # GERAR_RETIFICACAO_ESOCIAL_S_1080
-        0,                       # PROCESSAR_EXCLUSAO_ESOCIAL_S_1080
-        0,                       # EFETUAR_RETENCAO_INSS_NOTAS_FISCAIS
-        "{00000000-0000-0000-0000-000000000000}",  # COMPANY_ID
-        "",                      # NUMERO_RECIBO_ESOCIAL_VALIDACAO_AUTOMATICA_1005
-        "",                      # NUMERO_PROCESSO_APRENDIZ
-        0,                       # INEXIGIBILIDADE_RAT
-        0,                       # CALCULAR_APOIO_FINANCEIRO_FOLHA_MTE_991_2024
+        codigo_empresa,          # 1  codi_emp          — igual foservicos col 1
+        cod_servico,             # 2  i_servicos         — igual foservicos col 2
+        vigencia,                # 3  VIGENCIA
+        descricao_vigencia,      # 4  DESCRICAO
+        cnpj_limpo,              # 5  cgc               — igual foservicos col 3
+        1,                       # 6  tipo_insc          — igual foservicos col 4
+        cod_terc_str,            # 7  codigo_terceiro    — igual foservicos col 5
+        perc_terc,               # 8  perc_terceiro
+        0,                       # 9  perc_inss_empresa
+        rat,                     # 10 perc_acid_trabalho — igual foservicos col 6
+        0,                       # 11 codigo_sat
+        0,                       # 12 perc_autonomos
+        fpas,                    # 13 codigo_fpas        — igual foservicos col 7
+        0,                       # 14 codigo_atividade
+        gfip,                    # 15 codigo_gfip        — igual foservicos col 9
+        gps,                     # 16 codigo_gps         — igual foservicos col 10
+        0,                       # 17 i_bancos
+        0,                       # 18 numero_fgts
+        endereco,                # 19 endereco           — igual foservicos col 12
+        numero,                  # 20 numero             — igual foservicos col 13
+        bairro,                  # 21 bairro             — igual foservicos col 14
+        cep,                     # 22 cep                — igual foservicos col 15
+        municipio,               # 23 cidade             — igual foservicos col 16
+        uf,                      # 24 estado             — igual foservicos col 17
+        1,                       # 25 i_filiais
+        0,                       # 26 sequencia_gps
+        0,                       # 27 filantropia
+        0,                       # 28 origem_reg
+        tipo_cod,                # 29 tipo               — igual foservicos col 20
+        0,                       # 30 codi_mun
+        cod_mun,                 # 31 codigo_municipio   — igual foservicos col 21
+        0,                       # 32 I_FPAS
+        0,                       # 33 CALCULA_INSS_EMPRESA_LEI_12546
+        0,                       # 34 TIPO_SERVICO_TOMADOR
+        0,                       # 35 TIPO_ENDERECO
+        "",                      # 36 COMPLEMENTO
+        0,                       # 37 TIPO_INSCRICAO_CONTRATANTE_EMPREITADA_PARCIAL
+        "",                      # 38 INSCRICAO_CONTRATANTE_EMPREITADA_PARCIAL
+        "",                      # 39 NOME_CONTRATANTE_EMPREITADA_PARCIAL
+        0,                       # 40 TIPO_INSCRICAO_PROPRIETARIO_CEI_EMPREITADA_PARCIAL
+        "",                      # 41 INSCRICAO_PROPRIETARIO_CEI_EMPREITADA_PARCIAL
+        "",                      # 42 NOME_PROPRIETARIO_CEI_EMPREITADA_PARCIAL
+        cnae_num,                # 43 I_CNAE20
+        1,                       # 44 TIPO_INFORMACAO_ALIQUOTA_ACIDENTE_TRABALHO
+        0,                       # 45 I_PROCESSO
+        0,                       # 46 I_SCP
+        "",                      # 47 DDD
+        "",                      # 48 TELEFONE
+        COMP_FIM,                # 49 COMPETENCIA_FIM_VIGENCIA
+        0,                       # 50 TIPO_LOTACAO_ESOCIAL
+        0,                       # 51 I_PROCESSO_TERCEIROS
+        "",                      # 52 CAEPF
+        0,                       # 53 TIPO_CAEPF
+        0,                       # 54 REGISTRO_PONTO
+        1,                       # 55 CONTRATACAO_APRENDIZ
+        0,                       # 56 I_PROCESSO_CONTRATACAO_APRENDIZ
+        0,                       # 57 REALIZA_CONTRATACAO_APRENDIZ_INTERMEDIO
+        "",                      # 58 CODIGO_SUSPENSAO_PROCESSO_RAT
+        0,                       # 59 SOMA_CODIGOS_SUSPENSAO_TERCEIROS
+        perc_terc,               # 60 PERCENTUAL_TERCEIRO_BRUTO
+        0,                       # 61 I_DADOS_EVENTOS_ESOCIAL_S_1005
+        0,                       # 62 I_LOTE_ESOCIAL_S_1005
+        0,                       # 63 STATUS_ESOCIAL_S_1005
+        1,                       # 64 ENVIAR_ESOCIAL_S_1005
+        0,                       # 65 INCLUSAO_VALIDADA_ESOCIAL_S_1005
+        0,                       # 66 GERAR_RETIFICACAO_ESOCIAL_S_1005
+        0,                       # 67 I_DADOS_EVENTOS_ESOCIAL_S_1020
+        0,                       # 68 I_LOTE_ESOCIAL_S_1020
+        0,                       # 69 STATUS_ESOCIAL_S_1020
+        1,                       # 70 ENVIAR_ESOCIAL_S_1020
+        0,                       # 71 INCLUSAO_VALIDADA_ESOCIAL_S_1020
+        0,                       # 72 GERAR_RETIFICACAO_ESOCIAL_S_1020
+        cnae_num,                # 73 I_CNAE_ESOCIAL        — igual col 43
+        i_terceiros,             # 74 I_TERCEIROS           — inteiro de cod_terc_str
+        0,                       # 75 PROCESSAR_EXCLUSAO_ESOCIAL_S_1005
+        0,                       # 76 PROCESSAR_EXCLUSAO_ESOCIAL_S_1020
+        1,                       # 77 ORIGEM_ALTERACAO
+        0,                       # 78 I_DADOS_EVENTOS_ESOCIAL_S_1080
+        0,                       # 79 I_LOTE_ESOCIAL_S_1080
+        0,                       # 80 STATUS_ESOCIAL_S_1080
+        1,                       # 81 ENVIAR_ESOCIAL_S_1080
+        0,                       # 82 INCLUSAO_VALIDADA_ESOCIAL_S_1080
+        0,                       # 83 GERAR_RETIFICACAO_ESOCIAL_S_1080
+        0,                       # 84 PROCESSAR_EXCLUSAO_ESOCIAL_S_1080
+        0,                       # 85 EFETUAR_RETENCAO_INSS_NOTAS_FISCAIS
+        "{00000000-0000-0000-0000-000000000000}",  # 86 COMPANY_ID
+        "",                      # 87 NUMERO_RECIBO_ESOCIAL_VALIDACAO_AUTOMATICA_1005
+        "",                      # 88 NUMERO_PROCESSO_APRENDIZ
+        0,                       # 89 INEXIGIBILIDADE_RAT
+        0,                       # 90 CALCULAR_APOIO_FINANCEIRO_FOLHA_MTE_991_2024
     ]
 
 def _linha_vigencia_vazia(
@@ -1527,38 +1549,22 @@ with tab_lote:
                     st.session_state["_zip"]  = _zip
                     st.success("Arquivos gerados com sucesso!")
 
-            if "_txt" in st.session_state and "_vig" in st.session_state:
-                col_dl1, col_dl2, col_dl3, col_dl4 = st.columns(4)
+            if "_zip" in st.session_state:
+                col_dl1, col_dl2 = st.columns(2)
                 with col_dl1:
-                    st.download_button(
-                        "foservicos.txt\n(25 col - TAB)",
-                        data=st.session_state["_txt"],
-                        file_name="foservicos.txt",
-                        mime="text/plain",
-                        use_container_width=True,
-                    )
-                with col_dl2:
-                    st.download_button(
-                        "fovigencias_servicos.txt\n(Vigencias - TAB)",
-                        data=st.session_state["_vig"],
-                        file_name="fovigencias_servicos.txt",
-                        mime="text/plain",
-                        use_container_width=True,
-                    )
-                with col_dl3:
-                    st.download_button(
-                        "Excel Conferencia\n(.xlsx formatado)",
-                        data=st.session_state["_xlsx"],
-                        file_name="dominio_conferencia.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        use_container_width=True,
-                    )
-                with col_dl4:
                     st.download_button(
                         "Baixar Tudo (.zip)\nfoservicos + fovigencias",
                         data=st.session_state["_zip"],
                         file_name="dominio_importacao.zip",
                         mime="application/zip",
+                        use_container_width=True,
+                    )
+                with col_dl2:
+                    st.download_button(
+                        "Excel Conferencia\n(.xlsx formatado)",
+                        data=st.session_state["_xlsx"],
+                        file_name="dominio_conferencia.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                         use_container_width=True,
                     )
 
