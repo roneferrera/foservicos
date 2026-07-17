@@ -1,0 +1,59 @@
+12	FOVIGENCIAS_SERVICO	1	codi_emp	Codigo empresa   (codi_emp)	integer	1	7		I		0
+12	FOVIGENCIAS_SERVICO	2	i_servicos	Codigo   (i_servicos)	integer	1	7		I		0
+12	FOVIGENCIAS_SERVICO	3	VIGENCIA	Vigência   (VIGENCIA)	date	1	10	DD/MM/YYYY	I		0
+12	FOVIGENCIAS_SERVICO	4	DESCRICAO	Descrição da vigência   (DESCRICAO)	char	1	80		I		0
+12	FOVIGENCIAS_SERVICO	5	cgc	CNPJ/CPF/CEI   (cgc)	char	1	14		I		0
+12	FOVIGENCIAS_SERVICO	6	tipo_insc	Tipo de inscrição (1=CNPJ/2=CPF/3=CEI/6=CAEPF/7=CNO).   (tipo_insc)	smallint	1	7		I		0
+12	FOVIGENCIAS_SERVICO	7	codigo_terceiro	Codigo terceiro   (codigo_terceiro)	numeric	1	4		I		0
+12	FOVIGENCIAS_SERVICO	8	perc_terceiro	Terceiro(%)   (perc_terceiro)	numeric	1	5		I		3
+12	FOVIGENCIAS_SERVICO	9	perc_inss_empresa	INSS Empresa(%)   (perc_inss_empresa)	numeric	1	5		I		3
+12	FOVIGENCIAS_SERVICO	10	perc_acid_trabalho	Acid. Trabalho(%)   (perc_acid_trabalho)	numeric	1	5		I		3
+12	FOVIGENCIAS_SERVICO	11	codigo_sat	Codigo do SAT   (codigo_sat)	numeric	1	5		I		0
+12	FOVIGENCIAS_SERVICO	12	perc_autonomos	Pro-Lab./Aut.(%)   (perc_autonomos)	numeric	1	5		I		3
+12	FOVIGENCIAS_SERVICO	13	codigo_fpas	Codigo FPAS   (codigo_fpas)	numeric	1	3		I		0
+12	FOVIGENCIAS_SERVICO	14	codigo_atividade	CNAE   (codigo_atividade)	numeric	1	7		I		0
+12	FOVIGENCIAS_SERVICO	15	codigo_gfip	Codigo SEFIP   (codigo_gfip)	numeric	1	3		I		0
+12	FOVIGENCIAS_SERVICO	16	codigo_gps	Codigo GPS   (codigo_gps)	numeric	1	4		I		0
+12	FOVIGENCIAS_SERVICO	17	i_bancos	Banco   (i_bancos)	integer	1	7		I		0
+12	FOVIGENCIAS_SERVICO	18	numero_fgts	Numero   (numero_fgts)	numeric	1	14		I		0
+12	FOVIGENCIAS_SERVICO	19	endereco	Endereco   (endereco)	char	1	31		I		0
+12	FOVIGENCIAS_SERVICO	20	numero	Numero   (numero)	integer	1	7		I		0
+12	FOVIGENCIAS_SERVICO	21	bairro	Bairro   (bairro)	char	1	20		I		0
+12	FOVIGENCIAS_SERVICO	22	cep	CEP   (cep)	char	1	8		I		0
+12	FOVIGENCIAS_SERVICO	23	cidade	Cidade   (cidade)	char	1	20		I		0
+12	FOVIGENCIAS_SERVICO	24	estado	UF   (estado)	char	1	2		I		0
+12	FOVIGENCIAS_SERVICO	25	i_filiais	Filial   (i_filiais)	integer	1	7		I		0
+12	FOVIGENCIAS_SERVICO	26	sequencia_gps	Sequencia   (sequencia_gps)	integer	1	7		I		0
+12	FOVIGENCIAS_SERVICO	27	filantropia	Isencao Filantropia(%)   (filantropia)	numeric	1	6		I		3
+12	FOVIGENCIAS_SERVICO	28	origem_reg	Origem do registro 0 - Sistema, 1 - Imp. Tabelas, 2 - Imp. Layout, 3- Imp. Tabelas Concorrentes, 4-Importação eSocial   (origem_reg)	tinyint	1	3		I		0
+12	FOVIGENCIAS_SERVICO	29	tipo	Tipo de serviço. (1=Empresa/2=Obra Própria/3=Cooperativa de trabalho/4=Tomador de serviço/5=Empreitada parcial/6=Empreitada total)   (tipo)	integer	1	7		I		0
+12	FOVIGENCIAS_SERVICO	30	codi_mun	Codigo do municipio   (codi_mun)	integer	1	7		I		0
+12	FOVIGENCIAS_SERVICO	31	codigo_municipio	Codigo do municipio   (codigo_municipio)	integer	1	7		I		0
+12	FOVIGENCIAS_SERVICO	32	I_FPAS	Código Sequencial FPAS   (I_FPAS)	integer	1	7		I		0
+12	FOVIGENCIAS_SERVICO	33	CALCULA_INSS_EMPRESA_LEI_12546	Calcular INSS Empresa sobre a receita bruta conforme Lei 12.546/2011: (0=Não/1=Sim)   (CALCULA_INSS_EMPRESA_LEI_12546)	smallint	1	7		I		0
+12	FOVIGENCIAS_SERVICO	34	TIPO_SERVICO_TOMADOR	Tipo de serviço do tomador. (1=Cessão de Mão de Obra, inclusive contratante de cooperativa de trabalho (PJ)/2=Trabalho temporário - substituição de pessoal/3=Trabalho temporário - serviços extraordinários)   (TIPO_SERVICO_TOMADOR)	smallint	1	7		I		0
+12	FOVIGENCIAS_SERVICO	35	TIPO_ENDERECO	Tipo de endereço.   (TIPO_ENDERECO)	smallint	1	7		I		0
+12	FOVIGENCIAS_SERVICO	36	COMPLEMENTO	Complemento do endereço.   (COMPLEMENTO)	varchar	1	30		I		0
+12	FOVIGENCIAS_SERVICO	37	INSCRICAO_CONTRATANTE_EMPREITADA_PARCIAL	Inscrição do contratante da empreitada parcial.   (INSCRICAO_CONTRATANTE_EMPREITADA_PARCIAL)	varchar	1	14		I		0
+12	FOVIGENCIAS_SERVICO	38	NOME_CONTRATANTE_EMPREITADA_PARCIAL	Nome do contratante da empreitada parcial.   (NOME_CONTRATANTE_EMPREITADA_PARCIAL)	varchar	1	100		I		0
+12	FOVIGENCIAS_SERVICO	39	INSCRICAO_PROPRIETARIO_CEI_EMPREITADA_PARCIAL	Inscrição do proprietário do CEI da empreitada parcial.   (INSCRICAO_PROPRIETARIO_CEI_EMPREITADA_PARCIAL)	varchar	1	14		I		0
+12	FOVIGENCIAS_SERVICO	40	NOME_PROPRIETARIO_CEI_EMPREITADA_PARCIAL	Nome do proprietário do CEI da empreitada parcial.   (NOME_PROPRIETARIO_CEI_EMPREITADA_PARCIAL)	varchar	1	100		I		0
+12	FOVIGENCIAS_SERVICO	41	I_CNAE20	Código do CNAE 2.0.   (I_CNAE20)	char	1	15		I		0
+12	FOVIGENCIAS_SERVICO	42	TIPO_INFORMACAO_ALIQUOTA_ACIDENTE_TRABALHO	Tipo de informação da alíquota do acidente de trabalho. (1=Informado/2=Conforme CNAE)   (TIPO_INFORMACAO_ALIQUOTA_ACIDENTE_TRABALHO)	smallint	1	7		I		0
+12	FOVIGENCIAS_SERVICO	43	DDD	DDD do telefone.   (DDD)	varchar	1	4		I		0
+12	FOVIGENCIAS_SERVICO	44	TELEFONE	Telefone.   (TELEFONE)	varchar	1	14		I		0
+12	FOVIGENCIAS_SERVICO	45	COMPETENCIA_FIM_VIGENCIA	Competência fim da vigência.   (COMPETENCIA_FIM_VIGENCIA)	date	1	10	DD/MM/YYYY	I		0
+12	FOVIGENCIAS_SERVICO	46	CAEPF	Código CAEPF.   (CAEPF)	varchar	1	15		I		0
+12	FOVIGENCIAS_SERVICO	47	REGISTRO_PONTO	Registro ponto. (0=Não utiliza/1=Manual/2=Mecânico/3=Eletrônico/4=Não eletrônico/5=Eletrônico alternativo/6=Eletrônico outros)   (REGISTRO_PONTO)	smallint	1	7		I		0
+12	FOVIGENCIAS_SERVICO	48	CONTRATACAO_APRENDIZ	Contratação de aprendiz. (1=Dispensado, de acordo com a lei/2=Dispensado, mesmo que parcialmente, em virtude de processo judicial/3=Obrigado)   (CONTRATACAO_APRENDIZ)	smallint	1	7		I		0
+12	FOVIGENCIAS_SERVICO	49	REALIZA_CONTRATACAO_APRENDIZ_INTERMEDIO_ENTIDADE_EDUCATIVA_SEM_FINS_LUCRATIVOS	Realiza contratação de aprendiz por intermédio de entidade educativa sem fins lucrativos. (0=Não/1=Sim)   (REALIZA_CONTRATACAO_APRENDIZ_INTERMEDIO_ENTIDADE_EDUCATIVA_SEM_FINS_LUCRATIVOS)	smallint	1	7		I		0
+12	FOVIGENCIAS_SERVICO	50	CODIGO_SUSPENSAO_PROCESSO_RAT	Código de suspensão do processo do RAT.   (CODIGO_SUSPENSAO_PROCESSO_RAT)	varchar	1	14		I		0
+12	FOVIGENCIAS_SERVICO	51	SOMA_CODIGOS_SUSPENSAO_TERCEIROS	Soma do percentual de códigos de suspensão de terceiros.   (SOMA_CODIGOS_SUSPENSAO_TERCEIROS)	numeric	1	5		I		2
+12	FOVIGENCIAS_SERVICO	52	PERCENTUAL_TERCEIRO_BRUTO	Percentual bruto de terceiros.   (PERCENTUAL_TERCEIRO_BRUTO)	numeric	1	5		I		3
+12	FOVIGENCIAS_SERVICO	53	I_CNAE_ESOCIAL	Código do CNAE para ser informado no eSocial.   (I_CNAE_ESOCIAL)	varchar	1	15		I		0
+12	FOVIGENCIAS_SERVICO	54	I_TERCEIROS	Identificador da tabela de terceiros.   (I_TERCEIROS)	integer	1	7		I		0
+12	FOVIGENCIAS_SERVICO	55	EFETUAR_RETENCAO_INSS_NOTAS_FISCAIS_INSCRICAO_OUTROS_CLIENTES	Efetuar as retenções de INSS de Notas Fiscais com a inscrição de outros clientes. (0=Não/1=Sim)   (EFETUAR_RETENCAO_INSS_NOTAS_FISCAIS_INSCRICAO_OUTROS_CLIENTES)	smallint	1	7		I		0
+12	FOVIGENCIAS_SERVICO	56	COMPANY_ID	Onvio company global unique identifier   (COMPANY_ID)	uniqueidentifier	1	16		I		0
+12	FOVIGENCIAS_SERVICO	57	NUMERO_PROCESSO_APRENDIZ	Numero do processo - contratação de aprendiz.   (NUMERO_PROCESSO_APRENDIZ)	varchar	1	20		I		0
+12	FOVIGENCIAS_SERVICO	58	INEXIGIBILIDADE_RAT	Inexigibilidade do RAT   (INEXIGIBILIDADE_RAT)	smallint	1	7		I		0
+12	FOVIGENCIAS_SERVICO	59	CALCULAR_APOIO_FINANCEIRO_FOLHA_COLABORADOR_RS_MTE_991_2024	Calcular o apoio financeiro na folha de pagamento dos colaboradores, portaria MTE nº 991/2024   (CALCULAR_APOIO_FINANCEIRO_FOLHA_COLABORADOR_RS_MTE_991_2024)	smallint	1	7		I		0
