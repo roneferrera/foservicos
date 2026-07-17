@@ -1103,35 +1103,35 @@ else:
 
         col_d1, _ = st.columns(2)
         with col_d1:
-           if st.button("⚙️ Gerar Arquivos", type="primary", use_container_width=True):
-    codigo_empresa_dom = st.session_state.get("codigo_empresa_dom_val", 1)  # ✅ recupera da sidebar
+            if st.button("⚙️ Gerar Arquivos", type="primary", use_container_width=True):
+                codigo_empresa_dom = st.session_state.get("codigo_empresa_dom_val", 1)
 
-    linhas_finais = []
-    for idx, row in enumerate(resultados_proc):
-        cod_srv  = codigos_servico.get(idx, seq_inicio + idx)
-        tipo_cod = tipos_selecionados.get(idx, 1)
-        r_merged = dados_brutos.get(idx)
+                linhas_finais = []
+                for idx, row in enumerate(resultados_proc):
+                    cod_srv  = codigos_servico.get(idx, seq_inicio + idx)
+                    tipo_cod = tipos_selecionados.get(idx, 1)
+                    r_merged = dados_brutos.get(idx)
 
-        if r_merged:
-            linha = montar_linha_dominio(
-                r_merged,
-                tipo_cod=tipo_cod,
-                cod_servico=cod_srv,
-                codigo_empresa=codigo_empresa_dom  # ✅ passa o código da empresa
-            )
-        else:
-            linha = [""] * 25
-            linha[0]  = codigo_empresa_dom  # ✅ coluna 0 = código da empresa
-            linha[1]  = cod_srv             # ✅ coluna 1 = código do serviço
-            linha[2]  = row["cnpj"]
-            linha[3]  = 1
-            linha[17] = cod_srv
-            linha[18] = 1
-            linha[19] = tipo_cod
-            linha[21] = "2020-01-01"
-            linha[22] = 1
-            linha[23] = cod_srv
-        linhas_finais.append(linha)
+                    if r_merged:
+                        linha = montar_linha_dominio(
+                            r_merged,
+                            tipo_cod=tipo_cod,
+                            cod_servico=cod_srv,
+                            codigo_empresa=codigo_empresa_dom
+                        )
+                    else:
+                        linha = [""] * 25
+                        linha[0]  = codigo_empresa_dom
+                        linha[1]  = cod_srv
+                        linha[2]  = row["cnpj"]
+                        linha[3]  = 1
+                        linha[17] = cod_srv
+                        linha[18] = 1
+                        linha[19] = tipo_cod
+                        linha[21] = "2020-01-01"
+                        linha[22] = 1
+                        linha[23] = cod_srv
+                    linhas_finais.append(linha)
 
                 df_conf = pd.DataFrame(linhas_finais, columns=COLUNAS_LEIAUTE)
                 df_conf["_status"] = [r["_status"] for r in resultados_proc]
@@ -1163,7 +1163,6 @@ else:
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     use_container_width=True,
                 )
-
 # ══════════════════════════════════════════════════════════════════════════════
 # TAB 2 — CONSULTA INDIVIDUAL
 # ══════════════════════════════════════════════════════════════════════════════
