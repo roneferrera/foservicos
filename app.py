@@ -738,34 +738,33 @@ COMP_FIM = "31/12/3000"
 # LEIAUTE FOSERVICOS - 25 colunas
 # ──────────────────────────────────────────────────────────────────────────────
 COLUNAS_LEIAUTE = [
-    "Codigo_empresa",        # 1  codi_emp
-    "Codigo_Servicos",       # 2  i_servicos
-    "CNPJ_CPF",              # 3  cgc
-    "Tipo_Inscricao",        # 4  tipo_insc
-    "Codigo_Terceiro",       # 5  codigo_terceiro
-    "Perc_Acidente_Trabalho",# 6  perc_acid_trabalho
-    "Codigo_FPAS",           # 7  codigo_fpas
-    "CNAE",                  # 8  codigo_atividade
-    "Codigo_GFIP",           # 9  codigo_gfip
-    "Codigo_GPS",            # 10 codigo_gps
-    "Nome",                  # 11 nome
-    "Endereco",              # 12 endereco
-    "Numero",                # 13 numero
-    "Bairro",                # 14 bairro
-    "CEP",                   # 15 cep
-    "Cidade",                # 16 cidade
-    "Estado",                # 17 estado
-    "Codigo_Filial",         # 18 i_filiais
-    "Sequencia_GPS",         # 19 sequencia_gps
-    "Codigo_Municipio",      # 20 codigo_municipio  ← era "Tipo" ERRADO
-    "Data_Inicio",           # 21 DATA_INICIO
-    "Situacao",              # 22 SITUACAO
-    "Codigo_eSocial",        # 23 CODIGO_ESOCIAL
-    "Origem_Reg",            # 24 origem_reg        ← era coluna 25
+    "Codigo_empresa",         # 1  codi_emp
+    "Codigo_Servicos",        # 2  i_servicos
+    "CNPJ_CPF",               # 3  cgc
+    "Tipo_Inscricao",         # 4  tipo_insc
+    "Codigo_Terceiro",        # 5  codigo_terceiro
+    "Perc_Acidente_Trabalho", # 6  perc_acid_trabalho
+    "Codigo_FPAS",            # 7  codigo_fpas
+    "CNAE",                   # 8  codigo_atividade
+    "Codigo_GFIP",            # 9  codigo_gfip
+    "Codigo_GPS",             # 10 codigo_gps
+    "Nome",                   # 11 nome
+    "Endereco",               # 12 endereco
+    "Numero",                 # 13 numero
+    "Bairro",                 # 14 bairro
+    "CEP",                    # 15 cep
+    "Cidade",                 # 16 cidade
+    "Estado",                 # 17 estado
+    "Codigo_Filial",          # 18 i_filiais
+    "Sequencia_GPS",          # 19 sequencia_gps
+    "Codigo_Municipio",       # 20 codigo_municipio
+    "Data_Inicio",            # 21 DATA_INICIO
+    "Situacao",               # 22 SITUACAO
+    "Codigo_eSocial",         # 23 CODIGO_ESOCIAL
+    "Origem_Reg",             # 24 origem_reg
 ]
 
 def montar_linha_dominio(r: dict, cod_servico: int, codigo_empresa: int = 1) -> list:
-    # tipo_cod REMOVIDO — campo não existe em FOSERVICOS
     cnpj_limpo = limpar_cnpj(r.get("cnpj", ""))
 
     cod_terc_raw = r.get("codigo_terceiro", 0)
@@ -792,30 +791,30 @@ def montar_linha_dominio(r: dict, cod_servico: int, codigo_empresa: int = 1) -> 
     gps  = str(r.get("codigo_gps",  "") or "2100")
 
     return [
-        codigo_empresa,                              # 1  codi_emp
-        cod_servico,                                 # 2  i_servicos
-        cnpj_limpo,                                  # 3  cgc
-        1,                                           # 4  tipo_insc
-        cod_terc_str,                                # 5  codigo_terceiro
-        rat,                                         # 6  perc_acid_trabalho
-        fpas,                                        # 7  codigo_fpas
-        str(r.get("cnae_codigo", "") or ""),         # 8  codigo_atividade
-        gfip,                                        # 9  codigo_gfip
-        gps,                                         # 10 codigo_gps
-        str(r.get("razao_social", "") or ""),        # 11 nome
-        str(r.get("logradouro", "") or ""),          # 12 endereco
-        str(r.get("numero", "") or ""),              # 13 numero
-        str(r.get("bairro", "") or ""),              # 14 bairro
-        cep,                                         # 15 cep
-        municipio,                                   # 16 cidade
-        uf,                                          # 17 estado
-        cod_servico,                                 # 18 i_filiais
-        1,                                           # 19 sequencia_gps
-        cod_mun,                                     # 20 codigo_municipio ← era tipo ERRADO
-        data_ini,                                    # 21 DATA_INICIO
-        1,                                           # 22 SITUACAO
-        cod_servico,                                 # 23 CODIGO_ESOCIAL
-        1,                                           # 24 origem_reg       ← era coluna 25
+        codigo_empresa,                          # 1  codi_emp
+        cod_servico,                             # 2  i_servicos
+        cnpj_limpo,                              # 3  cgc
+        1,                                       # 4  tipo_insc
+        cod_terc_str,                            # 5  codigo_terceiro
+        rat,                                     # 6  perc_acid_trabalho
+        fpas,                                    # 7  codigo_fpas
+        str(r.get("cnae_codigo", "") or ""),     # 8  codigo_atividade
+        gfip,                                    # 9  codigo_gfip
+        gps,                                     # 10 codigo_gps
+        str(r.get("razao_social", "") or ""),    # 11 nome
+        str(r.get("logradouro", "") or ""),      # 12 endereco
+        str(r.get("numero", "") or ""),          # 13 numero
+        str(r.get("bairro", "") or ""),          # 14 bairro
+        cep,                                     # 15 cep
+        municipio,                               # 16 cidade
+        uf,                                      # 17 estado
+        cod_servico,                             # 18 i_filiais
+        1,                                       # 19 sequencia_gps
+        cod_mun,                                 # 20 codigo_municipio
+        data_ini,                                # 21 DATA_INICIO
+        1,                                       # 22 SITUACAO
+        cod_servico,                             # 23 CODIGO_ESOCIAL
+        1,                                       # 24 origem_reg
     ]
 
 
@@ -1516,10 +1515,11 @@ with tab_lote:
                         r_merged = dados_brutos.get(idx)
 
                         if r_merged:
-                            linha_fo = montar_linha_dominio(
-                                r_merged, tipo_cod=tipo_cod,
-                                cod_servico=cod_srv, codigo_empresa=codigo_empresa_dom,
-                            )
+                    linha_fo = montar_linha_dominio(
+                    r_merged,
+                    cod_servico=cod_srv,
+                    codigo_empresa=codigo_empresa_dom,
+                    )
                         else:
                             linha_fo = [""] * 25
                             linha_fo[0]  = codigo_empresa_dom
@@ -1528,7 +1528,6 @@ with tab_lote:
                             linha_fo[3]  = 1
                             linha_fo[17] = cod_srv
                             linha_fo[18] = 1
-                            linha_fo[19] = tipo_cod
                             linha_fo[21] = "01/01/2020"
                             linha_fo[22] = 1
                             linha_fo[23] = cod_srv
@@ -1848,7 +1847,6 @@ with tab_importacao:
             ("17", "estado",             "char 2",   "UF"),
             ("18", "i_filiais",          "integer",  "Filial (= i_servicos)"),
             ("19", "sequencia_gps",      "integer",  "Sequencia GPS (= 1)"),
-            ("20", "tipo",               "integer",  "1=Empresa / 2=Tomador..."),
             ("21", "codigo_municipio",   "integer",  "Codigo municipio Dominio"),
             ("22", "DATA_INICIO",        "date",     "DD/MM/AAAA"),
             ("23", "SITUACAO",           "smallint", "0=Inativo / 1=Ativo"),
