@@ -1492,9 +1492,9 @@ with tab_lote:
                             format_func=lambda k: f"{k} - {TIPOS_SERVICO_TOMADOR[k]}",
                             key=f"tipo_servico_tomador_{idx}",
                         )
-                        tipos_servico_tomador[idx] = tst
-                else:
-                    tipos_servico_tomador[idx] = None
+                        tipos_servico_tomador[idx] = int(tst)   # 1, 2 ou 3
+else:
+    tipos_servico_tomador[idx] = 1              # ← era None, agora 1 (evita constraint ASA6232)
 
             st.markdown("<br>", unsafe_allow_html=True)
             st.markdown(
