@@ -57,206 +57,122 @@ CSS = f"""
       font-size: 26px; font-weight: 900; color: #fff;
       letter-spacing: -1px; flex-shrink: 0;
   }}
-  .tr-title {{
-      font-size: 22px; font-weight: 700;
-      color: {TR_TEXT}; margin: 0; line-height: 1.2;
-  }}
-  .tr-subtitle {{
-      font-size: 12px; color: {TR_TEXT_MUTED};
-      margin: 2px 0 0 0; letter-spacing: 0.5px;
-  }}
+  .tr-title   {{ font-size: 22px; font-weight: 700; color: {TR_TEXT}; margin: 0; line-height: 1.2; }}
+  .tr-subtitle {{ font-size: 12px; color: {TR_TEXT_MUTED}; margin: 2px 0 0 0; letter-spacing: 0.5px; }}
   .tr-badge {{
-      margin-left: auto;
-      background: {TR_ORANGE};
+      margin-left: auto; background: {TR_ORANGE};
       color: #fff; font-size: 10px; font-weight: 700;
       padding: 4px 10px; border-radius: 20px;
       letter-spacing: 1px; text-transform: uppercase;
   }}
   .tr-card {{
-      background: {TR_CARD};
-      border: 1px solid {TR_BORDER};
-      border-radius: 10px;
-      padding: 18px 20px;
-      margin-bottom: 16px;
+      background: {TR_CARD}; border: 1px solid {TR_BORDER};
+      border-radius: 10px; padding: 18px 20px; margin-bottom: 16px;
   }}
   .tr-card-title {{
-      font-size: 13px; font-weight: 700;
-      color: {TR_ORANGE}; text-transform: uppercase;
-      letter-spacing: 1px; margin-bottom: 12px;
-      border-bottom: 1px solid {TR_BORDER};
-      padding-bottom: 8px;
+      font-size: 13px; font-weight: 700; color: {TR_ORANGE};
+      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;
+      border-bottom: 1px solid {TR_BORDER}; padding-bottom: 8px;
   }}
-  .tr-metrics {{
-      display: flex; gap: 12px; flex-wrap: wrap;
-      margin-bottom: 20px;
-  }}
+  .tr-metrics {{ display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }}
   .tr-metric {{
-      background: {TR_CARD};
-      border: 1px solid {TR_BORDER};
-      border-radius: 10px;
-      padding: 14px 20px;
-      flex: 1; min-width: 120px;
-      text-align: center;
+      background: {TR_CARD}; border: 1px solid {TR_BORDER};
+      border-radius: 10px; padding: 14px 20px;
+      flex: 1; min-width: 120px; text-align: center;
   }}
-  .tr-metric-value {{
-      font-size: 28px; font-weight: 800;
-      color: {TR_ORANGE}; line-height: 1;
-  }}
-  .tr-metric-label {{
-      font-size: 11px; color: {TR_TEXT_MUTED};
-      margin-top: 4px; text-transform: uppercase;
-      letter-spacing: 0.5px;
-  }}
+  .tr-metric-value {{ font-size: 28px; font-weight: 800; color: {TR_ORANGE}; line-height: 1; }}
+  .tr-metric-label {{ font-size: 11px; color: {TR_TEXT_MUTED}; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }}
   .tr-metric.success .tr-metric-value {{ color: {TR_SUCCESS}; }}
   .tr-metric.error   .tr-metric-value {{ color: {TR_ERROR};   }}
   .tr-metric.warning .tr-metric-value {{ color: {TR_WARNING}; }}
-  [data-testid="stDataFrame"] {{
-      border: 1px solid {TR_BORDER} !important;
-      border-radius: 8px !important;
-  }}
+  [data-testid="stDataFrame"] {{ border: 1px solid {TR_BORDER} !important; border-radius: 8px !important; }}
   .stButton > button {{
-      background: {TR_ORANGE} !important;
-      color: #fff !important;
-      border: none !important;
-      border-radius: 6px !important;
-      font-weight: 700 !important;
-      letter-spacing: 0.5px !important;
-      transition: background 0.2s !important;
+      background: {TR_ORANGE} !important; color: #fff !important;
+      border: none !important; border-radius: 6px !important;
+      font-weight: 700 !important; letter-spacing: 0.5px !important;
   }}
-  .stButton > button:hover {{
-      background: {TR_ORANGE_DARK} !important;
-  }}
+  .stButton > button:hover {{ background: {TR_ORANGE_DARK} !important; }}
   .stDownloadButton > button {{
-      background: #1a3a1a !important;
-      color: {TR_SUCCESS} !important;
-      border: 1px solid {TR_SUCCESS} !important;
-      border-radius: 6px !important;
-      font-weight: 700 !important;
+      background: #1a3a1a !important; color: {TR_SUCCESS} !important;
+      border: 1px solid {TR_SUCCESS} !important; border-radius: 6px !important; font-weight: 700 !important;
   }}
-  .stDownloadButton > button:hover {{
-      background: {TR_SUCCESS} !important;
-      color: #fff !important;
-  }}
-  .stTextInput input, .stNumberInput input, .stSelectbox select {{
-      background: {TR_CARD2} !important;
-      color: {TR_TEXT} !important;
-      border: 1px solid {TR_BORDER} !important;
-      border-radius: 6px !important;
+  .stDownloadButton > button:hover {{ background: {TR_SUCCESS} !important; color: #fff !important; }}
+  .stTextInput input, .stNumberInput input {{
+      background: {TR_CARD2} !important; color: {TR_TEXT} !important;
+      border: 1px solid {TR_BORDER} !important; border-radius: 6px !important;
   }}
   .stTextArea textarea {{
-      background: {TR_CARD2} !important;
-      color: {TR_TEXT} !important;
-      border: 1px solid {TR_BORDER} !important;
-      border-radius: 6px !important;
-      font-family: 'Courier New', monospace !important;
-      font-size: 13px !important;
-      line-height: 1.6 !important;
+      background: {TR_CARD2} !important; color: {TR_TEXT} !important;
+      border: 1px solid {TR_BORDER} !important; border-radius: 6px !important;
+      font-family: 'Courier New', monospace !important; font-size: 13px !important;
   }}
-  .stTextArea textarea:focus {{
-      border-color: {TR_ORANGE} !important;
-      box-shadow: 0 0 0 2px rgba(255,128,0,0.2) !important;
-  }}
+  .stTextArea textarea:focus {{ border-color: {TR_ORANGE} !important; box-shadow: 0 0 0 2px rgba(255,128,0,0.2) !important; }}
   .stMultiSelect [data-baseweb="select"] {{
-      background: {TR_CARD2} !important;
-      border: 1px solid {TR_BORDER} !important;
-      border-radius: 6px !important;
+      background: {TR_CARD2} !important; border: 1px solid {TR_BORDER} !important; border-radius: 6px !important;
   }}
   .stTabs [data-baseweb="tab-list"] {{
-      background: {TR_CARD} !important;
-      border-radius: 8px 8px 0 0 !important;
-      border-bottom: 2px solid {TR_ORANGE} !important;
-      gap: 4px !important;
+      background: {TR_CARD} !important; border-radius: 8px 8px 0 0 !important;
+      border-bottom: 2px solid {TR_ORANGE} !important; gap: 4px !important;
   }}
-  .stTabs [data-baseweb="tab"] {{
-      color: {TR_TEXT_MUTED} !important;
-      font-weight: 600 !important;
-      border-radius: 6px 6px 0 0 !important;
-  }}
-  .stTabs [aria-selected="true"] {{
-      background: {TR_ORANGE} !important;
-      color: #fff !important;
-  }}
+  .stTabs [data-baseweb="tab"] {{ color: {TR_TEXT_MUTED} !important; font-weight: 600 !important; border-radius: 6px 6px 0 0 !important; }}
+  .stTabs [aria-selected="true"] {{ background: {TR_ORANGE} !important; color: #fff !important; }}
   .streamlit-expanderHeader {{
-      background: {TR_CARD2} !important;
-      border: 1px solid {TR_BORDER} !important;
-      border-radius: 6px !important;
-      color: {TR_TEXT} !important;
+      background: {TR_CARD2} !important; border: 1px solid {TR_BORDER} !important;
+      border-radius: 6px !important; color: {TR_TEXT} !important;
   }}
-  .stProgress > div > div {{
-      background: {TR_ORANGE} !important;
-  }}
+  .stProgress > div > div {{ background: {TR_ORANGE} !important; }}
   .tr-sidebar-section {{
-      background: #1a1a1a;
-      border: 1px solid {TR_BORDER};
-      border-radius: 8px;
-      padding: 12px 14px;
-      margin-bottom: 12px;
+      background: #1a1a1a; border: 1px solid {TR_BORDER};
+      border-radius: 8px; padding: 12px 14px; margin-bottom: 12px;
   }}
   .tr-sidebar-title {{
-      font-size: 10px; font-weight: 700;
-      color: {TR_ORANGE}; text-transform: uppercase;
-      letter-spacing: 1px; margin-bottom: 8px;
+      font-size: 10px; font-weight: 700; color: {TR_ORANGE};
+      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;
   }}
   .result-grid {{
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
       gap: 10px; margin-top: 12px;
   }}
   .result-item {{
-      background: {TR_CARD2};
-      border: 1px solid {TR_BORDER};
-      border-radius: 8px;
-      padding: 10px 14px;
+      background: {TR_CARD2}; border: 1px solid {TR_BORDER};
+      border-radius: 8px; padding: 10px 14px;
   }}
-  .result-item-label {{
-      font-size: 10px; color: {TR_TEXT_MUTED};
-      text-transform: uppercase; letter-spacing: 0.5px;
-  }}
-  .result-item-value {{
-      font-size: 16px; font-weight: 700; color: {TR_TEXT};
-      margin-top: 2px;
-  }}
+  .result-item-label {{ font-size: 10px; color: {TR_TEXT_MUTED}; text-transform: uppercase; letter-spacing: 0.5px; }}
+  .result-item-value {{ font-size: 16px; font-weight: 700; color: {TR_TEXT}; margin-top: 2px; }}
   .result-item-value.highlight {{ color: {TR_ORANGE}; }}
   .ent-pill {{
-      display: inline-block;
-      background: #2a1500;
-      border: 1px solid {TR_ORANGE};
-      color: {TR_ORANGE};
-      border-radius: 20px;
-      padding: 3px 10px;
-      font-size: 11px; font-weight: 700;
-      margin: 3px 3px 3px 0;
+      display: inline-block; background: #2a1500; border: 1px solid {TR_ORANGE};
+      color: {TR_ORANGE}; border-radius: 20px; padding: 3px 10px;
+      font-size: 11px; font-weight: 700; margin: 3px 3px 3px 0;
   }}
   .cnpj-preview-box {{
-      background: {TR_CARD2};
-      border: 1px solid {TR_BORDER};
-      border-radius: 8px;
-      padding: 12px 16px;
-      margin-top: 10px;
+      background: {TR_CARD2}; border: 1px solid {TR_BORDER};
+      border-radius: 8px; padding: 12px 16px; margin-top: 10px;
   }}
   .cnpj-chip {{
-      display: inline-block;
-      background: #2a1500;
-      border: 1px solid {TR_ORANGE};
-      color: {TR_TEXT};
-      border-radius: 6px;
-      padding: 3px 10px;
-      font-size: 12px;
-      font-family: 'Courier New', monospace;
-      margin: 3px;
+      display: inline-block; background: #2a1500; border: 1px solid {TR_ORANGE};
+      color: {TR_TEXT}; border-radius: 6px; padding: 3px 10px;
+      font-size: 12px; font-family: 'Courier New', monospace; margin: 3px;
   }}
-  .cnpj-chip.invalido {{
-      border-color: {TR_ERROR};
-      color: {TR_ERROR};
-      background: #2b0d0d;
+  .cnpj-chip.invalido {{ border-color: {TR_ERROR}; color: {TR_ERROR}; background: #2b0d0d; }}
+  .tipo-box {{
+      background: {TR_CARD2}; border: 2px solid {TR_ORANGE};
+      border-radius: 10px; padding: 16px 20px; margin: 12px 0;
+  }}
+  .tipo-box-title {{
+      font-size: 12px; font-weight: 700; color: {TR_ORANGE};
+      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;
+  }}
+  .tipo-badge {{
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #2a1500; border: 1px solid {TR_ORANGE};
+      color: {TR_TEXT}; border-radius: 8px; padding: 6px 14px;
+      font-size: 12px; font-weight: 600; margin: 4px;
+      cursor: pointer;
   }}
   .tr-footer {{
-      text-align: center;
-      color: {TR_TEXT_MUTED};
-      font-size: 11px;
-      margin-top: 40px;
-      padding: 16px;
-      border-top: 1px solid {TR_BORDER};
+      text-align: center; color: {TR_TEXT_MUTED}; font-size: 11px;
+      margin-top: 40px; padding: 16px; border-top: 1px solid {TR_BORDER};
   }}
   .tr-footer span {{ color: {TR_ORANGE}; font-weight: 700; }}
   ::-webkit-scrollbar {{ width: 6px; height: 6px; }}
@@ -266,6 +182,18 @@ CSS = f"""
   .block-container {{ padding-top: 1rem !important; }}
 </style>
 """
+
+# ──────────────────────────────────────────────────────────────────────────────
+# CONSTANTES — TIPO EMPRESA (Domínio Sistemas)
+# ──────────────────────────────────────────────────────────────────────────────
+TIPOS_EMPRESA = {
+    1: "Empresa",
+    2: "Tomador de Serviço",
+    3: "Empreitada Parcial",
+    4: "Obra Própria",
+    5: "Empreitada Total",
+    6: "Cooperativa de Trabalho",
+}
 
 # ──────────────────────────────────────────────────────────────────────────────
 # MOTOR FPAS — ENTIDADES (BITMASK)
@@ -314,7 +242,6 @@ FPAS_CONFIG = {
 FPAS_SEMPRE_ZERO = {582, 868, 876}
 
 CNAE_FPAS = {
-    # AGRICULTURA / PECUÁRIA / RURAL
     "0111-3/01":604,"0111-3/02":604,"0111-3/03":604,"0112-1/01":604,
     "0113-0/00":604,"0115-6/00":604,"0116-4/00":604,"0119-9/01":604,
     "0119-9/99":604,"0121-1/01":604,"0122-9/00":604,"0131-8/00":604,
@@ -326,7 +253,6 @@ CNAE_FPAS = {
     "0170-9/00":604,"0210-1/01":604,"0210-1/02":604,"0220-9/01":604,
     "0220-9/02":604,"0230-6/00":604,"0240-3/00":604,"0311-6/01":604,
     "0312-4/00":604,"0321-3/01":604,"0322-1/00":604,
-    # INDÚSTRIA GERAL
     "1011-2/01":507,"1011-2/02":507,"1012-1/01":507,"1013-9/01":507,
     "1020-1/01":507,"1020-1/02":507,"1031-7/00":507,"1032-5/01":507,
     "1033-3/01":507,"1041-4/00":507,"1042-2/00":507,"1043-1/00":507,
@@ -395,7 +321,6 @@ CNAE_FPAS = {
     "3103-9/00":507,"3104-7/00":507,"3211-6/01":507,"3212-4/00":507,
     "3220-5/00":507,"3230-2/00":507,"3240-0/01":507,"3291-4/00":507,
     "3292-2/00":507,"3299-0/05":507,
-    # CONSTRUÇÃO CIVIL
     "4110-7/00":833,"4120-4/00":833,"4211-1/01":833,"4211-1/02":833,
     "4212-0/00":833,"4213-8/00":833,"4221-9/01":833,"4221-9/02":833,
     "4222-7/00":833,"4223-5/00":833,"4291-0/00":833,"4292-8/00":833,
@@ -406,7 +331,6 @@ CNAE_FPAS = {
     "4330-4/03":833,"4330-4/04":833,"4330-4/05":833,"4391-6/00":833,
     "4399-1/01":833,"4399-1/02":833,"4399-1/03":833,"4399-1/04":833,
     "4399-1/05":833,"4399-1/99":833,
-    # COMÉRCIO
     "4511-1/01":515,"4511-1/02":515,"4512-9/01":515,"4512-9/02":515,
     "4520-0/01":515,"4520-0/02":515,"4530-7/01":515,"4530-7/02":515,
     "4530-7/03":515,"4541-2/01":515,"4541-2/02":515,"4541-2/03":515,
@@ -437,7 +361,6 @@ CNAE_FPAS = {
     "4781-4/00":515,"4782-2/01":515,"4783-1/01":515,"4784-9/00":515,
     "4785-7/01":515,"4789-0/01":515,"4789-0/99":515,"4791-1/00":515,
     "4792-8/00":515,"4793-6/00":515,
-    # TRANSPORTE
     "4911-6/00":620,"4912-4/01":620,"4912-4/02":620,"4921-3/01":620,
     "4921-3/02":620,"4922-1/01":620,"4922-1/02":620,"4923-0/01":620,
     "4923-0/02":620,"4924-8/00":620,"4929-9/01":620,"4929-9/02":620,
@@ -453,11 +376,9 @@ CNAE_FPAS = {
     "5231-1/01":620,"5232-0/00":620,"5239-7/00":620,"5240-1/01":620,
     "5250-8/01":620,"5250-8/02":620,"5310-5/01":620,"5310-5/02":620,
     "5320-2/01":620,
-    # TI / TECNOLOGIA
     "6201-5/00":736,"6201-5/01":736,"6201-5/02":736,"6202-3/00":736,
     "6203-1/00":736,"6204-0/00":736,"6209-1/00":736,"6311-9/00":736,
     "6319-4/00":736,"6391-7/00":736,"6399-2/00":736,
-    # FINANCEIRO
     "6410-7/00":655,"6421-2/00":655,"6422-1/00":655,"6423-9/00":655,
     "6424-7/01":655,"6424-7/02":655,"6424-7/03":655,"6431-0/00":655,
     "6432-8/00":655,"6433-6/00":655,"6434-4/01":655,"6435-2/01":655,
@@ -470,7 +391,6 @@ CNAE_FPAS = {
     "6541-3/00":655,"6542-1/00":655,"6550-2/00":655,"6611-8/00":655,
     "6612-6/00":655,"6613-4/00":655,"6619-3/01":655,"6621-5/00":655,
     "6622-3/00":655,"6629-1/00":655,"6630-4/00":655,
-    # SAÚDE
     "8610-1/01":647,"8610-1/02":647,"8621-6/01":647,"8621-6/02":647,
     "8622-4/00":647,"8630-5/01":647,"8630-5/02":647,"8630-5/03":647,
     "8630-5/04":647,"8630-5/06":647,"8630-5/07":647,"8630-5/08":647,
@@ -480,16 +400,13 @@ CNAE_FPAS = {
     "8640-2/13":647,"8650-0/01":647,"8650-0/02":647,"8650-0/03":647,
     "8650-0/04":647,"8650-0/05":647,"8650-0/06":647,"8650-0/07":647,
     "8660-7/00":647,
-    # EDUCAÇÃO
     "8511-2/00":647,"8512-1/00":647,"8513-9/00":647,"8520-1/00":647,
     "8531-7/00":647,"8532-5/00":647,"8533-3/00":647,"8541-4/00":647,
     "8542-2/00":647,"8550-3/01":647,"8550-3/02":647,"8591-1/00":647,
     "8592-9/01":647,"8593-7/00":647,"8599-6/01":647,"8599-6/99":647,
-    # ADM PÚBLICA
     "8411-6/00":582,"8412-4/00":582,"8413-2/00":582,"8421-3/00":582,
     "8422-1/00":582,"8423-0/00":582,"8424-8/00":582,"8425-6/00":582,
     "8430-2/00":582,
-    # SERVIÇOS GERAIS
     "7711-0/00":515,"7719-5/99":515,"7721-7/00":515,"7722-5/00":515,
     "7723-3/00":515,"7729-2/01":515,"7731-4/00":515,"7732-2/00":515,
     "7733-1/00":515,"7739-0/01":515,"7740-3/00":515,"7810-8/00":515,
@@ -577,19 +494,17 @@ def validar_cnpj(cnpj: str) -> bool:
     c = limpar_cnpj(cnpj)
     if len(c) != 14 or len(set(c)) == 1:
         return False
-    def calc_dv(digits: str, pesos: list) -> int:
+    def calc_dv(digits, pesos):
         soma  = sum(int(d) * p for d, p in zip(digits, pesos))
         resto = soma % 11
         return 0 if resto < 2 else 11 - resto
-    pesos1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
-    pesos2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
-    return (int(c[12]) == calc_dv(c[:12], pesos1) and
-            int(c[13]) == calc_dv(c[:13], pesos2))
+    pesos1 = [5,4,3,2,9,8,7,6,5,4,3,2]
+    pesos2 = [6,5,4,3,2,9,8,7,6,5,4,3,2]
+    return int(c[12]) == calc_dv(c[:12], pesos1) and int(c[13]) == calc_dv(c[:13], pesos2)
 
 def normalizar_resposta(data: dict, cnpj: str) -> dict:
     cnae_codigo = (
-        data.get("cnae_fiscal")
-        or data.get("cnae_fiscal_codigo")
+        data.get("cnae_fiscal") or data.get("cnae_fiscal_codigo")
         or (data.get("atividade_principal", [{}])[0].get("code", "")
             if isinstance(data.get("atividade_principal"), list) else "")
     )
@@ -643,21 +558,156 @@ def consultar_cnpj(cnpj_raw: str, delay: float = 1.0) -> dict:
     return {"erro": f"CNPJ {cnpj} não encontrado em nenhuma API."}
 
 def extrair_cnpjs_do_texto(texto: str) -> list[str]:
-    """
-    Extrai e deduplica todos os CNPJs de um texto livre.
-    Aceita qualquer separador: vírgula, ponto-e-vírgula, quebra de linha, espaço, tab.
-    Aceita com ou sem máscara.
-    """
-    # Encontra sequências que parecem CNPJ (14 dígitos com ou sem máscara)
-    encontrados = re.findall(r"\d{2}[\.\s]?\d{3}[\.\s]?\d{3}[\/\s]?\d{4}[-\s]?\d{2}", texto)
-    vistos   = set()
-    unicos   = []
+    encontrados = re.findall(
+        r"\d{2}[\.\s]?\d{3}[\.\s]?\d{3}[\/\s]?\d{4}[-\s]?\d{2}", texto
+    )
+    vistos, unicos = set(), []
     for c in encontrados:
         limpo = limpar_cnpj(c)
         if limpo not in vistos:
             vistos.add(limpo)
             unicos.append(c.strip())
     return unicos
+
+# ──────────────────────────────────────────────────────────────────────────────
+# GERAÇÃO DOS ARQUIVOS DE SAÍDA — LEIAUTE DOMÍNIO
+# ──────────────────────────────────────────────────────────────────────────────
+# Colunas na ordem exata do leiaute Domínio Sistemas
+COLUNAS_LEIAUTE = [
+    "Tipo",           # 1-6 conforme TIPOS_EMPRESA
+    "Tipo_Descricao", # Descrição do tipo
+    "CNPJ",
+    "Razao_Social",
+    "Nome_Fantasia",
+    "Situacao_Cadastral",
+    "Natureza_Juridica",
+    "Porte",
+    "Data_Inicio_Atividade",
+    "Logradouro",
+    "Numero",
+    "Bairro",
+    "Municipio",
+    "UF",
+    "CEP",
+    "CNAE_Codigo",
+    "CNAE_Descricao",
+    "Simples_Nacional",
+    "FPAS",
+    "FPAS_Descricao",
+    "Codigo_Terceiros",
+    "RAT_Base_Pct",
+    "SAT_RAT_x_FAP_Pct",
+    "Codigo_GPS",
+    "Codigo_GFIP",
+    "Total_Terceiros_Pct",
+    "Observacao",
+    "Status",
+]
+
+def montar_linha_leiaute(r: dict, tipo_cod: int) -> dict:
+    """Monta dicionário com as colunas do leiaute Domínio."""
+    return {
+        "Tipo":                  tipo_cod,
+        "Tipo_Descricao":        TIPOS_EMPRESA.get(tipo_cod, ""),
+        "CNPJ":                  r.get("cnpj", ""),
+        "Razao_Social":          r.get("razao_social", ""),
+        "Nome_Fantasia":         r.get("nome_fantasia", ""),
+        "Situacao_Cadastral":    r.get("situacao_cadastral", ""),
+        "Natureza_Juridica":     r.get("natureza_juridica", ""),
+        "Porte":                 r.get("porte", ""),
+        "Data_Inicio_Atividade": r.get("data_inicio", ""),
+        "Logradouro":            r.get("logradouro", ""),
+        "Numero":                r.get("numero", ""),
+        "Bairro":                r.get("bairro", ""),
+        "Municipio":             r.get("municipio", ""),
+        "UF":                    r.get("uf", ""),
+        "CEP":                   r.get("cep", ""),
+        "CNAE_Codigo":           r.get("cnae_codigo", ""),
+        "CNAE_Descricao":        r.get("cnae_descricao", ""),
+        "Simples_Nacional":      r.get("simples_nacional", ""),
+        "FPAS":                  r.get("codigo_fpas", ""),
+        "FPAS_Descricao":        r.get("fpas_descricao", ""),
+        "Codigo_Terceiros":      r.get("codigo_terceiro", ""),
+        "RAT_Base_Pct":          r.get("perc_acid_trabalho", ""),
+        "SAT_RAT_x_FAP_Pct":    r.get("codigo_sat", ""),
+        "Codigo_GPS":            r.get("codigo_gps", ""),
+        "Codigo_GFIP":           r.get("codigo_gfip", ""),
+        "Total_Terceiros_Pct":   r.get("total_terceiros_pct", ""),
+        "Observacao":            r.get("observacao", ""),
+        "Status":                r.get("status", ""),
+    }
+
+def gerar_txt_tabulado(df: pd.DataFrame) -> bytes:
+    """Gera TXT com separador TAB, cabeçalho incluído, encoding UTF-8 BOM."""
+    return df.to_csv(
+        index=False, sep="\t", encoding="utf-8-sig", lineterminator="\r\n"
+    ).encode("utf-8-sig")
+
+def gerar_excel_conferencia(df_leiaute: pd.DataFrame,
+                            df_erros: pd.DataFrame | None) -> bytes:
+    """
+    Gera Excel com:
+      - Aba 'Importacao_Dominio'  → leiaute final
+      - Aba 'Conferencia'         → mesmas linhas com formatação zebrada
+      - Aba 'Erros'               → apenas se houver erros
+    """
+    buf = io.BytesIO()
+    with pd.ExcelWriter(buf, engine="openpyxl") as writer:
+        # ── Aba principal (importação)
+        df_leiaute.to_excel(writer, sheet_name="Importacao_Dominio", index=False)
+
+        # ── Aba conferência com formatação
+        df_leiaute.to_excel(writer, sheet_name="Conferencia", index=False)
+        wb  = writer.book
+        ws  = wb["Conferencia"]
+
+        from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
+        from openpyxl.utils import get_column_letter
+
+        # Cores
+        HDR_FILL  = PatternFill("solid", fgColor="FF8000")   # laranja TR
+        EVEN_FILL = PatternFill("solid", fgColor="2E2E2E")   # cinza escuro
+        ODD_FILL  = PatternFill("solid", fgColor="242424")   # cinza mais escuro
+        OK_FILL   = PatternFill("solid", fgColor="0D2B0D")   # verde escuro
+        ERR_FILL  = PatternFill("solid", fgColor="2B0D0D")   # vermelho escuro
+        HDR_FONT  = Font(bold=True, color="FFFFFF", size=10)
+        CELL_FONT = Font(color="F0F0F0", size=9)
+        THIN      = Side(style="thin", color="3A3A3A")
+        BORDER    = Border(left=THIN, right=THIN, top=THIN, bottom=THIN)
+
+        # Cabeçalho
+        for col_idx, cell in enumerate(ws[1], start=1):
+            cell.fill      = HDR_FILL
+            cell.font      = HDR_FONT
+            cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+            cell.border    = BORDER
+            ws.column_dimensions[get_column_letter(col_idx)].width = 20
+        ws.row_dimensions[1].height = 30
+
+        # Linhas de dados
+        status_col = COLUNAS_LEIAUTE.index("Status") + 1
+        for row_idx, row in enumerate(ws.iter_rows(min_row=2), start=2):
+            status_val = ws.cell(row=row_idx, column=status_col).value or ""
+            if status_val == "OK":
+                bg = OK_FILL
+            elif "ERRO" in str(status_val):
+                bg = ERR_FILL
+            else:
+                bg = EVEN_FILL if row_idx % 2 == 0 else ODD_FILL
+            for cell in row:
+                cell.fill      = bg
+                cell.font      = CELL_FONT
+                cell.alignment = Alignment(vertical="center")
+                cell.border    = BORDER
+
+        # Congela cabeçalho
+        ws.freeze_panes = "A2"
+
+        # ── Aba erros
+        if df_erros is not None and len(df_erros) > 0:
+            df_erros.to_excel(writer, sheet_name="Erros", index=False)
+
+    return buf.getvalue()
 
 # ──────────────────────────────────────────────────────────────────────────────
 # HELPERS HTML
@@ -702,7 +752,7 @@ st.markdown("""
         <div class="tr-title">Classificador FPAS / Terceiros / SEFIP</div>
         <div class="tr-subtitle">DOMÍNIO SISTEMAS &nbsp;·&nbsp; Thomson Reuters &nbsp;·&nbsp; IN RFB nº 971/2009</div>
     </div>
-    <div class="tr-badge">v2.1</div>
+    <div class="tr-badge">v3.0</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -715,11 +765,9 @@ with st.sidebar:
     st.markdown('<div class="tr-sidebar-section"><div class="tr-sidebar-title">📊 Parâmetros SEFIP</div>',
                 unsafe_allow_html=True)
     fap = st.number_input("FAP — Fator Acidentário", min_value=0.5,
-                          max_value=2.0, value=1.0, step=0.01,
-                          help="Multiplica o RAT. Padrão = 1,00")
+                          max_value=2.0, value=1.0, step=0.01)
     delay = st.number_input("Intervalo entre consultas (s)", min_value=0.3,
-                            max_value=5.0, value=1.0, step=0.1,
-                            help="Respeita o rate limit das APIs públicas")
+                            max_value=5.0, value=1.0, step=0.1)
     st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="tr-sidebar-section"><div class="tr-sidebar-title">🤝 Convênios Diretos</div>',
@@ -727,7 +775,6 @@ with st.sidebar:
     convenios = st.multiselect(
         "Entidades com convênio direto",
         options=["SENAI","SESI","SENAC","SESC","SEBRAE","SENAR","SEST","SENAT","SESCOOP"],
-        help="Serão removidas do código de terceiros",
         label_visibility="collapsed",
     )
     st.markdown('</div>', unsafe_allow_html=True)
@@ -736,23 +783,17 @@ with st.sidebar:
                 unsafe_allow_html=True)
     st.markdown(f"""
     <div style="font-size:11px;color:{TR_TEXT_MUTED};line-height:1.8;">
-        1️⃣ BrasilAPI<br>
-        2️⃣ ReceitaWS<br>
-        3️⃣ MinhaReceita<br>
+        1️⃣ BrasilAPI<br>2️⃣ ReceitaWS<br>3️⃣ MinhaReceita<br>
         <span style="color:{TR_WARNING};">Fallback automático</span>
-    </div>
-    """, unsafe_allow_html=True)
+    </div>""", unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown(f"""
     <div style="font-size:10px;color:{TR_TEXT_MUTED};margin-top:20px;line-height:1.6;">
         <b style="color:{TR_ORANGE};">Base legal:</b><br>
-        IN RFB nº 971/2009<br>
-        IN RFB nº 2.110/2022<br>
-        Decreto-Lei nº 1.146/1970<br>
-        Lei nº 10.256/2001
-    </div>
-    """, unsafe_allow_html=True)
+        IN RFB nº 971/2009<br>IN RFB nº 2.110/2022<br>
+        Decreto-Lei nº 1.146/1970<br>Lei nº 10.256/2001
+    </div>""", unsafe_allow_html=True)
 
 # ── TABS ──────────────────────────────────────────────────────────────────────
 tab_lote, tab_individual, tab_tabela = st.tabs([
@@ -762,73 +803,103 @@ tab_lote, tab_individual, tab_tabela = st.tabs([
 ])
 
 # ══════════════════════════════════════════════════════════════════════════════
-# TAB 1 — CONSULTA EM LOTE (campo de texto)
+# TAB 1 — CONSULTA EM LOTE
 # ══════════════════════════════════════════════════════════════════════════════
 with tab_lote:
 
-    st.markdown('<div class="tr-card"><div class="tr-card-title">📋 Cole os CNPJs para Consulta em Lote</div>',
+    # ── PASSO 1: Tipo de Empresa ───────────────────────────────────────────────
+    st.markdown(f"""
+    <div class="tipo-box">
+        <div class="tipo-box-title">
+            🏷️ Passo 1 — Selecione o Tipo de Empresa (campo "Tipo" no Domínio Sistemas)
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    col_t1, col_t2, col_t3 = st.columns(3)
+    with col_t1:
+        tipo_selecionado = st.selectbox(
+            "Tipo",
+            options=list(TIPOS_EMPRESA.keys()),
+            format_func=lambda k: f"{k} — {TIPOS_EMPRESA[k]}",
+            label_visibility="collapsed",
+        )
+    with col_t2:
+        st.markdown(f"""
+        <div style="background:{TR_CARD2};border:1px solid {TR_ORANGE};
+                    border-radius:8px;padding:10px 16px;margin-top:0px;">
+            <span style="font-size:11px;color:{TR_TEXT_MUTED};">Tipo selecionado:</span><br>
+            <span style="font-size:20px;font-weight:800;color:{TR_ORANGE};">{tipo_selecionado}</span>
+            <span style="font-size:14px;color:{TR_TEXT};margin-left:8px;">
+                {TIPOS_EMPRESA[tipo_selecionado]}
+            </span>
+        </div>
+        """, unsafe_allow_html=True)
+    with col_t3:
+        st.markdown(f"""
+        <div style="background:{TR_CARD2};border:1px solid {TR_BORDER};
+                    border-radius:8px;padding:10px 16px;font-size:11px;
+                    color:{TR_TEXT_MUTED};line-height:1.8;">
+            <b style="color:{TR_ORANGE};">Legenda:</b><br>
+            1 = Empresa &nbsp; 2 = Tomador Serviço<br>
+            3 = Empreitada Parcial &nbsp; 4 = Obra Própria<br>
+            5 = Empreitada Total &nbsp; 6 = Cooperativa
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # ── PASSO 2: CNPJs ────────────────────────────────────────────────────────
+    st.markdown('<div class="tr-card"><div class="tr-card-title">📋 Passo 2 — Cole os CNPJs</div>',
                 unsafe_allow_html=True)
 
     col_input, col_dica = st.columns([3, 1])
-
     with col_input:
         texto_cnpjs = st.text_area(
             "CNPJs",
             placeholder=(
-                "Cole aqui os CNPJs — um por linha, separados por vírgula, ponto-e-vírgula ou espaço.\n\n"
-                "Exemplos aceitos:\n"
-                "08.795.211/0001-70\n"
-                "11222333000181\n"
-                "08795211000170, 11222333000181\n"
-                "08.795.211/0001-70; 11.222.333/0001-81"
+                "Cole aqui os CNPJs — um por linha, separados por vírgula, "
+                "ponto-e-vírgula ou espaço.\n\n"
+                "Exemplos:\n08.795.211/0001-70\n11222333000181\n"
+                "08795211000170, 11222333000181"
             ),
-            height=220,
+            height=200,
             label_visibility="collapsed",
         )
-
     with col_dica:
         st.markdown(f"""
         <div style="background:{TR_CARD2};border:1px solid {TR_BORDER};
                     border-radius:8px;padding:14px;font-size:11px;
-                    color:{TR_TEXT_MUTED};line-height:1.8;margin-top:0px;">
+                    color:{TR_TEXT_MUTED};line-height:1.8;">
             <b style="color:{TR_ORANGE};">Formatos aceitos:</b><br>
-            ✅ Com máscara<br>
-            &nbsp;&nbsp;<code>08.795.211/0001-70</code><br>
-            ✅ Sem máscara<br>
-            &nbsp;&nbsp;<code>08795211000170</code><br>
-            ✅ Separadores<br>
-            &nbsp;&nbsp;Linha, vírgula,<br>
-            &nbsp;&nbsp;ponto-e-vírgula,<br>
-            &nbsp;&nbsp;espaço ou tab<br>
-            ✅ Duplicatas<br>
-            &nbsp;&nbsp;Removidas automaticamente
+            ✅ <code>08.795.211/0001-70</code><br>
+            ✅ <code>08795211000170</code><br>
+            ✅ Vírgula, ponto-e-vírgula,<br>&nbsp;&nbsp;&nbsp;quebra de linha, tab<br>
+            ✅ Duplicatas removidas
         </div>
         """, unsafe_allow_html=True)
-
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # Pré-visualização dos CNPJs detectados em tempo real
+    # Pré-visualização
     if texto_cnpjs and texto_cnpjs.strip():
         lista_cnpjs = extrair_cnpjs_do_texto(texto_cnpjs)
-
         if lista_cnpjs:
             validos   = [c for c in lista_cnpjs if validar_cnpj(c)]
             invalidos = [c for c in lista_cnpjs if not validar_cnpj(c)]
 
-            chips_html = ""
-            for c in lista_cnpjs:
-                cls  = "" if validar_cnpj(c) else "invalido"
-                icon = "✅" if validar_cnpj(c) else "❌"
-                chips_html += f'<span class="cnpj-chip {cls}">{icon} {c}</span>'
-
+            chips_html = "".join(
+                f'<span class="cnpj-chip {"invalido" if not validar_cnpj(c) else ""}">'
+                f'{"✅" if validar_cnpj(c) else "❌"} {c}</span>'
+                for c in lista_cnpjs
+            )
             st.markdown(f"""
             <div class="cnpj-preview-box">
                 <div style="font-size:11px;color:{TR_TEXT_MUTED};
-                            text-transform:uppercase;letter-spacing:0.5px;
-                            margin-bottom:8px;">
+                            text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">
                     {len(lista_cnpjs)} CNPJ(s) detectado(s) —
                     <span style="color:{TR_SUCCESS};">{len(validos)} válido(s)</span>
-                    {f'· <span style="color:{TR_ERROR};">{len(invalidos)} inválido(s)</span>' if invalidos else ''}
+                    {f'· <span style="color:{TR_ERROR};">{len(invalidos)} inválido(s)</span>'
+                     if invalidos else ''}
                 </div>
                 {chips_html}
             </div>
@@ -836,32 +907,26 @@ with tab_lote:
 
             st.markdown("<br>", unsafe_allow_html=True)
 
-            col_btn1, col_btn2 = st.columns([2, 2])
-            with col_btn1:
+            col_b1, col_b2 = st.columns([3, 1])
+            with col_b1:
                 iniciar = st.button(
-                    f"🚀 Classificar {len(validos)} CNPJ(s) válido(s)",
-                    type="primary",
-                    use_container_width=True,
+                    f"🚀 Passo 3 — Classificar {len(validos)} CNPJ(s) e Gerar Arquivos",
+                    type="primary", use_container_width=True,
                     disabled=len(validos) == 0,
                 )
-            with col_btn2:
+            with col_b2:
                 if st.button("🗑️ Limpar", use_container_width=True):
                     st.rerun()
 
+            # ── PROCESSAMENTO ─────────────────────────────────────────────────
             if iniciar and validos:
-                resultados = []
-                total      = len(validos)
-                progress   = st.progress(0, text="Iniciando...")
-
+                resultados_raw = []   # dados brutos
+                total          = len(validos)
+                progress       = st.progress(0, text="Iniciando...")
                 col_log, col_stat = st.columns([2, 1])
-                with col_log:
-                    log_area = st.empty()
-                with col_stat:
-                    stat_area = st.empty()
-
-                logs  = []
-                ok_n  = 0
-                err_n = 0
+                log_area  = col_log.empty()
+                stat_area = col_stat.empty()
+                logs, ok_n, err_n = [], 0, 0
 
                 for i, cnpj_raw in enumerate(validos):
                     pct = int((i + 1) / total * 100)
@@ -872,38 +937,25 @@ with tab_lote:
                     if dados_rf.get("erro"):
                         err_n += 1
                         logs.append(f"❌ {cnpj_raw}: {dados_rf['erro']}")
-                        resultados.append({
-                            "cnpj":               cnpj_raw,
-                            "razao_social":        "",
-                            "nome_fantasia":       "",
-                            "situacao_cadastral":  "",
-                            "natureza_juridica":   "",
-                            "porte":               "",
-                            "data_inicio":         "",
-                            "logradouro":          "",
-                            "numero":              "",
-                            "bairro":              "",
-                            "municipio":           "",
-                            "uf":                  "",
-                            "cep":                 "",
-                            "cnae_codigo":         "",
-                            "cnae_descricao":      "",
-                            "simples_nacional":    "",
-                            "codigo_fpas":         "",
-                            "fpas_descricao":      "",
-                            "codigo_terceiro":     "",
-                            "perc_acid_trabalho":  "",
-                            "codigo_sat":          "",
-                            "codigo_gps":          "",
-                            "codigo_gfip":         "",
-                            "total_terceiros_pct": "",
-                            "observacao":          dados_rf["erro"],
-                            "status":              "ERRO_RF",
+                        resultados_raw.append({
+                            "cnpj": limpar_cnpj(cnpj_raw),
+                            "razao_social":"","nome_fantasia":"",
+                            "situacao_cadastral":"","natureza_juridica":"",
+                            "porte":"","data_inicio":"","logradouro":"",
+                            "numero":"","bairro":"","municipio":"","uf":"","cep":"",
+                            "cnae_codigo":"","cnae_descricao":"",
+                            "simples_nacional":"","codigo_fpas":"",
+                            "fpas_descricao":"","codigo_terceiro":"",
+                            "perc_acid_trabalho":"","codigo_sat":"",
+                            "codigo_gps":"","codigo_gfip":"",
+                            "total_terceiros_pct":"",
+                            "observacao": dados_rf["erro"],
+                            "status": "ERRO_RF",
                         })
                     else:
                         simples = dados_rf.get("simples", False)
                         classif = classificar(
-                            dados_rf.get("cnae_codigo", ""),
+                            dados_rf.get("cnae_codigo",""),
                             simples=simples, fap=fap, convenios=convenios,
                         )
                         if classif.get("erro"):
@@ -911,7 +963,7 @@ with tab_lote:
                             status = "ERRO_FPAS"
                             logs.append(
                                 f"⚠️ {cnpj_raw} | "
-                                f"{dados_rf.get('razao_social','')[:30]} | "
+                                f"{dados_rf.get('razao_social','')[:28]} | "
                                 f"{classif['erro']}"
                             )
                         else:
@@ -921,40 +973,40 @@ with tab_lote:
                             cod3_f = f"{cod3:04d}" if isinstance(cod3, int) else "—"
                             logs.append(
                                 f"✅ {cnpj_raw} | "
-                                f"{dados_rf.get('razao_social','')[:28]} | "
+                                f"{dados_rf.get('razao_social','')[:26]} | "
                                 f"FPAS {classif['fpas']} | 3ºs {cod3_f}"
                             )
 
-                        resultados.append({
+                        resultados_raw.append({
                             "cnpj":               limpar_cnpj(cnpj_raw),
-                            "razao_social":        dados_rf.get("razao_social", ""),
-                            "nome_fantasia":       dados_rf.get("nome_fantasia", ""),
-                            "situacao_cadastral":  dados_rf.get("situacao", ""),
-                            "natureza_juridica":   dados_rf.get("natureza_juridica", ""),
-                            "porte":               dados_rf.get("porte", ""),
-                            "data_inicio":         dados_rf.get("data_inicio", ""),
-                            "logradouro":          dados_rf.get("logradouro", ""),
-                            "numero":              dados_rf.get("numero", ""),
-                            "bairro":              dados_rf.get("bairro", ""),
-                            "municipio":           dados_rf.get("municipio", ""),
-                            "uf":                  dados_rf.get("uf", ""),
-                            "cep":                 dados_rf.get("cep", ""),
-                            "cnae_codigo":         dados_rf.get("cnae_codigo", ""),
-                            "cnae_descricao":      dados_rf.get("cnae_descricao", ""),
+                            "razao_social":        dados_rf.get("razao_social",""),
+                            "nome_fantasia":       dados_rf.get("nome_fantasia",""),
+                            "situacao_cadastral":  dados_rf.get("situacao",""),
+                            "natureza_juridica":   dados_rf.get("natureza_juridica",""),
+                            "porte":               dados_rf.get("porte",""),
+                            "data_inicio":         dados_rf.get("data_inicio",""),
+                            "logradouro":          dados_rf.get("logradouro",""),
+                            "numero":              dados_rf.get("numero",""),
+                            "bairro":              dados_rf.get("bairro",""),
+                            "municipio":           dados_rf.get("municipio",""),
+                            "uf":                  dados_rf.get("uf",""),
+                            "cep":                 dados_rf.get("cep",""),
+                            "cnae_codigo":         dados_rf.get("cnae_codigo",""),
+                            "cnae_descricao":      dados_rf.get("cnae_descricao",""),
                             "simples_nacional":    "SIM" if simples else "NÃO",
-                            "codigo_fpas":         classif.get("fpas", ""),
-                            "fpas_descricao":      classif.get("fpas_descricao", ""),
-                            "codigo_terceiro":     (
+                            "codigo_fpas":         classif.get("fpas",""),
+                            "fpas_descricao":      classif.get("fpas_descricao",""),
+                            "codigo_terceiro": (
                                 f"{classif['codigo_terceiro']:04d}"
                                 if isinstance(classif.get("codigo_terceiro"), int)
-                                else classif.get("codigo_terceiro", "")
+                                else classif.get("codigo_terceiro","")
                             ),
-                            "perc_acid_trabalho":  classif.get("perc_acid_trabalho", ""),
-                            "codigo_sat":          classif.get("codigo_sat", ""),
-                            "codigo_gps":          classif.get("codigo_gps", ""),
-                            "codigo_gfip":         classif.get("codigo_gfip", ""),
-                            "total_terceiros_pct": classif.get("total_terceiros_pct", ""),
-                            "observacao":          classif.get("observacao", ""),
+                            "perc_acid_trabalho":  classif.get("perc_acid_trabalho",""),
+                            "codigo_sat":          classif.get("codigo_sat",""),
+                            "codigo_gps":          classif.get("codigo_gps",""),
+                            "codigo_gfip":         classif.get("codigo_gfip",""),
+                            "total_terceiros_pct": classif.get("total_terceiros_pct",""),
+                            "observacao":          classif.get("observacao",""),
                             "status":              status,
                         })
 
@@ -967,90 +1019,118 @@ with tab_lote:
                         {metric_card(i+1,  "Processados")}
                         {metric_card(ok_n,  "Sucesso",  "success")}
                         {metric_card(err_n, "Erros",    "error")}
-                    </div>
-                    """, unsafe_allow_html=True)
+                    </div>""", unsafe_allow_html=True)
 
                 progress.progress(100, text="✅ Concluído!")
 
-                # ── RESULTADO FINAL ────────────────────────────────────────────
-                df_res = pd.DataFrame(resultados)
-                st.session_state["df_resultado"] = df_res
-                df_ok  = df_res[df_res["status"] == "OK"]
-                df_err = df_res[df_res["status"] != "OK"]
+                # ── MONTA LEIAUTE DOMÍNIO ──────────────────────────────────────
+                linhas_leiaute = [
+                    montar_linha_leiaute(r, tipo_selecionado)
+                    for r in resultados_raw
+                ]
+                df_leiaute = pd.DataFrame(linhas_leiaute, columns=COLUNAS_LEIAUTE)
+                df_erros   = df_leiaute[df_leiaute["Status"] != "OK"]
+                df_ok      = df_leiaute[df_leiaute["Status"] == "OK"]
 
+                st.session_state["df_leiaute"]  = df_leiaute
+                st.session_state["tipo_codigo"] = tipo_selecionado
+
+                # ── RESULTADO ─────────────────────────────────────────────────
                 st.markdown("---")
-                st.markdown(f'<div class="tr-card-title">📊 Resultado Final</div>',
+                st.markdown(f'<div class="tr-card-title">📊 Resultado — Tipo {tipo_selecionado}: '
+                            f'{TIPOS_EMPRESA[tipo_selecionado]}</div>',
                             unsafe_allow_html=True)
 
                 taxa = len(df_ok) / total * 100 if total else 0
                 st.markdown(f"""
                 <div class="tr-metrics">
-                    {metric_card(total,         "Total")}
-                    {metric_card(len(df_ok),    "Classificados", "success")}
-                    {metric_card(len(df_err),   "Erros",         "error")}
-                    {metric_card(f"{taxa:.0f}%","Taxa de Sucesso",
+                    {metric_card(total,        "Total")}
+                    {metric_card(len(df_ok),   "Classificados", "success")}
+                    {metric_card(len(df_erros),"Erros",         "error")}
+                    {metric_card(f"{taxa:.0f}%","Taxa Sucesso",
                                  "success" if taxa >= 80 else "warning")}
+                    {metric_card(tipo_selecionado, TIPOS_EMPRESA[tipo_selecionado])}
                 </div>
                 """, unsafe_allow_html=True)
 
+                # Prévia do leiaute
                 st.dataframe(
-                    df_res[[
-                        "cnpj", "razao_social", "situacao_cadastral",
-                        "cnae_codigo", "cnae_descricao", "simples_nacional",
-                        "codigo_fpas", "fpas_descricao", "codigo_terceiro",
-                        "perc_acid_trabalho", "codigo_sat", "codigo_gps",
-                        "codigo_gfip", "total_terceiros_pct", "status", "observacao",
-                    ]],
-                    use_container_width=True, hide_index=True, height=380,
+                    df_leiaute[COLUNAS_LEIAUTE],
+                    use_container_width=True, hide_index=True, height=360,
                 )
 
                 if len(df_ok) > 0:
                     with st.expander("📈 Resumo por FPAS"):
                         resumo = (
-                            df_ok.groupby(["codigo_fpas", "fpas_descricao"])
-                            .size().reset_index(name="qtd_empresas")
-                            .sort_values("qtd_empresas", ascending=False)
+                            df_ok.groupby(["FPAS","FPAS_Descricao"])
+                            .size().reset_index(name="Qtd_Empresas")
+                            .sort_values("Qtd_Empresas", ascending=False)
                         )
                         st.dataframe(resumo, use_container_width=True, hide_index=True)
 
-                if len(df_err) > 0:
-                    with st.expander(f"⚠️ {len(df_err)} registro(s) com erro"):
+                if len(df_erros) > 0:
+                    with st.expander(f"⚠️ {len(df_erros)} registro(s) com erro"):
                         st.dataframe(
-                            df_err[["cnpj", "razao_social", "status", "observacao"]],
+                            df_erros[["CNPJ","Razao_Social","Status","Observacao"]],
                             use_container_width=True, hide_index=True,
                         )
 
                 # ── DOWNLOADS ─────────────────────────────────────────────────
                 st.markdown("---")
-                st.markdown(f'<div class="tr-card-title">⬇️ Download</div>',
-                            unsafe_allow_html=True)
+                st.markdown(f"""
+                <div class="tr-card">
+                    <div class="tr-card-title">⬇️ Passo 4 — Download dos Arquivos</div>
+                    <div style="font-size:12px;color:{TR_TEXT_MUTED};margin-bottom:12px;">
+                        📌 Tipo <b style="color:{TR_ORANGE};">{tipo_selecionado} — {TIPOS_EMPRESA[tipo_selecionado]}</b>
+                        &nbsp;·&nbsp; {total} registros
+                        &nbsp;·&nbsp; FAP {fap}
+                        &nbsp;·&nbsp; Convênios: {', '.join(convenios) if convenios else 'Nenhum'}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
 
-                col_d1, col_d2 = st.columns(2)
+                col_d1, col_d2, col_d3 = st.columns(3)
+
+                # TXT tabulado (importação Domínio)
                 with col_d1:
-                    buf = io.BytesIO()
-                    with pd.ExcelWriter(buf, engine="openpyxl") as w:
-                        df_res.to_excel(w, sheet_name="Classificacao_FPAS", index=False)
-                        if len(df_err) > 0:
-                            df_err.to_excel(w, sheet_name="Erros", index=False)
+                    txt_bytes = gerar_txt_tabulado(df_leiaute)
                     st.download_button(
-                        "📥 Baixar Excel Completo (.xlsx)",
-                        data=buf.getvalue(),
-                        file_name="classificacao_fpas_dominio.xlsx",
+                        "📄 TXT Tabulado\n(Importação Domínio)",
+                        data=txt_bytes,
+                        file_name=f"dominio_fpas_tipo{tipo_selecionado}.txt",
+                        mime="text/plain",
+                        use_container_width=True,
+                    )
+
+                # Excel conferência
+                with col_d2:
+                    xlsx_bytes = gerar_excel_conferencia(
+                        df_leiaute,
+                        df_erros if len(df_erros) > 0 else None,
+                    )
+                    st.download_button(
+                        "📊 Excel Conferência\n(.xlsx formatado)",
+                        data=xlsx_bytes,
+                        file_name=f"dominio_fpas_tipo{tipo_selecionado}_conferencia.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                         use_container_width=True,
                     )
-                with col_d2:
-                    csv = df_res.to_csv(index=False, sep=";", encoding="utf-8-sig")
+
+                # CSV backup
+                with col_d3:
+                    csv_bytes = df_leiaute.to_csv(
+                        index=False, sep=";", encoding="utf-8-sig"
+                    ).encode("utf-8-sig")
                     st.download_button(
-                        "📥 Baixar CSV (separador ;)",
-                        data=csv,
-                        file_name="classificacao_fpas_dominio.csv",
+                        "📋 CSV Backup\n(separador ;)",
+                        data=csv_bytes,
+                        file_name=f"dominio_fpas_tipo{tipo_selecionado}.csv",
                         mime="text/csv",
                         use_container_width=True,
                     )
 
         else:
-            st.warning("⚠️ Nenhum CNPJ detectado no texto. Verifique o formato.")
+            st.warning("⚠️ Nenhum CNPJ detectado. Verifique o formato.")
 
 # ══════════════════════════════════════════════════════════════════════════════
 # TAB 2 — CONSULTA INDIVIDUAL
@@ -1059,13 +1139,10 @@ with tab_individual:
 
     st.markdown('<div class="tr-card"><div class="tr-card-title">🔍 Consulta Individual de CNPJ</div>',
                 unsafe_allow_html=True)
-
     col_inp, col_btn = st.columns([3, 1])
     with col_inp:
-        cnpj_input = st.text_input(
-            "CNPJ", placeholder="00.000.000/0000-00",
-            label_visibility="collapsed",
-        )
+        cnpj_input = st.text_input("CNPJ", placeholder="00.000.000/0000-00",
+                                   label_visibility="collapsed")
     with col_btn:
         buscar = st.button("🔍 Consultar", type="primary", use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
@@ -1078,7 +1155,7 @@ with tab_individual:
             st.error(f"❌ {dados_rf['erro']}")
         else:
             simples = dados_rf.get("simples", False)
-            classif = classificar(dados_rf.get("cnae_codigo", ""),
+            classif = classificar(dados_rf.get("cnae_codigo",""),
                                   simples=simples, fap=fap, convenios=convenios)
 
             st.markdown(f"""
@@ -1093,7 +1170,8 @@ with tab_individual:
                     {result_item("Porte",             dados_rf.get("porte","—"))}
                     {result_item("Simples Nacional",  "✅ SIM" if simples else "❌ NÃO")}
                     {result_item("Data de Início",    dados_rf.get("data_inicio","—"))}
-                    {result_item("Município/UF",      f"{dados_rf.get('municipio','—')}/{dados_rf.get('uf','—')}")}
+                    {result_item("Município/UF",
+                                 f"{dados_rf.get('municipio','—')}/{dados_rf.get('uf','—')}")}
                     {result_item("CEP",               dados_rf.get("cep","—"))}
                 </div>
             </div>
@@ -1114,7 +1192,6 @@ with tab_individual:
             else:
                 cod3   = classif["codigo_terceiro"]
                 cod3_f = f"{cod3:04d}" if isinstance(cod3, int) else "Em branco (Simples)"
-
                 st.markdown(f"""
                 <div class="tr-card">
                     <div class="tr-card-title">📋 Classificação FPAS / SEFIP</div>
@@ -1130,8 +1207,9 @@ with tab_individual:
                     </div>
                     <div style="margin-top:14px;">
                         <div style="font-size:11px;color:{TR_TEXT_MUTED};
-                                    text-transform:uppercase;letter-spacing:0.5px;
-                                    margin-bottom:6px;">Entidades Beneficiadas</div>
+                                    text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">
+                            Entidades Beneficiadas
+                        </div>
                         {entidade_pills(classif["entidades"]) or
                          f'<span style="color:{TR_TEXT_MUTED};font-size:12px;">Nenhuma</span>'}
                     </div>
@@ -1144,10 +1222,10 @@ with tab_individual:
                 if classif["entidades"]:
                     with st.expander("📊 Detalhamento das Entidades e Alíquotas"):
                         df_ent = pd.DataFrame(classif["entidades"])
-                        df_ent.columns = ["Sigla", "Entidade", "Alíquota (%)"]
+                        df_ent.columns = ["Sigla","Entidade","Alíquota (%)"]
                         total_row = pd.DataFrame([{
-                            "Sigla": "TOTAL", "Entidade": "",
-                            "Alíquota (%)": classif["total_terceiros_pct"],
+                            "Sigla":"TOTAL","Entidade":"",
+                            "Alíquota (%)":classif["total_terceiros_pct"]
                         }])
                         df_ent = pd.concat([df_ent, total_row], ignore_index=True)
                         st.dataframe(df_ent, use_container_width=True, hide_index=True)
@@ -1166,14 +1244,10 @@ with tab_tabela:
         total_pct = sum(e["aliquota"] for e in ents)
         siglas    = " + ".join(e["sigla"] for e in ents) if ents else "—"
         ref_rows.append({
-            "FPAS":           fpas,
-            "Descrição":      desc,
-            "Cód. Terceiros": f"{terc:04d}",
-            "Entidades":      siglas,
-            "Total 3ºs (%)":  f"{total_pct:.1f}%",
-            "RAT Base (%)":   f"{rat}%",
-            "Cód. GPS":       gps,
-            "Cód. GFIP":      gfip,
+            "FPAS": fpas, "Descrição": desc,
+            "Cód. Terceiros": f"{terc:04d}", "Entidades": siglas,
+            "Total 3ºs (%)": f"{total_pct:.1f}%",
+            "RAT Base (%)": f"{rat}%", "Cód. GPS": gps, "Cód. GFIP": gfip,
         })
     df_ref = pd.DataFrame(ref_rows)
 
@@ -1217,6 +1291,6 @@ st.markdown(f"""
     <span>DOMÍNIO SISTEMAS</span> &nbsp;·&nbsp; Thomson Reuters &nbsp;·&nbsp;
     Classificador FPAS / Terceiros / SEFIP &nbsp;·&nbsp;
     Base legal: IN RFB nº 971/2009 &nbsp;·&nbsp;
-    <span>v2.1</span>
+    <span>v3.0</span>
 </div>
 """, unsafe_allow_html=True)
