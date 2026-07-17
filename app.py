@@ -119,7 +119,7 @@ CSS = f"""
   }}
   .cnpj-chip.invalido {{ border-color:{TR_ERROR}; color:{TR_ERROR}; background:#2b0d0d; }}
   .tipo-row {{
-      background:{TR_CARD2}; border:1px solid {TR_BORDER}; border-radius:8px; padding:10px 14px; margin-bottom:8px;
+      background:{TR_CARD2}; border:1px solid {TR_BORDER}; border-radius:8px; padding:12px 14px; margin-bottom:8px;
   }}
   .tr-footer {{
       text-align:center; color:{TR_TEXT_MUTED}; font-size:11px;
@@ -589,13 +589,12 @@ COLUNAS_LEIAUTE = [
     "Codigo_Municipio", "Data_Inicio", "Situacao", "Codigo_eSocial", "Origem_Reg",
 ]
 
-def _proximo_seq() -> int:
-    if "_seq" not in st.session_state:
-        st.session_state["_seq"] = 0
-    st.session_state["_seq"] += 1
-    return st.session_state["_seq"]
-
-def montar_linha_dominio(r: dict, tipo_cod: int, seq: int) -> list:
+def montar_linha_dominio(r: dict, tipo_cod: int, cod_servico: int) -> list:
+    """
+    Monta uma linha do leiaute Domínio.
+    cod_servico → Codigo_Servicos (col 1), Codigo_Filial (col 17), Codigo_eSocial (col 23)
+    Codigo_empresa (col 0) = cod_servico (mesmo valor)
+    """
     cnpj_limpo   = limpar_cnpj(r.get("cnpj", ""))
     cod_terceiro = r.get("codigo_terceiro", "")
     if isinstance(cod_terceiro, int):
@@ -618,15 +617,31 @@ def montar_linha_dominio(r: dict, tipo_cod: int, seq: int) -> list:
         pass
 
     return [
-        seq, seq, cnpj_limpo, 1,
-        cod_terceiro, r.get("perc_acid_trabalho", ""),
-        r.get("codigo_fpas", ""), r.get("cnae_codigo", ""),
-        r.get("codigo_gfip", ""), r.get("codigo_gps", ""),
-        r.get("razao_social", ""), r.get("logradouro", ""),
-        r.get("numero", ""), r.get("bairro", ""),
-        cep, municipio, uf,
-        seq, 1, tipo_cod, cod_mun,
-        data_inicio, 1, seq, "",
+        cod_servico,    # 0  Codigo_empresa
+        cod_servico,    # 1  Codigo_Servicos
+        cnpj_limpo,     # 2  CNPJ_CPF
+        1,              # 3  Tipo_Inscricao
+        cod_terceiro,   # 4  Codigo_Terceiro
+        r.get("perc_acid_trabalho", ""),  # 5  Perc_Acidente_Trabalho
+        r.get("codigo_fpas", ""),         # 6  Codigo_FPAS
+        r.get("cnae_codigo", ""),         # 7  CNAE
+        r.get("codigo_gfip", ""),         # 8  Codigo_GFIP
+        r.get("codigo_gps", ""),          # 9  Codigo_GPS
+        r.get("razao_social", ""),        # 10 Nome
+        r.get("logradouro", ""),          # 11 Endereco
+        r.get("numero", ""),              # 12 Numero
+        r.get("bairro", ""),              # 13 Bairro
+        cep,                              # 14 CEP
+        municipio,                        # 15 Cidade
+        uf,                               # 16 Estado
+        cod_servico,    # 17 Codigo_Filial (= Codigo_Servicos)
+        1,              # 18 Sequencia_GPS
+        tipo_cod,       # 19 Tipo
+        cod_mun,        # 20 Codigo_Municipio
+        data_inicio,    # 21 Data_Inicio
+        1,              # 22 Situacao
+        cod_servico,    # 23 Codigo_eSocial (= Codigo_Servicos)
+        "",             # 24 Origem_Reg
     ]
 
 def gerar_txt_leiaute(linhas: list[list]) -> bytes:
@@ -701,7 +716,7 @@ st.markdown("""
         <div class="tr-title">Classificador FPAS / Terceiros / SEFIP</div>
         <div class="tr-subtitle">DOMÍNIO SISTEMAS &nbsp;·&nbsp; Thomson Reuters &nbsp;·&nbsp; IN RFB nº 971/2009</div>
     </div>
-    <div class="tr-badge">v7.3</div>
+    <div class="tr-badge">v7.4</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -711,7 +726,6 @@ with st.sidebar:
         f'<p style="color:{TR_ORANGE};font-size:13px;font-weight:700;letter-spacing:1px;margin-bottom:16px;">⚙ CONFIGURAÇÕES</p>',
         unsafe_allow_html=True
     )
-
     st.markdown(f'<p style="font-size:10px;font-weight:700;color:{TR_ORANGE};text-transform:uppercase;letter-spacing:1px;">📊 Parâmetros SEFIP</p>', unsafe_allow_html=True)
     fap   = st.number_input("FAP", min_value=0.5, max_value=2.0, value=1.0, step=0.01)
     delay = st.number_input("Intervalo (s)", min_value=0.3, max_value=5.0, value=1.0, step=0.1)
@@ -724,7 +738,6 @@ with st.sidebar:
 
     st.divider()
 
-    # Status municípios
     mapa  = st.session_state.get("MUNICIPIOS_MAP", {})
     debug = st.session_state.get("_mun_debug", {})
 
@@ -776,6 +789,8 @@ tab_lote, tab_individual, tab_tabela = st.tabs([
 # TAB 1 — CONSULTA EM LOTE
 # ══════════════════════════════════════════════════════════════════════════════
 with tab_lote:
+
+    # ── Passo 1 — CNPJs ───────────────────────────────────────────────────────
     st.markdown(f'<div class="tr-card"><div class="tr-card-title">📋 Passo 1 — Cole os CNPJs</div>', unsafe_allow_html=True)
     col_input, col_dica = st.columns([3, 1])
     with col_input:
@@ -805,7 +820,6 @@ with tab_lote:
                 for c in lista_cnpjs
             )
             err_html = f'· <span style="color:{TR_ERROR};">{len(invalidos)} inválido(s)</span>' if invalidos else ""
-
             st.markdown(f"""
             <div class="cnpj-preview-box">
                 <div style="font-size:11px;color:{TR_TEXT_MUTED};text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">
@@ -828,7 +842,6 @@ with tab_lote:
                     st.rerun()
 
             if iniciar and validos:
-                st.session_state["_seq"] = 0
                 resultados_proc, linhas_base = [], []
                 total    = len(validos)
                 progress = st.progress(0, text="Iniciando...")
@@ -840,24 +853,19 @@ with tab_lote:
                 for i, cnpj_raw in enumerate(validos):
                     progress.progress(int((i+1)/total*100), text=f"⏳ {i+1}/{total} — {cnpj_raw}")
                     dados_rf = consultar_cnpj(cnpj_raw, delay=delay)
-                    seq      = _proximo_seq()
 
                     if dados_rf.get("erro"):
                         err_n += 1
                         logs.append(f"❌ {cnpj_raw}: {dados_rf['erro']}")
                         resultados_proc.append({
-                            "seq": seq, "cnpj": limpar_cnpj(cnpj_raw),
+                            "cnpj": limpar_cnpj(cnpj_raw),
                             "razao_social":"","cnae_codigo":"","municipio":"","uf":"",
                             "cod_municipio_dom":"","data_inicio":"","codigo_fpas":"",
                             "fpas_descricao":"","codigo_terceiro":"","perc_acid_trabalho":"",
                             "codigo_gps":"","codigo_gfip":"",
                             "_status":"ERRO_RF", "_obs": dados_rf["erro"],
+                            "_r_merged": None,
                         })
-                        linha = [""] * 25
-                        linha[0]=seq; linha[1]=seq; linha[2]=limpar_cnpj(cnpj_raw)
-                        linha[3]=1; linha[17]=seq; linha[18]=1; linha[19]=0
-                        linha[21]="2020-01-01"; linha[22]=1; linha[23]=seq
-                        linhas_base.append(linha)
                     else:
                         simples = dados_rf.get("simples", False)
                         classif = classificar(dados_rf.get("cnae_codigo",""), simples=simples, fap=fap, convenios=convenios)
@@ -891,9 +899,8 @@ with tab_lote:
                             "codigo_gps":        classif.get("codigo_gps",""),
                             "codigo_gfip":       classif.get("codigo_gfip",""),
                         }
-                        linhas_base.append(montar_linha_dominio(r_merged, tipo_cod=0, seq=seq))
+
                         resultados_proc.append({
-                            "seq": seq,
                             "cnpj":              limpar_cnpj(cnpj_raw),
                             "razao_social":      dados_rf.get("razao_social",""),
                             "municipio":         municipio,
@@ -912,6 +919,7 @@ with tab_lote:
                             "codigo_gfip":       classif.get("codigo_gfip",""),
                             "_status": status,
                             "_obs":    classif.get("observacao","") if status=="OK" else classif.get("erro",""),
+                            "_r_merged": r_merged,
                         })
 
                     log_area.text_area("log", "\n".join(logs[-12:]), height=240, label_visibility="collapsed")
@@ -924,14 +932,13 @@ with tab_lote:
 
                 progress.progress(100, text="✅ Concluído!")
                 st.session_state["resultados_proc"] = resultados_proc
-                st.session_state["linhas_base"]     = linhas_base
 
         else:
             st.warning("⚠️ Nenhum CNPJ detectado. Verifique o formato.")
 
+    # ── Resultados + Passo 3 ──────────────────────────────────────────────────
     if "resultados_proc" in st.session_state:
         resultados_proc = st.session_state["resultados_proc"]
-        linhas_base     = st.session_state["linhas_base"]
         df_proc = pd.DataFrame(resultados_proc)
         ok_n    = len(df_proc[df_proc["_status"] == "OK"])
         err_n   = len(df_proc[df_proc["_status"] != "OK"])
@@ -944,19 +951,57 @@ with tab_lote:
             {metric_card(err_n,"Erros","error")}
         </div>""", unsafe_allow_html=True)
 
-        cols_show = [c for c in df_proc.columns if not c.startswith("_") and c != "seq"]
+        cols_show = [c for c in df_proc.columns if not c.startswith("_")]
         st.dataframe(df_proc[cols_show], use_container_width=True, hide_index=True, height=300)
 
+        # ── Passo 3 — Tipo, Código de Serviço e edição individual ─────────────
         st.markdown(f"""
         <div class="tr-card">
-            <div class="tr-card-title">🏷️ Passo 3 — Defina o Tipo para cada empresa</div>
-            <div style="font-size:12px;color:{TR_TEXT_MUTED};margin-bottom:14px;">
-                1=Empresa &nbsp;·&nbsp; 2=Tomador de Serviço &nbsp;·&nbsp; 3=Empreitada Parcial
-                &nbsp;·&nbsp; 4=Obra Própria &nbsp;·&nbsp; 5=Empreitada Total &nbsp;·&nbsp; 6=Cooperativa de Trabalho
+            <div class="tr-card-title">🏷️ Passo 3 — Código de Serviço, Tipo e Revisão</div>
+            <div style="font-size:12px;color:{TR_TEXT_MUTED};margin-bottom:16px;">
+                Defina o número inicial da sequência de <b style="color:{TR_ORANGE};">Código de Serviço</b> —
+                o sistema preencherá automaticamente. Você pode editar individualmente se necessário.<br>
+                <b>Código de Serviço = Codigo_Servicos = Codigo_Filial = Codigo_eSocial</b>
             </div>
         """, unsafe_allow_html=True)
 
-        tipos_selecionados = {}
+        # Número inicial da sequência
+        col_seq1, col_seq2, col_seq3 = st.columns([1, 1, 2])
+        with col_seq1:
+            seq_inicio = st.number_input(
+                "🔢 Número inicial da sequência",
+                min_value=1, max_value=999999,
+                value=st.session_state.get("seq_inicio_val", 1),
+                step=1,
+                help="Cada empresa receberá um código sequencial a partir deste número."
+            )
+            st.session_state["seq_inicio_val"] = seq_inicio
+        with col_seq2:
+            st.markdown(f"""
+            <div style="background:{TR_CARD2};border:1px solid {TR_BORDER};border-radius:8px;
+                        padding:12px;margin-top:28px;font-size:11px;color:{TR_TEXT_MUTED};">
+                📌 Sequência gerada:<br>
+                <b style="color:{TR_ORANGE};font-size:14px;">
+                    {seq_inicio} → {seq_inicio + len(resultados_proc) - 1}
+                </b>
+            </div>""", unsafe_allow_html=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # Cabeçalho da tabela de edição
+        st.markdown(f"""
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;
+                    padding:6px 12px;background:{TR_CARD};border-radius:6px;
+                    font-size:10px;font-weight:700;color:{TR_ORANGE};
+                    text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">
+            <div>Empresa</div>
+            <div>Cód. Serviço</div>
+            <div>Tipo</div>
+        </div>""", unsafe_allow_html=True)
+
+        tipos_selecionados   = {}
+        codigos_servico      = {}
+
         for idx, row in enumerate(resultados_proc):
             status  = row.get("_status","")
             mun     = row.get("municipio","") or ""
@@ -965,25 +1010,41 @@ with tab_lote:
             cor_mun = TR_SUCCESS if cod_mun and "não" not in str(cod_mun) else TR_ERROR
             cor_st  = TR_SUCCESS if status == "OK" else TR_ERROR
             icone   = "✅" if status == "OK" else "❌"
+            seq_auto = seq_inicio + idx
 
-            col_info, col_tipo = st.columns([3, 2])
+            col_info, col_cod_srv, col_tipo = st.columns([2, 1, 1])
+
             with col_info:
                 st.markdown(f"""
                 <div class="tipo-row">
-                    <div style="font-size:13px;font-weight:700;color:{TR_TEXT};">
+                    <div style="font-size:12px;font-weight:700;color:{TR_TEXT};">
                         {icone} <code style="color:{TR_ORANGE};">{row['cnpj']}</code>
-                        &nbsp; {(row.get('razao_social','') or '—')[:45]}
+                        &nbsp; {(row.get('razao_social','') or '—')[:40]}
                     </div>
-                    <div style="font-size:11px;color:{TR_TEXT_MUTED};margin-top:4px;">
+                    <div style="font-size:10px;color:{TR_TEXT_MUTED};margin-top:3px;">
                         FPAS <b style="color:{TR_ORANGE};">{row.get('codigo_fpas','—')}</b>
                         &nbsp;·&nbsp; {mun}/{uf}
-                        &nbsp;·&nbsp; Cód.Mun: <b style="color:{cor_mun};">{cod_mun or '⚠️ não encontrado'}</b>
+                        &nbsp;·&nbsp; Cód.Mun: <b style="color:{cor_mun};">{cod_mun or '⚠️'}</b>
                         &nbsp;·&nbsp; <span style="color:{cor_st};">{status}</span>
                     </div>
                 </div>""", unsafe_allow_html=True)
+
+            with col_cod_srv:
+                # Editável — padrão = sequência automática
+                cod_srv = st.number_input(
+                    f"Cód. Serviço #{idx+1}",
+                    min_value=1, max_value=999999,
+                    value=seq_auto,
+                    step=1,
+                    key=f"cod_srv_{idx}",
+                    label_visibility="collapsed",
+                    help=f"Automático: {seq_auto} — edite se necessário"
+                )
+                codigos_servico[idx] = int(cod_srv)
+
             with col_tipo:
                 tipos_selecionados[idx] = st.selectbox(
-                    f"Tipo {idx+1}",
+                    f"Tipo #{idx+1}",
                     options=list(TIPOS_EMPRESA.keys()),
                     format_func=lambda k: f"{k} — {TIPOS_EMPRESA[k]}",
                     key=f"tipo_{idx}",
@@ -992,15 +1053,34 @@ with tab_lote:
 
         st.markdown('</div>', unsafe_allow_html=True)
 
+        # ── Passo 4 — Gerar arquivos ──────────────────────────────────────────
         st.markdown(f'<div class="tr-card"><div class="tr-card-title">⬇️ Passo 4 — Gerar e Baixar Arquivos</div></div>', unsafe_allow_html=True)
 
         col_d1, col_d2 = st.columns(2)
         with col_d1:
             if st.button("⚙️ Gerar Arquivos", type="primary", use_container_width=True):
                 linhas_finais = []
-                for idx, linha in enumerate(linhas_base):
-                    l = list(linha); l[19] = tipos_selecionados.get(idx, 1)
-                    linhas_finais.append(l)
+                for idx, row in enumerate(resultados_proc):
+                    cod_srv  = codigos_servico.get(idx, seq_inicio + idx)
+                    tipo_cod = tipos_selecionados.get(idx, 1)
+                    r_merged = row.get("_r_merged")
+
+                    if r_merged:
+                        linha = montar_linha_dominio(r_merged, tipo_cod=tipo_cod, cod_servico=cod_srv)
+                    else:
+                        # Linha de erro — preenche campos mínimos
+                        linha = [""] * 25
+                        linha[0]  = cod_srv   # Codigo_empresa
+                        linha[1]  = cod_srv   # Codigo_Servicos
+                        linha[2]  = row["cnpj"]
+                        linha[3]  = 1
+                        linha[17] = cod_srv   # Codigo_Filial
+                        linha[18] = 1
+                        linha[19] = tipo_cod
+                        linha[21] = "2020-01-01"
+                        linha[22] = 1
+                        linha[23] = cod_srv   # Codigo_eSocial
+                    linhas_finais.append(linha)
 
                 df_conf = pd.DataFrame(linhas_finais, columns=COLUNAS_LEIAUTE)
                 df_conf["_status"] = [r["_status"] for r in resultados_proc]
@@ -1116,5 +1196,5 @@ with tab_tabela:
 st.markdown(f"""
 <div class="tr-footer">
     <span>DOMÍNIO SISTEMAS</span> &nbsp;·&nbsp; Thomson Reuters &nbsp;·&nbsp;
-    Classificador FPAS / Terceiros / SEFIP &nbsp;·&nbsp; IN RFB nº 971/2009 &nbsp;·&nbsp; <span>v7.3</span>
+    Classificador FPAS / Terceiros / SEFIP &nbsp;·&nbsp; IN RFB nº 971/2009 &nbsp;·&nbsp; <span>v7.4</span>
 </div>""", unsafe_allow_html=True)
