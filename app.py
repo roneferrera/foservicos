@@ -355,8 +355,7 @@ def _carregar_municipios():
         }
 
 def buscar_codigo_municipio(municipio: str, uf: str) -> str:
-    if not municipio or not uf: return ""
-    mapa = st.session_state.get("MUNICIPIOS_MAP", {})
+    if "MUNICIPIOS_MAP" not in st.session_state or not st.session_state["MUNICIPIOS_MAP"]:
     if not mapa: return ""
     uf_n      = _normalizar(uf)
     nome_orig = _normalizar(municipio)
@@ -1032,6 +1031,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ── SIDEBAR ───────────────────────────────────────────────────────────────────
+# ── SIDEBAR ───────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown(
         f'<p style="color:{TR_ORANGE};font-size:13px;font-weight:700;letter-spacing:1px;margin-bottom:16px;">CONFIGURACOES</p>',
@@ -1078,75 +1078,83 @@ with st.sidebar:
     descricao_vig = st.text_input("Descricao da vigencia", value="Vigencia Inicial")
 
     st.divider()
+
+    # CORRECAO 1: recarrega se vazio (evita cache de erro entre deploys)
+    if "MUNICIPIOS_MAP" not in st.session_state or not st.session_state["MUNICIPIOS_MAP"]:
+        _mapa, _debug = _carregar_municipios()
+        st.session_state["MUNICIPIOS_MAP"] = _mapa
+        st.session_state["_mun_debug"]     = _debug
+
     mapa  = st.session_state.get("MUNICIPIOS_MAP", {})
     debug = st.session_state.get("_mun_debug", {})
+
     if mapa:
         st.success(f"OK {len(mapa):,} municipios carregados")
     else:
         st.warning(f"Municipios nao carregados: {debug.get('erro_fatal', 'arquivo nao encontrado')}")
 
-   with st.expander("Debug municipios"):
-    # Listagem real dos arquivos no repositorio
-    _dirs_debug = [
-        "/mount/src/foservicos",
-        os.path.dirname(os.path.abspath(__file__)),
-        os.getcwd(),
-    ]
-    for _d in _dirs_debug:
-        try:
-            _lista = os.listdir(_d)
-            _xlsx  = [f for f in _lista if f.endswith(".xlsx")]
-            st.markdown(
-                f'<p style="font-size:10px;color:{TR_TEXT_MUTED};">'
-                f'<b style="color:{TR_ORANGE};">{_d}</b><br>'
-                + "<br>".join(
-                    f'<span style="color:{"#2ECC71" if f.endswith(".xlsx") else TR_TEXT_MUTED};">{f}</span>'
-                    for f in sorted(_lista)
-                    if not f.startswith("__") and not f.startswith(".")
+    # CORRECAO 2: expander DENTRO do with st.sidebar (indentacao correta)
+    with st.expander("Debug municipios"):
+        # Listagem real dos arquivos no repositorio
+        _dirs_debug = [
+            "/mount/src/foservicos",
+            os.path.dirname(os.path.abspath(__file__)),
+            os.getcwd(),
+        ]
+        for _d in _dirs_debug:
+            try:
+                _lista = os.listdir(_d)
+                st.markdown(
+                    f'<p style="font-size:10px;color:{TR_TEXT_MUTED};">'
+                    f'<b style="color:{TR_ORANGE};">{_d}</b><br>'
+                    + "<br>".join(
+                        f'<span style="color:{"#2ECC71" if f.endswith(".xlsx") else TR_TEXT_MUTED};">{f}</span>'
+                        for f in sorted(_lista)
+                        if not f.startswith("__") and not f.startswith(".")
+                    )
+                    + "</p>",
+                    unsafe_allow_html=True,
                 )
-                + "</p>",
-                unsafe_allow_html=True,
-            )
-        except Exception as _e:
-            st.markdown(
-                f'<p style="font-size:10px;color:{TR_ERROR};">{_d}: {_e}</p>',
-                unsafe_allow_html=True,
-            )
+            except Exception as _e:
+                st.markdown(
+                    f'<p style="font-size:10px;color:{TR_ERROR};">{_d}: {_e}</p>',
+                    unsafe_allow_html=True,
+                )
 
-    st.json({
-        "total":      debug.get("total", 0),
-        "caminho":    debug.get("caminho", "nao encontrado"),
-        "col_codigo": debug.get("col_codigo", ""),
-        "col_nome":   debug.get("col_nome", ""),
-        "col_uf":     debug.get("col_uf", ""),
-        "colunas":    debug.get("colunas", []),
-        "amostra":    debug.get("amostra", []),
-        "erros":      debug.get("erros", []),
-        "erro_fatal": debug.get("erro_fatal", ""),
-    })
-    teste_mun = st.text_input("Testar municipio", placeholder="SAO PAULO")
-    teste_uf  = st.text_input("UF", placeholder="SP")
-    if teste_mun and teste_uf:
-        cod_teste = buscar_codigo_municipio(teste_mun, teste_uf)
-        if cod_teste:
-            st.success(f"Codigo: {cod_teste}")
-        else:
-            st.error("Nao encontrado")
-            uf_n   = _normalizar(teste_uf)
-            nome_n = _normalizar(teste_mun)
-            sugestoes = [
-                f"{n}->{c}"
-                for (u, n), c in list(mapa.items())
-                if u == uf_n and nome_n[:4] in n
-            ][:8]
-            if sugestoes:
-                st.write("Sugestoes:", sugestoes)
+        st.json({
+            "total":      debug.get("total", 0),
+            "caminho":    debug.get("caminho", "nao encontrado"),
+            "col_codigo": debug.get("col_codigo", ""),
+            "col_nome":   debug.get("col_nome", ""),
+            "col_uf":     debug.get("col_uf", ""),
+            "colunas":    debug.get("colunas", []),
+            "amostra":    debug.get("amostra", []),
+            "erros":      debug.get("erros", []),
+            "erro_fatal": debug.get("erro_fatal", ""),
+        })
+        teste_mun = st.text_input("Testar municipio", placeholder="SAO PAULO")
+        teste_uf  = st.text_input("UF", placeholder="SP")
+        if teste_mun and teste_uf:
+            cod_teste = buscar_codigo_municipio(teste_mun, teste_uf)
+            if cod_teste:
+                st.success(f"Codigo: {cod_teste}")
+            else:
+                st.error("Nao encontrado")
+                uf_n   = _normalizar(teste_uf)
+                nome_n = _normalizar(teste_mun)
+                sugestoes = [
+                    f"{n}->{c}"
+                    for (u, n), c in list(mapa.items())
+                    if u == uf_n and nome_n[:4] in n
+                ][:8]
+                if sugestoes:
+                    st.write("Sugestoes:", sugestoes)
 
-if st.button("Recarregar municipios"):
-    for k in ["MUNICIPIOS_MAP", "_mun_debug"]:
-        st.session_state.pop(k, None)
-    st.rerun()
-
+    # CORRECAO 3: botao DENTRO do with st.sidebar
+    if st.button("Recarregar municipios"):
+        for k in ["MUNICIPIOS_MAP", "_mun_debug"]:
+            st.session_state.pop(k, None)
+        st.rerun()
 # ══════════════════════════════════════════════════════════════════════════════
 # TABS
 # ══════════════════════════════════════════════════════════════════════════════
