@@ -610,19 +610,31 @@ APIS = [
 ]
 HEADERS = {"User-Agent": "Mozilla/5.0 (classificador-fpas/2.0)"}
 
-def limpar_cnpj(cnpj: str) -> str:
-    return re.sub(r"\D", "", str(cnpj))
-
 def validar_cnpj(cnpj: str) -> bool:
+    """
+    Valida CNPJ usando os pesos oficiais da Receita Federal.
+    Pesos 1º DV : 5,4,3,2,9,8,7,6,5,4,3,2
+    Pesos 2º DV : 6,5,4,3,2,9,8,7,6,5,4,3,2
+    """
     c = limpar_cnpj(cnpj)
+
+    # Deve ter 14 dígitos e não pode ser sequência repetida
     if len(c) != 14 or len(set(c)) == 1:
         return False
-    def calc(c, n):
-        s = sum(int(c[i]) * ((n - i) % (n - 1) or (n - 1)) for i in range(n - 1))
-        r = 11 - s % 11
-        return 0 if r >= 10 else r
-    return int(c[12]) == calc(c, 13) and int(c[13]) == calc(c, 14)
 
+    def calc_dv(digits: str, pesos: list[int]) -> int:
+        soma = sum(int(d) * p for d, p in zip(digits, pesos))
+        resto = soma % 11
+        return 0 if resto < 2 else 11 - resto
+
+    pesos1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+    pesos2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+
+    dv1 = calc_dv(c[:12], pesos1)
+    dv2 = calc_dv(c[:13], pesos2)
+
+    return int(c[12]) == dv1 and int(c[13]) == dv2
+  
 def normalizar_resposta(data: dict, cnpj: str) -> dict:
     cnae_codigo = (
         data.get("cnae_fiscal")
