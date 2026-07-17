@@ -624,87 +624,58 @@ def gerar_txt_leiaute(linhas: list[list]) -> bytes:
     return ("\r\n".join(linhas_txt)+"\r\n").encode("utf-8")
 
 # ──────────────────────────────────────────────────────────────────────────────
-# LEIAUTE FOVIGENCIAS_SERVICOS — baseado no xlsx real
+# LEIAUTE FOVIGENCIAS_SERVICOS — ordem exata do xlsx real
 # ──────────────────────────────────────────────────────────────────────────────
-def montar_linha_vigencia(
-    r: dict,
-    cod_servico: int,
-    tipo_cod: int,
-    codigo_empresa: int,
-    vigencia: str,
-    descricao_vigencia: str,
-    cod_mun: str,
-) -> list:
-    """
-    Gera uma linha no leiaute FOVIGENCIAS_SERVICOS.TXT conforme estrutura real
-    extraída do FOVIGENCIAS_SERIVCO.xlsx. Ordem das colunas:
-    codi_emp | i_servicos | VIGENCIA | DESCRICAO | cgc | tipo_insc |
-    codigo_terceiro | perc_terceiro | perc_inss_empresa | perc_acid_trabalho |
-    codigo_sat | perc_autonomos | codigo_fpas | codigo_atividade |
-    codigo_gfip | codigo_gps | i_bancos | numero_fgts |
-    endereco | numero | bairro | cep | cidade | estado |
-    i_filiais | sequencia_gps | filantropia | origem_reg | tipo |
-    codi_mun | codigo_municipio | I_FPAS | CALCULA_INSS_EMPRESA_LEI_12546 |
-    TIPO_SERVICO_TOMADOR | TIPO_ENDERECO | COMPLEMENTO |
-    TIPO_INSCRICAO_CONTRATANTE_EMPREITADA_PARCIAL |
-    INSCRICAO_CONTRATANTE_EMPREITADA_PARCIAL |
-    NOME_CONTRATANTE_EMPREITADA_PARCIAL |
-    TIPO_INSCRICAO_PROPRIETARIO_CEI_EMPREITADA_PARCIAL |
-    INSCRICAO_PROPRIETARIO_CEI_EMPREITADA_PARCIAL |
-    NOME_PROPRIETARIO_CEI_EMPREITADA_PARCIAL |
-    I_CNAE20 | TIPO_INFORMACAO_ALIQUOTA_ACIDENTE_TRABALHO |
-    I_PROCESSO | I_SCP | DDD | TELEFONE | COMPETENCIA_FIM_VIGENCIA |
-    TIPO_LOTACAO_ESOCIAL | I_PROCESSO_TERCEIROS | CAEPF | TIPO_CAEPF |
-    REGISTRO_PONTO | CONTRATACAO_APRENDIZ |
-    I_PROCESSO_CONTRATACAO_APRENDIZ |
-    REALIZA_CONTRATACAO_APRENDIZ_INTERMEDIO_ENTIDADE_EDUCATIVA_SEM_FINS_LUCRATIVOS |
-    CODIGO_SUSPENSAO_PROCESSO_RAT | SOMA_CODIGOS_SUSPENSAO_TERCEIROS |
-    PERCENTUAL_TERCEIRO_BRUTO |
-    (campos SEM USO e eSocial = 0) ...
-    ENVIAR_ESOCIAL_S_1005 | ENVIAR_ESOCIAL_S_1020 | ENVIAR_ESOCIAL_S_1080 |
-    I_CNAE_ESOCIAL | I_TERCEIROS | ORIGEM_ALTERACAO |
-    EFETUAR_RETENCAO_INSS_NOTAS_FISCAIS_INSCRICAO_OUTROS_CLIENTES |
-    COMPANY_ID | CONTRATACAO_APRENDIZ(1) | INEXIGIBILIDADE_RAT |
-    CALCULAR_APOIO_FINANCEIRO_FOLHA_COLABORADOR_RS_MTE_991_2024
-    """
-    cnpj_limpo  = limpar_cnpj(r.get("cnpj",""))
-    cod_terc    = r.get("codigo_terceiro","")
-    if isinstance(cod_terc,int): cod_terc_str=str(cod_terc)
-    elif cod_terc is None: cod_terc_str="0"
-    else: cod_terc_str=str(cod_terc) if str(cod_terc).strip() else "0"
+def montar_linha_vigencia(r: dict, cod_servico: int, tipo_cod: int,
+                          codigo_empresa: int, vigencia: str,
+                          descricao_vigencia: str, cod_mun: str) -> list:
+    cnpj_limpo = limpar_cnpj(r.get("cnpj",""))
+    # codigo_terceiro: int ou None → string numérica
+    cod_terc = r.get("codigo_terceiro","")
+    if isinstance(cod_terc, int):
+        cod_terc_str = str(cod_terc)
+    elif cod_terc is None:
+        cod_terc_str = "0"
+    else:
+        cod_terc_str = str(cod_terc).strip() if str(cod_terc).strip() else "0"
 
-    # % terceiros — soma das alíquotas das entidades
-    entidades   = r.get("entidades",[]) or []
-    perc_terc   = sum(e.get("aliquota",0) for e in entidades) if entidades else 0.0
+    # % terceiros = soma das alíquotas das entidades decodificadas
+    entidades  = r.get("entidades", []) or []
+    perc_terc  = sum(e.get("aliquota", 0) for e in entidades)
 
-    rat         = r.get("perc_acid_trabalho",0) or 0
-    fpas        = r.get("codigo_fpas","") or 0
-    gfip        = r.get("codigo_gfip","") or "115"
-    gps         = r.get("codigo_gps","")  or "2100"
-    endereco    = str(r.get("logradouro","") or "")
-    numero      = str(r.get("numero","") or "0")
-    bairro      = str(r.get("bairro","") or "")
-    cep         = re.sub(r"\D","",str(r.get("cep","") or ""))
-    municipio   = str(r.get("municipio","") or "")
-    uf          = str(r.get("uf","") or "")
+    rat        = r.get("perc_acid_trabalho", 0) or 0
+    fpas       = r.get("codigo_fpas", 0) or 0
+    gfip       = r.get("codigo_gfip", "") or "115"
+    gps        = r.get("codigo_gps",  "") or "2100"
+    endereco   = str(r.get("logradouro","") or "")
+    numero     = str(r.get("numero","") or "0")
+    bairro     = str(r.get("bairro","") or "")
+    cep        = re.sub(r"\D","",str(r.get("cep","") or ""))
+    municipio  = str(r.get("municipio","") or "")
+    uf         = str(r.get("uf","") or "")
 
-    # CNAE numérico sem formatação para I_CNAE20
-    cnae_fmt    = str(r.get("cnae_codigo","") or "")
-    cnae_num    = re.sub(r"\D","",cnae_fmt)  # ex: "4761003"
+    # CNAE numérico para I_CNAE20 e I_CNAE_ESOCIAL
+    cnae_fmt   = str(r.get("cnae_codigo","") or "")
+    cnae_num   = re.sub(r"\D","",cnae_fmt)   # ex: "4761003"
 
-    # tipo_informacao_aliquota: 1=Informado (padrão)
+    # Tipo informação alíquota: 1=Informado (padrão para importação)
     tipo_inf_aliq = 1
 
-    # vigência fim = 3000-12-31
+    # Competência fim: 3000-12-31 00:00:00 (vigência aberta)
     comp_fim = "3000-12-31 00:00:00"
 
-    campos = [
+    # i_filiais = cod_servico (igual ao leiaute real do xlsx)
+    i_filiais = cod_servico
+
+    return [
+        # ── Identificação ──────────────────────────────────────────────────
         codigo_empresa,          # codi_emp
         cod_servico,             # i_servicos
-        vigencia,                # VIGENCIA  ex: "2020-01-01 00:00:00"
-        descricao_vigencia,      # DESCRICAO ex: "Vigência Inicial"
+        vigencia,                # VIGENCIA          ex: "2020-01-01 00:00:00"
+        descricao_vigencia,      # DESCRICAO
         cnpj_limpo,              # cgc
-        1,                       # tipo_insc (1=CNPJ)
+        1,                       # tipo_insc         1=CNPJ
+        # ── Alíquotas ─────────────────────────────────────────────────────
         cod_terc_str,            # codigo_terceiro
         perc_terc,               # perc_terceiro
         0,                       # perc_inss_empresa
@@ -712,35 +683,43 @@ def montar_linha_vigencia(
         0,                       # codigo_sat
         0,                       # perc_autonomos
         fpas,                    # codigo_fpas
-        0,                       # codigo_atividade
+        0,                       # codigo_atividade  (CNAE interno — sempre 0 na importação)
         gfip,                    # codigo_gfip
         gps,                     # codigo_gps
+        # ── Banco / FGTS ──────────────────────────────────────────────────
         0,                       # i_bancos
         0,                       # numero_fgts
+        # ── Endereço ──────────────────────────────────────────────────────
         endereco,                # endereco
         numero,                  # numero
         bairro,                  # bairro
         cep,                     # cep
         municipio,               # cidade
         uf,                      # estado
-        cod_servico,             # i_filiais
+        # ── Filial / GPS ──────────────────────────────────────────────────
+        i_filiais,               # i_filiais
         0,                       # sequencia_gps
         0,                       # filantropia
-        2,                       # origem_reg (2=Imp. Layout)
+        2,                       # origem_reg        2=Imp. Layout
         tipo_cod,                # tipo
-        0,                       # codi_mun
+        # ── Município ─────────────────────────────────────────────────────
+        0,                       # codi_mun          (sempre 0 na importação)
         cod_mun,                 # codigo_municipio
+        # ── FPAS / Lei 12.546 ─────────────────────────────────────────────
         0,                       # I_FPAS
         0,                       # CALCULA_INSS_EMPRESA_LEI_12546
+        # ── Tomador / Endereço ────────────────────────────────────────────
         0,                       # TIPO_SERVICO_TOMADOR
         0,                       # TIPO_ENDERECO
         "",                      # COMPLEMENTO
+        # ── Empreitada parcial ────────────────────────────────────────────
         0,                       # TIPO_INSCRICAO_CONTRATANTE_EMPREITADA_PARCIAL
         "",                      # INSCRICAO_CONTRATANTE_EMPREITADA_PARCIAL
         "",                      # NOME_CONTRATANTE_EMPREITADA_PARCIAL
         0,                       # TIPO_INSCRICAO_PROPRIETARIO_CEI_EMPREITADA_PARCIAL
         "",                      # INSCRICAO_PROPRIETARIO_CEI_EMPREITADA_PARCIAL
         "",                      # NOME_PROPRIETARIO_CEI_EMPREITADA_PARCIAL
+        # ── CNAE / RAT / Processo ─────────────────────────────────────────
         cnae_num,                # I_CNAE20
         tipo_inf_aliq,           # TIPO_INFORMACAO_ALIQUOTA_ACIDENTE_TRABALHO
         0,                       # I_PROCESSO
@@ -753,28 +732,41 @@ def montar_linha_vigencia(
         "",                      # CAEPF
         0,                       # TIPO_CAEPF
         0,                       # REGISTRO_PONTO
-        1,                       # CONTRATACAO_APRENDIZ (1=Dispensado)
+        1,                       # CONTRATACAO_APRENDIZ  1=Dispensado
         0,                       # I_PROCESSO_CONTRATACAO_APRENDIZ
-        0,                       # REALIZA_CONTRATACAO_APRENDIZ_...
+        0,                       # REALIZA_CONTRATACAO_APRENDIZ_INTERMEDIO_...
         "",                      # CODIGO_SUSPENSAO_PROCESSO_RAT
         0,                       # SOMA_CODIGOS_SUSPENSAO_TERCEIROS
         perc_terc,               # PERCENTUAL_TERCEIRO_BRUTO
-        # campos SEM USO (S-1005)
-        0,0,0,                   # I_DADOS/I_LOTE/STATUS S-1005
+        # ── S-1005 ────────────────────────────────────────────────────────
+        0,                       # I_DADOS_EVENTOS_ESOCIAL_S_1005   **SEM USO**
+        0,                       # I_LOTE_ESOCIAL_S_1005            **SEM USO**
+        0,                       # STATUS_ESOCIAL_S_1005            **SEM USO**
         1,                       # ENVIAR_ESOCIAL_S_1005
-        0,0,                     # INCLUSAO_VALIDADA / GERAR_RETIFICACAO S-1005
-        # campos SEM USO (S-1020)
-        0,0,0,                   # I_DADOS/I_LOTE/STATUS S-1020
+        0,                       # INCLUSAO_VALIDADA_ESOCIAL_S_1005 **SEM USO**
+        0,                       # GERAR_RETIFICACAO_ESOCIAL_S_1005
+        # ── S-1020 ────────────────────────────────────────────────────────
+        0,                       # I_DADOS_EVENTOS_ESOCIAL_S_1020   **SEM USO**
+        0,                       # I_LOTE_ESOCIAL_S_1020            **SEM USO**
+        0,                       # STATUS_ESOCIAL_S_1020            **SEM USO**
         1,                       # ENVIAR_ESOCIAL_S_1020
-        0,0,                     # INCLUSAO_VALIDADA / GERAR_RETIFICACAO S-1020
+        0,                       # INCLUSAO_VALIDADA_ESOCIAL_S_1020 **SEM USO**
+        0,                       # GERAR_RETIFICACAO_ESOCIAL_S_1020
+        # ── eSocial extra ─────────────────────────────────────────────────
         cnae_num,                # I_CNAE_ESOCIAL
         0,                       # I_TERCEIROS
-        0,0,                     # PROCESSAR_EXCLUSAO S-1005 / S-1020
-        1,                       # ORIGEM_ALTERACAO
-        # campos SEM USO (S-1080)
-        0,0,0,                   # I_DADOS/I_LOTE/STATUS S-1080
+        0,                       # PROCESSAR_EXCLUSAO_ESOCIAL_S_1005
+        0,                       # PROCESSAR_EXCLUSAO_ESOCIAL_S_1020
+        1,                       # ORIGEM_ALTERACAO  1=Sistema
+        # ── S-1080 ────────────────────────────────────────────────────────
+        0,                       # I_DADOS_EVENTOS_ESOCIAL_S_1080   **SEM USO**
+        0,                       # I_LOTE_ESOCIAL_S_1080            **SEM USO**
+        0,                       # STATUS_ESOCIAL_S_1080            **SEM USO**
         1,                       # ENVIAR_ESOCIAL_S_1080
-        0,0,0,                   # INCLUSAO_VALIDADA / GERAR_RETIFICACAO / PROCESSAR_EXCLUSAO S-1080
+        0,                       # INCLUSAO_VALIDADA_ESOCIAL_S_1080 **SEM USO**
+        0,                       # GERAR_RETIFICACAO_ESOCIAL_S_1080
+        0,                       # PROCESSAR_EXCLUSAO_ESOCIAL_S_1080
+        # ── Retenção / COMPANY_ID / Recibo ────────────────────────────────
         0,                       # EFETUAR_RETENCAO_INSS_NOTAS_FISCAIS_INSCRICAO_OUTROS_CLIENTES
         "{00000000-0000-0000-0000-000000000000}",  # COMPANY_ID
         "",                      # NUMERO_RECIBO_ESOCIAL_VALIDACAO_AUTOMATICA_1005
@@ -782,7 +774,25 @@ def montar_linha_vigencia(
         0,                       # INEXIGIBILIDADE_RAT
         0,                       # CALCULAR_APOIO_FINANCEIRO_FOLHA_COLABORADOR_RS_MTE_991_2024
     ]
-    return campos
+
+def _linha_vigencia_vazia(cnpj: str, cod_servico: int, tipo_cod: int,
+                          codigo_empresa: int, vigencia: str,
+                          descricao_vigencia: str) -> list:
+    """Linha mínima para CNPJs com erro na consulta RF."""
+    return montar_linha_vigencia(
+        r={
+            "cnpj": cnpj, "codigo_terceiro": 0,
+            "perc_acid_trabalho": 0, "codigo_fpas": 0,
+            "codigo_gfip": "115", "codigo_gps": "2100",
+            "logradouro": "", "numero": "0", "bairro": "",
+            "cep": "", "municipio": "", "uf": "",
+            "cnae_codigo": "", "entidades": [],
+        },
+        cod_servico=cod_servico, tipo_cod=tipo_cod,
+        codigo_empresa=codigo_empresa,
+        vigencia=vigencia, descricao_vigencia=descricao_vigencia,
+        cod_mun="",
+    )
 
 def gerar_txt_vigencias(linhas: list[list]) -> bytes:
     linhas_txt=[]
@@ -852,7 +862,7 @@ st.markdown("""
         <div class="tr-title">Classificador FPAS / Terceiros / SEFIP</div>
         <div class="tr-subtitle">DOMÍNIO SISTEMAS &nbsp;·&nbsp; Thomson Reuters &nbsp;·&nbsp; IN RFB nº 971/2009</div>
     </div>
-    <div class="tr-badge">v8.0</div>
+    <div class="tr-badge">v8.1</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -922,7 +932,7 @@ tab_lote, tab_individual, tab_tabela = st.tabs([
 # ══════════════════════════════════════════════════════════════════════════════
 with tab_lote:
     st.markdown(f'<div class="tr-card"><div class="tr-card-title">📋 Passo 1 — Cole os CNPJs</div>', unsafe_allow_html=True)
-    col_input, col_dica = st.columns([3,1])
+    col_input,col_dica=st.columns([3,1])
     with col_input:
         texto_cnpjs=st.text_area("CNPJs",label_visibility="collapsed",height=180,
             placeholder="Cole aqui os CNPJs — um por linha, vírgula, ponto-e-vírgula ou espaço.")
@@ -960,7 +970,8 @@ with tab_lote:
                     type="primary",use_container_width=True,disabled=len(validos)==0)
             with col_b2:
                 if st.button("🗑️ Limpar",use_container_width=True):
-                    for k in ["resultados_proc","dados_brutos","seq_confirmada","seq_inicio_val","_txt","_xlsx","_vig"]:
+                    for k in ["resultados_proc","dados_brutos","seq_confirmada",
+                              "seq_inicio_val","_txt","_xlsx","_vig"]:
                         st.session_state.pop(k,None)
                     st.rerun()
 
@@ -1012,7 +1023,7 @@ with tab_lote:
                             "perc_acid_trabalho":classif.get("perc_acid_trabalho",""),
                             "codigo_gps":classif.get("codigo_gps",""),
                             "codigo_gfip":classif.get("codigo_gfip",""),
-                            "entidades":classif.get("entidades",[]),
+                            "entidades":classif.get("entidades",[]),  # ← necessário para perc_terceiro
                         }
                         dados_brutos[i]=r_merged
                         resultados_proc.append({
@@ -1068,13 +1079,12 @@ with tab_lote:
         cols_show=[c for c in df_proc.columns if not c.startswith("_")]
         st.dataframe(df_proc[cols_show],use_container_width=True,hide_index=True,height=300)
 
-        # ── Passo 3 ───────────────────────────────────────────────────────────
         st.markdown(f"""
         <div class="tr-card">
             <div class="tr-card-title">🏷️ Passo 3 — Código de Serviço, Tipo e Revisão</div>
             <div style="font-size:12px;color:{TR_TEXT_MUTED};margin-bottom:16px;">
                 Informe o número inicial da sequência e clique em <b style="color:{TR_ORANGE};">Confirmar</b>.<br>
-                <b>Código de Serviço = Codigo_Servicos = Codigo_Filial = Codigo_eSocial = i_filiais (FOVIGENCIAS)</b>
+                <b>Código de Serviço = Codigo_Servicos = i_filiais (FOVIGENCIAS) = Codigo_eSocial</b>
             </div>
         """, unsafe_allow_html=True)
 
@@ -1083,8 +1093,7 @@ with tab_lote:
             seq_inicio=st.number_input("🔢 Número inicial da sequência",
                 min_value=1,max_value=999999,
                 value=st.session_state.get("seq_inicio_val",1),
-                step=1,key="seq_inicio_input",
-                help="Cada empresa receberá um código sequencial a partir deste número.")
+                step=1,key="seq_inicio_input")
             confirmar_seq=st.button("✅ Confirmar sequência",use_container_width=True)
             if confirmar_seq:
                 for i in range(len(resultados_proc)): st.session_state.pop(f"cod_srv_{i}",None)
@@ -1144,7 +1153,7 @@ with tab_lote:
                 with col_cod_srv:
                     cod_srv=st.number_input(f"Cód. Serviço #{idx+1}",
                         min_value=1,max_value=999999,value=seq_auto,step=1,
-                        key=f"cod_srv_{idx}",label_visibility="collapsed",help=f"Sequência: {seq_auto}")
+                        key=f"cod_srv_{idx}",label_visibility="collapsed")
                     codigos_servico[idx]=int(cod_srv)
                 with col_tipo:
                     tipos_selecionados[idx]=st.selectbox(f"Tipo #{idx+1}",
@@ -1163,55 +1172,37 @@ with tab_lote:
                     linhas_fo=[]; linhas_vig=[]
 
                     for idx,row in enumerate(resultados_proc):
-                        cod_srv=codigos_servico.get(idx,seq_inicio+idx)
+                        cod_srv =codigos_servico.get(idx,seq_inicio+idx)
                         tipo_cod=tipos_selecionados.get(idx,1)
                         r_merged=dados_brutos.get(idx)
 
-                        # ── foservicos.txt ────────────────────────────────────
+                        # foservicos.txt
                         if r_merged:
-                            linha_fo=montar_linha_dominio(
-                                r_merged,tipo_cod=tipo_cod,
+                            linha_fo=montar_linha_dominio(r_merged,tipo_cod=tipo_cod,
                                 cod_servico=cod_srv,codigo_empresa=codigo_empresa_dom)
                         else:
                             linha_fo=[""]* 25
                             linha_fo[0]=codigo_empresa_dom; linha_fo[1]=cod_srv
                             linha_fo[2]=row["cnpj"]; linha_fo[3]=1
-                            linha_fo[17]=cod_srv; linha_fo[18]=1
-                            linha_fo[19]=tipo_cod; linha_fo[21]="2020-01-01"
-                            linha_fo[22]=1; linha_fo[23]=cod_srv
+                            linha_fo[17]=cod_srv; linha_fo[18]=1; linha_fo[19]=tipo_cod
+                            linha_fo[21]="2020-01-01"; linha_fo[22]=1; linha_fo[23]=cod_srv
                         linhas_fo.append(linha_fo)
 
-                        # ── fovigencias_servicos.txt ──────────────────────────
+                        # fovigencias_servicos.txt
                         if r_merged:
                             cod_mun_v=buscar_codigo_municipio(
                                 r_merged.get("municipio",""),r_merged.get("uf",""))
                             linha_vig=montar_linha_vigencia(
-                                r_merged,
-                                cod_servico=cod_srv,
-                                tipo_cod=tipo_cod,
+                                r_merged,cod_servico=cod_srv,tipo_cod=tipo_cod,
                                 codigo_empresa=codigo_empresa_dom,
-                                vigencia=vigencia_str,
-                                descricao_vigencia=descricao_vig,
-                                cod_mun=cod_mun_v,
-                            )
+                                vigencia=vigencia_str,descricao_vigencia=descricao_vig,
+                                cod_mun=cod_mun_v)
                         else:
-                            # linha mínima para erros
-                            linha_vig=montar_linha_vigencia(
-                                {"cnpj":row["cnpj"],"codigo_terceiro":0,
-                                 "perc_acid_trabalho":0,"codigo_fpas":0,
-                                 "codigo_gfip":"115","codigo_gps":"2100",
-                                 "logradouro":"","numero":"0","bairro":"",
-                                 "cep":"","municipio":"","uf":"",
-                                 "cnae_codigo":"","entidades":[]},
-                                cod_servico=cod_srv,tipo_cod=tipo_cod,
-                                codigo_empresa=codigo_empresa_dom,
-                                vigencia=vigencia_str,
-                                descricao_vigencia=descricao_vig,
-                                cod_mun="",
-                            )
+                            linha_vig=_linha_vigencia_vazia(
+                                row["cnpj"],cod_srv,tipo_cod,codigo_empresa_dom,
+                                vigencia_str,descricao_vig)
                         linhas_vig.append(linha_vig)
 
-                    # DataFrame conferência foservicos
                     df_conf=pd.DataFrame(linhas_fo,columns=COLUNAS_LEIAUTE)
                     df_conf["_status"]=[r["_status"] for r in resultados_proc]
                     df_err=df_conf[df_conf["_status"]!="OK"]
@@ -1224,13 +1215,14 @@ with tab_lote:
                     st.session_state["_vig"] =gerar_txt_vigencias(linhas_vig)
                     st.success("✅ Arquivos gerados com sucesso!")
 
-            if "_txt" in st.session_state:
+            # ── Downloads — cada um protegido individualmente ─────────────────
+            if "_txt" in st.session_state and "_vig" in st.session_state:
                 col_dl1,col_dl2,col_dl3=st.columns(3)
                 with col_dl1:
                     st.download_button(
                         "📄 foservicos.txt\n(Importação Domínio · 25 col · TAB)",
                         data=st.session_state["_txt"],
-                        file_name="foservicos.txt",          # ← nome correto
+                        file_name="foservicos.txt",
                         mime="text/plain",
                         use_container_width=True,
                     )
@@ -1238,7 +1230,7 @@ with tab_lote:
                     st.download_button(
                         "📄 fovigencias_servicos.txt\n(Vigências · TAB)",
                         data=st.session_state["_vig"],
-                        file_name="fovigencias_servicos.txt", # ← segundo arquivo
+                        file_name="fovigencias_servicos.txt",
                         mime="text/plain",
                         use_container_width=True,
                     )
@@ -1324,5 +1316,5 @@ with tab_tabela:
 st.markdown(f"""
 <div class="tr-footer">
     <span>DOMÍNIO SISTEMAS</span> &nbsp;·&nbsp; Thomson Reuters &nbsp;·&nbsp;
-    Classificador FPAS / Terceiros / SEFIP &nbsp;·&nbsp; IN RFB nº 971/2009 &nbsp;·&nbsp; <span>v8.0</span>
+    Classificador FPAS / Terceiros / SEFIP &nbsp;·&nbsp; IN RFB nº 971/2009 &nbsp;·&nbsp; <span>v8.1</span>
 </div>""", unsafe_allow_html=True)
