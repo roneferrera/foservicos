@@ -715,7 +715,6 @@ st.markdown("""
 
 # ── SIDEBAR ───────────────────────────────────────────────────────────────────
 with st.sidebar:
-with st.sidebar:
     st.markdown(
         f'<p style="color:{TR_ORANGE};font-size:13px;font-weight:700;letter-spacing:1px;margin-bottom:16px;">⚙ CONFIGURAÇÕES</p>',
         unsafe_allow_html=True
