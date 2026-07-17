@@ -895,25 +895,22 @@ def montar_linha_vigencia(
         "",                 # 45 DDD
         "",                 # 46 TELEFONE
         COMP_FIM,           # 47 COMPETENCIA_FIM_VIGENCIA
-        0,                  # 48 TIPO_LOTACAO_ESOCIAL
-        0,                  # 49 I_PROCESSO_TERCEIROS
-        "",                 # 50 CAEPF
-        0,                  # 51 REGISTRO_PONTO
-        1,                  # 52 CONTRATACAO_APRENDIZ
-        0,                  # 53 I_PROCESSO_CONTRATACAO_APRENDIZ
-        0,                  # 54 REALIZA_CONTRATACAO_APRENDIZ_INTERMEDIO_ENTIDADE_EDUCATIVA_SEM_FINS_LUCRATIVOS
-        "",                 # 55 CODIGO_SUSPENSAO_PROCESSO_RAT
-        0,                  # 56 SOMA_CODIGOS_SUSPENSAO_TERCEIROS
-        perc_terc,          # 57 PERCENTUAL_TERCEIRO_BRUTO
-        cnae_num,           # 58 I_CNAE_ESOCIAL
-        i_terceiros,        # 59 I_TERCEIROS
-        1,                  # 60 ORIGEM_ALTERACAO
-        0,                  # 61 EFETUAR_RETENCAO_INSS_NOTAS_FISCAIS_INSCRICAO_OUTROS_CLIENTES
-        "{00000000-0000-0000-0000-000000000000}",  # 62 COMPANY_ID
-        "",                 # 63 NUMERO_RECIBO_ESOCIAL_VALIDACAO_AUTOMATICA_1005
-        "",                 # 64 NUMERO_PROCESSO_APRENDIZ
-        0,                  # 65 INEXIGIBILIDADE_RAT
-        0,                  # 66 CALCULAR_APOIO_FINANCEIRO_FOLHA_COLABORADOR_RS_MTE_991_2024
+        0,                  # 48 I_PROCESSO_TERCEIROS
+        "",                 # 49 CAEPF
+        0,                  # 50 REGISTRO_PONTO
+        1,                  # 51 CONTRATACAO_APRENDIZ
+        0,                  # 52 I_PROCESSO_CONTRATACAO_APRENDIZ
+        0,                  # 53 REALIZA_CONTRATACAO_APRENDIZ_INTERMEDIO_ENTIDADE_EDUCATIVA_SEM_FINS_LUCRATIVOS
+        "",                 # 54 CODIGO_SUSPENSAO_PROCESSO_RAT
+        0,                  # 55 SOMA_CODIGOS_SUSPENSAO_TERCEIROS
+        perc_terc,          # 56 PERCENTUAL_TERCEIRO_BRUTO
+        cnae_num,           # 57 I_CNAE_ESOCIAL
+        i_terceiros,        # 58 I_TERCEIROS
+        0,                  # 59 EFETUAR_RETENCAO_INSS_NOTAS_FISCAIS_INSCRICAO_OUTROS_CLIENTES
+        "{00000000-0000-0000-0000-000000000000}",  # 60 COMPANY_ID
+        "",                 # 61 NUMERO_PROCESSO_APRENDIZ
+        0,                  # 62 INEXIGIBILIDADE_RAT
+        0,                  # 63 CALCULAR_APOIO_FINANCEIRO_FOLHA_COLABORADOR_RS_MTE_991_2024
     ]
 
 def _linha_vigencia_vazia(
