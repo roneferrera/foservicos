@@ -826,9 +826,9 @@ def montar_linha_vigencia(
     vigencia: str,
     descricao_vigencia: str,
     cod_mun: str,
-    tipo_servico_tomador_val: int | None = None,    # NOVO PARAMETRO
+    tipo_servico_tomador_val: int | None = None,
 ) -> list:
-  
+
     cnpj_limpo = limpar_cnpj(r.get("cnpj", ""))
 
     cod_terc_raw = r.get("codigo_terceiro", 0)
@@ -866,69 +866,65 @@ def montar_linha_vigencia(
     cnae_num = re.sub(r"\D", "", cnae_fmt)
 
     return [
-        codigo_empresa,     # 1  codi_emp
-        cod_servico,        # 2  i_servicos
-        vigencia,           # 3  VIGENCIA
-        descricao_vigencia, # 4  DESCRICAO
-        cnpj_limpo,         # 5  cgc
-        1,                  # 6  tipo_insc
-        cod_terc_str,       # 7  codigo_terceiro
-        perc_terc,          # 8  perc_terceiro
-        0,                  # 9  perc_inss_empresa
-        rat,                # 10 perc_acid_trabalho
-        0,                  # 11 codigo_sat
-        0,                  # 12 perc_autonomos
-        fpas,               # 13 codigo_fpas
-        0,                  # 14 codigo_atividade
-        gfip,               # 15 codigo_gfip
-        gps,                # 16 codigo_gps
-        0,                  # 17 i_bancos
-        0,                  # 18 numero_fgts
-        endereco,           # 19 endereco
-        numero,             # 20 numero
-        bairro,             # 21 bairro
-        cep,                # 22 cep
-        municipio,          # 23 cidade
-        uf,                 # 24 estado
-        1,                  # 25 i_filiais
-        0,                  # 26 sequencia_gps
-        0,                  # 27 filantropia
-        1,                  # 28 origem_reg       — 1 = Imp. Tabelas
-        tipo_cod,           # 29 tipo             — 1=Empresa/2=Obra Propria/3=Cooperativa/4=Tomador/5=Empreitada Parcial/6=Empreitada Total
-        0,                  # 30 codi_mun
-        cod_mun,            # 31 codigo_municipio
-        0,                  # 32 I_FPAS
-        0,                  # 33 CALCULA_INSS_EMPRESA_LEI_12546
-        tipo_servico_tomador_val,   # 34 tipo_servico_tomador — 1,2,3 se Tomador; NULL caso contrario
-        0,                  # 35 TIPO_ENDERECO
-        "",                 # 36 COMPLEMENTO
-        "",                 # 37 INSCRICAO_CONTRATANTE_EMPREITADA_PARCIAL
-        "",                 # 38 NOME_CONTRATANTE_EMPREITADA_PARCIAL
-        "",                 # 39 INSCRICAO_PROPRIETARIO_CEI_EMPREITADA_PARCIAL
-        "",                 # 40 NOME_PROPRIETARIO_CEI_EMPREITADA_PARCIAL
-        cnae_num,           # 41 I_CNAE20
-        1,                  # 42 TIPO_INFORMACAO_ALIQUOTA_ACIDENTE_TRABALHO
-        0,                  # 43 I_PROCESSO
-        0,                  # 44 I_SCP
-        "",                 # 45 DDD
-        "",                 # 46 TELEFONE
-        COMP_FIM,           # 47 COMPETENCIA_FIM_VIGENCIA
-        0,                  # 48 I_PROCESSO_TERCEIROS
-        "",                 # 49 CAEPF
-        0,                  # 50 REGISTRO_PONTO
-        1,                  # 51 CONTRATACAO_APRENDIZ
-        0,                  # 52 I_PROCESSO_CONTRATACAO_APRENDIZ
-        0,                  # 53 REALIZA_CONTRATACAO_APRENDIZ_INTERMEDIO_ENTIDADE_EDUCATIVA_SEM_FINS_LUCRATIVOS
-        "",                 # 54 CODIGO_SUSPENSAO_PROCESSO_RAT
-        0,                  # 55 SOMA_CODIGOS_SUSPENSAO_TERCEIROS
-        perc_terc,          # 56 PERCENTUAL_TERCEIRO_BRUTO
-        cnae_num,           # 57 I_CNAE_ESOCIAL
-        i_terceiros,        # 58 I_TERCEIROS
-        0,                  # 59 EFETUAR_RETENCAO_INSS_NOTAS_FISCAIS_INSCRICAO_OUTROS_CLIENTES
-        "{00000000-0000-0000-0000-000000000000}",  # 60 COMPANY_ID
-        "",                 # 61 NUMERO_PROCESSO_APRENDIZ
-        0,                  # 62 INEXIGIBILIDADE_RAT
-        0,                  # 63 CALCULAR_APOIO_FINANCEIRO_FOLHA_COLABORADOR_RS_MTE_991_2024
+        codigo_empresa,                 # 1  codi_emp
+        cod_servico,                    # 2  i_servicos
+        vigencia,                       # 3  VIGENCIA
+        descricao_vigencia,             # 4  DESCRICAO
+        cnpj_limpo,                     # 5  cgc
+        1,                              # 6  tipo_insc
+        cod_terc_str,                   # 7  codigo_terceiro
+        perc_terc,                      # 8  perc_terceiro
+        0,                              # 9  perc_inss_empresa
+        rat,                            # 10 perc_acid_trabalho
+        0,                              # 11 codigo_sat
+        0,                              # 12 perc_autonomos
+        fpas,                           # 13 codigo_fpas
+        0,                              # 14 codigo_atividade
+        gfip,                           # 15 codigo_gfip
+        gps,                            # 16 codigo_gps
+        0,                              # 17 i_bancos
+        0,                              # 18 numero_fgts
+        endereco,                       # 19 endereco
+        numero,                         # 20 numero
+        bairro,                         # 21 bairro
+        cep,                            # 22 cep
+        municipio,                      # 23 cidade
+        uf,                             # 24 estado
+        1,                              # 25 i_filiais
+        0,                              # 26 sequencia_gps
+        0,                              # 27 filantropia
+        1,                              # 28 origem_reg
+        tipo_cod,                       # 29 tipo
+        0,                              # 30 codi_mun
+        cod_mun,                        # 31 codigo_municipio
+        0,                              # 32 I_FPAS
+        0,                              # 33 CALCULA_INSS_EMPRESA_LEI_12546
+        tipo_servico_tomador_val,       # 34 TIPO_SERVICO_TOMADOR
+        0,                              # 35 TIPO_ENDERECO
+        "",                             # 36 COMPLEMENTO
+        "",                             # 37 INSCRICAO_CONTRATANTE_EMPREITADA_PARCIAL
+        "",                             # 38 NOME_CONTRATANTE_EMPREITADA_PARCIAL
+        "",                             # 39 INSCRICAO_PROPRIETARIO_CEI_EMPREITADA_PARCIAL
+        "",                             # 40 NOME_PROPRIETARIO_CEI_EMPREITADA_PARCIAL
+        cnae_num,                       # 41 I_CNAE20
+        1,                              # 42 TIPO_INFORMACAO_ALIQUOTA_ACIDENTE_TRABALHO
+        "",                             # 43 DDD
+        "",                             # 44 TELEFONE
+        COMP_FIM,                       # 45 COMPETENCIA_FIM_VIGENCIA
+        "",                             # 46 CAEPF
+        0,                              # 47 REGISTRO_PONTO
+        1,                              # 48 CONTRATACAO_APRENDIZ
+        0,                              # 49 REALIZA_CONTRATACAO_APRENDIZ_INTERMEDIO_ENTIDADE_EDUCATIVA_SEM_FINS_LUCRATIVOS
+        "",                             # 50 CODIGO_SUSPENSAO_PROCESSO_RAT
+        0,                              # 51 SOMA_CODIGOS_SUSPENSAO_TERCEIROS
+        perc_terc,                      # 52 PERCENTUAL_TERCEIRO_BRUTO
+        cnae_num,                       # 53 I_CNAE_ESOCIAL
+        i_terceiros,                    # 54 I_TERCEIROS
+        0,                              # 55 EFETUAR_RETENCAO_INSS_NOTAS_FISCAIS_INSCRICAO_OUTROS_CLIENTES
+        "{00000000-0000-0000-0000-000000000000}",  # 56 COMPANY_ID
+        "",                             # 57 NUMERO_PROCESSO_APRENDIZ
+        0,                              # 58 INEXIGIBILIDADE_RAT
+        0,                              # 59 CALCULAR_APOIO_FINANCEIRO_FOLHA_COLABORADOR_RS_MTE_991_2024
     ]
 
 def _linha_vigencia_vazia(
