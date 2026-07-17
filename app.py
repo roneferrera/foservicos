@@ -29,21 +29,16 @@ TR_INFO        = "#3498DB"
 
 CSS = f"""
 <style>
-  /* ── RESET GERAL ── */
   html, body, [data-testid="stAppViewContainer"] {{
       background-color: {TR_BG} !important;
       color: {TR_TEXT} !important;
       font-family: 'Segoe UI', Arial, sans-serif !important;
   }}
-
-  /* ── SIDEBAR ── */
   [data-testid="stSidebar"] {{
       background-color: #111111 !important;
       border-right: 2px solid {TR_ORANGE} !important;
   }}
   [data-testid="stSidebar"] * {{ color: {TR_TEXT} !important; }}
-
-  /* ── HEADER PRINCIPAL ── */
   .tr-header {{
       background: linear-gradient(135deg, #111111 0%, #1f1f1f 60%, #2a1500 100%);
       border-bottom: 3px solid {TR_ORANGE};
@@ -77,8 +72,6 @@ CSS = f"""
       padding: 4px 10px; border-radius: 20px;
       letter-spacing: 1px; text-transform: uppercase;
   }}
-
-  /* ── CARDS ── */
   .tr-card {{
       background: {TR_CARD};
       border: 1px solid {TR_BORDER};
@@ -93,8 +86,6 @@ CSS = f"""
       border-bottom: 1px solid {TR_BORDER};
       padding-bottom: 8px;
   }}
-
-  /* ── MÉTRICAS ── */
   .tr-metrics {{
       display: flex; gap: 12px; flex-wrap: wrap;
       margin-bottom: 20px;
@@ -119,34 +110,10 @@ CSS = f"""
   .tr-metric.success .tr-metric-value {{ color: {TR_SUCCESS}; }}
   .tr-metric.error   .tr-metric-value {{ color: {TR_ERROR};   }}
   .tr-metric.warning .tr-metric-value {{ color: {TR_WARNING}; }}
-
-  /* ── STEP INDICATOR ── */
-  .tr-steps {{
-      display: flex; gap: 0; margin-bottom: 24px;
-      border-radius: 8px; overflow: hidden;
-      border: 1px solid {TR_BORDER};
-  }}
-  .tr-step {{
-      flex: 1; padding: 10px 8px; text-align: center;
-      font-size: 12px; font-weight: 600;
-      background: {TR_CARD2}; color: {TR_TEXT_MUTED};
-      border-right: 1px solid {TR_BORDER};
-  }}
-  .tr-step:last-child {{ border-right: none; }}
-  .tr-step.active {{
-      background: {TR_ORANGE}; color: #fff;
-  }}
-  .tr-step.done {{
-      background: #1a3a1a; color: {TR_SUCCESS};
-  }}
-
-  /* ── TABELA ── */
   [data-testid="stDataFrame"] {{
       border: 1px solid {TR_BORDER} !important;
       border-radius: 8px !important;
   }}
-
-  /* ── BOTÕES ── */
   .stButton > button {{
       background: {TR_ORANGE} !important;
       color: #fff !important;
@@ -170,21 +137,30 @@ CSS = f"""
       background: {TR_SUCCESS} !important;
       color: #fff !important;
   }}
-
-  /* ── INPUTS ── */
   .stTextInput input, .stNumberInput input, .stSelectbox select {{
       background: {TR_CARD2} !important;
       color: {TR_TEXT} !important;
       border: 1px solid {TR_BORDER} !important;
       border-radius: 6px !important;
   }}
+  .stTextArea textarea {{
+      background: {TR_CARD2} !important;
+      color: {TR_TEXT} !important;
+      border: 1px solid {TR_BORDER} !important;
+      border-radius: 6px !important;
+      font-family: 'Courier New', monospace !important;
+      font-size: 13px !important;
+      line-height: 1.6 !important;
+  }}
+  .stTextArea textarea:focus {{
+      border-color: {TR_ORANGE} !important;
+      box-shadow: 0 0 0 2px rgba(255,128,0,0.2) !important;
+  }}
   .stMultiSelect [data-baseweb="select"] {{
       background: {TR_CARD2} !important;
       border: 1px solid {TR_BORDER} !important;
       border-radius: 6px !important;
   }}
-
-  /* ── TABS ── */
   .stTabs [data-baseweb="tab-list"] {{
       background: {TR_CARD} !important;
       border-radius: 8px 8px 0 0 !important;
@@ -200,34 +176,15 @@ CSS = f"""
       background: {TR_ORANGE} !important;
       color: #fff !important;
   }}
-
-  /* ── EXPANDER ── */
   .streamlit-expanderHeader {{
       background: {TR_CARD2} !important;
       border: 1px solid {TR_BORDER} !important;
       border-radius: 6px !important;
       color: {TR_TEXT} !important;
   }}
-
-  /* ── PROGRESS ── */
   .stProgress > div > div {{
       background: {TR_ORANGE} !important;
   }}
-
-  /* ── FILE UPLOADER ── */
-  [data-testid="stFileUploader"] {{
-      background: {TR_CARD} !important;
-      border: 2px dashed {TR_ORANGE} !important;
-      border-radius: 10px !important;
-  }}
-
-  /* ── ALERTS ── */
-  .stSuccess {{ background: #0d2b0d !important; border-left: 4px solid {TR_SUCCESS} !important; }}
-  .stError   {{ background: #2b0d0d !important; border-left: 4px solid {TR_ERROR}   !important; }}
-  .stWarning {{ background: #2b1f0d !important; border-left: 4px solid {TR_WARNING} !important; }}
-  .stInfo    {{ background: #0d1a2b !important; border-left: 4px solid {TR_INFO}    !important; }}
-
-  /* ── SIDEBAR SEÇÃO ── */
   .tr-sidebar-section {{
       background: #1a1a1a;
       border: 1px solid {TR_BORDER};
@@ -240,13 +197,6 @@ CSS = f"""
       color: {TR_ORANGE}; text-transform: uppercase;
       letter-spacing: 1px; margin-bottom: 8px;
   }}
-
-  /* ── TAG STATUS ── */
-  .tag-ok      {{ background:#0d2b0d; color:{TR_SUCCESS}; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:700; }}
-  .tag-erro    {{ background:#2b0d0d; color:{TR_ERROR};   padding:2px 8px; border-radius:12px; font-size:11px; font-weight:700; }}
-  .tag-alerta  {{ background:#2b1f0d; color:{TR_WARNING}; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:700; }}
-
-  /* ── RESULTADO INDIVIDUAL ── */
   .result-grid {{
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -267,8 +217,6 @@ CSS = f"""
       margin-top: 2px;
   }}
   .result-item-value.highlight {{ color: {TR_ORANGE}; }}
-
-  /* ── ENTIDADE PILL ── */
   .ent-pill {{
       display: inline-block;
       background: #2a1500;
@@ -279,8 +227,29 @@ CSS = f"""
       font-size: 11px; font-weight: 700;
       margin: 3px 3px 3px 0;
   }}
-
-  /* ── RODAPÉ ── */
+  .cnpj-preview-box {{
+      background: {TR_CARD2};
+      border: 1px solid {TR_BORDER};
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-top: 10px;
+  }}
+  .cnpj-chip {{
+      display: inline-block;
+      background: #2a1500;
+      border: 1px solid {TR_ORANGE};
+      color: {TR_TEXT};
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-size: 12px;
+      font-family: 'Courier New', monospace;
+      margin: 3px;
+  }}
+  .cnpj-chip.invalido {{
+      border-color: {TR_ERROR};
+      color: {TR_ERROR};
+      background: #2b0d0d;
+  }}
   .tr-footer {{
       text-align: center;
       color: {TR_TEXT_MUTED};
@@ -290,13 +259,9 @@ CSS = f"""
       border-top: 1px solid {TR_BORDER};
   }}
   .tr-footer span {{ color: {TR_ORANGE}; font-weight: 700; }}
-
-  /* ── SCROLLBAR ── */
   ::-webkit-scrollbar {{ width: 6px; height: 6px; }}
   ::-webkit-scrollbar-track {{ background: {TR_BG}; }}
   ::-webkit-scrollbar-thumb {{ background: {TR_ORANGE}; border-radius: 3px; }}
-
-  /* ── HIDE STREAMLIT DEFAULTS ── */
   #MainMenu, footer, header {{ visibility: hidden; }}
   .block-container {{ padding-top: 1rem !important; }}
 </style>
@@ -319,9 +284,6 @@ ENTIDADES = {
     "SESCOOP": {"codigo": 1024, "aliquota": 2.5,  "nome": "SESCOOP"},
 }
 
-# ──────────────────────────────────────────────────────────────────────────────
-# FPAS CONFIG: fpas → (terceiros, rat, gps, gfip, descricao)
-# ──────────────────────────────────────────────────────────────────────────────
 FPAS_CONFIG = {
     507: (79,   2, "2100", "150", "Indústria Geral"),
     515: (115,  2, "2100", "150", "Comércio / Serviços em Geral"),
@@ -351,9 +313,6 @@ FPAS_CONFIG = {
 
 FPAS_SEMPRE_ZERO = {582, 868, 876}
 
-# ──────────────────────────────────────────────────────────────────────────────
-# CNAE → FPAS  (tabela expandida ~400 CNAEs)
-# ──────────────────────────────────────────────────────────────────────────────
 CNAE_FPAS = {
     # AGRICULTURA / PECUÁRIA / RURAL
     "0111-3/01":604,"0111-3/02":604,"0111-3/03":604,"0112-1/01":604,
@@ -588,7 +547,8 @@ def classificar(cnae: str, simples: bool = False,
             if bit and (codigo_terceiro & bit):
                 codigo_terceiro &= ~bit
                 removidos.append(ent.upper())
-        obs = f"Convênio direto: {', '.join(removidos)} removido(s)" if removidos else "Classificação padrão"
+        obs = (f"Convênio direto: {', '.join(removidos)} removido(s)"
+               if removidos else "Classificação padrão")
     rat_ajustado = round(rat_base * fap, 2)
     entidades    = decodificar_terceiros(codigo_terceiro) if codigo_terceiro else []
     total_terc   = sum(e["aliquota"] for e in entidades)
@@ -610,34 +570,21 @@ APIS = [
 ]
 HEADERS = {"User-Agent": "Mozilla/5.0 (classificador-fpas/2.0)"}
 
-
 def limpar_cnpj(cnpj: str) -> str:
-    """Remove qualquer caractere não numérico do CNPJ."""
     return re.sub(r"\D", "", str(cnpj))
 
-
 def validar_cnpj(cnpj: str) -> bool:
-    """
-    Valida CNPJ usando os pesos oficiais da Receita Federal.
-    Pesos 1º DV : 5,4,3,2,9,8,7,6,5,4,3,2
-    Pesos 2º DV : 6,5,4,3,2,9,8,7,6,5,4,3,2
-    """
     c = limpar_cnpj(cnpj)
-
     if len(c) != 14 or len(set(c)) == 1:
         return False
-
     def calc_dv(digits: str, pesos: list) -> int:
         soma  = sum(int(d) * p for d, p in zip(digits, pesos))
         resto = soma % 11
         return 0 if resto < 2 else 11 - resto
-
     pesos1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
     pesos2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
-
     return (int(c[12]) == calc_dv(c[:12], pesos1) and
             int(c[13]) == calc_dv(c[:13], pesos2))
-
 
 def normalizar_resposta(data: dict, cnpj: str) -> dict:
     cnae_codigo = (
@@ -654,13 +601,11 @@ def normalizar_resposta(data: dict, cnpj: str) -> dict:
     cnae_str = str(cnae_codigo).zfill(7) if cnae_codigo else ""
     cnae_fmt = (f"{cnae_str[:4]}-{cnae_str[4]}/{cnae_str[5:]}"
                 if len(cnae_str) == 7 else cnae_str)
-
     simples = (
         data.get("opcao_pelo_simples")
         or (data.get("simples", {}).get("optante", False)
             if isinstance(data.get("simples"), dict) else False)
     )
-
     return {
         "cnpj":              cnpj,
         "razao_social":      data.get("razao_social") or data.get("nome", ""),
@@ -681,30 +626,38 @@ def normalizar_resposta(data: dict, cnpj: str) -> dict:
         "erro":              None,
     }
 
-
 def consultar_cnpj(cnpj_raw: str, delay: float = 1.0) -> dict:
     cnpj = limpar_cnpj(cnpj_raw)
-
     if not validar_cnpj(cnpj):
         return {"erro": f"CNPJ inválido: {cnpj_raw}"}
-
     time.sleep(delay)
-
     for url_tpl in APIS:
         try:
-            r = requests.get(
-                url_tpl.format(cnpj=cnpj),
-                headers=HEADERS,
-                timeout=12,
-            )
+            r = requests.get(url_tpl.format(cnpj=cnpj), headers=HEADERS, timeout=12)
             if r.status_code == 200:
                 return normalizar_resposta(r.json(), cnpj)
             if r.status_code == 429:
-                time.sleep(60)  # rate limit: aguarda 1 min e tenta próxima API
+                time.sleep(60)
         except Exception:
             continue
-
     return {"erro": f"CNPJ {cnpj} não encontrado em nenhuma API."}
+
+def extrair_cnpjs_do_texto(texto: str) -> list[str]:
+    """
+    Extrai e deduplica todos os CNPJs de um texto livre.
+    Aceita qualquer separador: vírgula, ponto-e-vírgula, quebra de linha, espaço, tab.
+    Aceita com ou sem máscara.
+    """
+    # Encontra sequências que parecem CNPJ (14 dígitos com ou sem máscara)
+    encontrados = re.findall(r"\d{2}[\.\s]?\d{3}[\.\s]?\d{3}[\/\s]?\d{4}[-\s]?\d{2}", texto)
+    vistos   = set()
+    unicos   = []
+    for c in encontrados:
+        limpo = limpar_cnpj(c)
+        if limpo not in vistos:
+            vistos.add(limpo)
+            unicos.append(c.strip())
+    return unicos
 
 # ──────────────────────────────────────────────────────────────────────────────
 # HELPERS HTML
@@ -749,7 +702,7 @@ st.markdown("""
         <div class="tr-title">Classificador FPAS / Terceiros / SEFIP</div>
         <div class="tr-subtitle">DOMÍNIO SISTEMAS &nbsp;·&nbsp; Thomson Reuters &nbsp;·&nbsp; IN RFB nº 971/2009</div>
     </div>
-    <div class="tr-badge">v2.0</div>
+    <div class="tr-badge">v2.1</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -803,231 +756,301 @@ with st.sidebar:
 
 # ── TABS ──────────────────────────────────────────────────────────────────────
 tab_lote, tab_individual, tab_tabela = st.tabs([
-    "📂  Processamento em Lote",
+    "📋  Consulta em Lote",
     "🔍  Consulta Individual",
     "📖  Tabela FPAS / Terceiros",
 ])
 
 # ══════════════════════════════════════════════════════════════════════════════
-# TAB 1 — PROCESSAMENTO EM LOTE
+# TAB 1 — CONSULTA EM LOTE (campo de texto)
 # ══════════════════════════════════════════════════════════════════════════════
 with tab_lote:
 
-    st.markdown('<div class="tr-card"><div class="tr-card-title">📂 Upload da Planilha</div>',
+    st.markdown('<div class="tr-card"><div class="tr-card-title">📋 Cole os CNPJs para Consulta em Lote</div>',
                 unsafe_allow_html=True)
 
-    col_up, col_ex = st.columns([3, 1])
-    with col_up:
-        arquivo = st.file_uploader(
-            "Arraste ou selecione o arquivo Excel com os CNPJs",
-            type=["xlsx"],
+    col_input, col_dica = st.columns([3, 1])
+
+    with col_input:
+        texto_cnpjs = st.text_area(
+            "CNPJs",
+            placeholder=(
+                "Cole aqui os CNPJs — um por linha, separados por vírgula, ponto-e-vírgula ou espaço.\n\n"
+                "Exemplos aceitos:\n"
+                "08.795.211/0001-70\n"
+                "11222333000181\n"
+                "08795211000170, 11222333000181\n"
+                "08.795.211/0001-70; 11.222.333/0001-81"
+            ),
+            height=220,
             label_visibility="collapsed",
         )
-    with col_ex:
-        st.markdown(f'<div style="font-size:11px;color:{TR_TEXT_MUTED};">Formato esperado:</div>',
-                    unsafe_allow_html=True)
-        st.dataframe(
-            pd.DataFrame({"cnpj": ["12.345.678/0001-99", "98.765.432/0001-10"]}),
-            hide_index=True, use_container_width=True, height=90,
-        )
+
+    with col_dica:
+        st.markdown(f"""
+        <div style="background:{TR_CARD2};border:1px solid {TR_BORDER};
+                    border-radius:8px;padding:14px;font-size:11px;
+                    color:{TR_TEXT_MUTED};line-height:1.8;margin-top:0px;">
+            <b style="color:{TR_ORANGE};">Formatos aceitos:</b><br>
+            ✅ Com máscara<br>
+            &nbsp;&nbsp;<code>08.795.211/0001-70</code><br>
+            ✅ Sem máscara<br>
+            &nbsp;&nbsp;<code>08795211000170</code><br>
+            ✅ Separadores<br>
+            &nbsp;&nbsp;Linha, vírgula,<br>
+            &nbsp;&nbsp;ponto-e-vírgula,<br>
+            &nbsp;&nbsp;espaço ou tab<br>
+            ✅ Duplicatas<br>
+            &nbsp;&nbsp;Removidas automaticamente
+        </div>
+        """, unsafe_allow_html=True)
+
     st.markdown('</div>', unsafe_allow_html=True)
 
-    if arquivo:
-        df_raw = pd.read_excel(arquivo, dtype=str)
-        st.success(f"✅ **{len(df_raw)} registros** carregados com sucesso.")
+    # Pré-visualização dos CNPJs detectados em tempo real
+    if texto_cnpjs and texto_cnpjs.strip():
+        lista_cnpjs = extrair_cnpjs_do_texto(texto_cnpjs)
 
-        # Detecta coluna CNPJ
-        col_cnpj = next(
-            (c for c in df_raw.columns
-             if c.lower() in ["cnpj","cgc","cnpj/cpf","documento","cpf_cnpj"]),
-            None
-        )
-        if not col_cnpj:
-            col_cnpj = st.selectbox(
-                "⚠️ Selecione a coluna que contém os CNPJs:",
-                df_raw.columns.tolist()
-            )
+        if lista_cnpjs:
+            validos   = [c for c in lista_cnpjs if validar_cnpj(c)]
+            invalidos = [c for c in lista_cnpjs if not validar_cnpj(c)]
 
-        st.info(f"📌 Coluna CNPJ detectada: **{col_cnpj}**  |  "
-                f"FAP configurado: **{fap}**  |  "
-                f"Convênios: **{', '.join(convenios) if convenios else 'Nenhum'}**")
-
-        with st.expander("👁️ Pré-visualização dos dados"):
-            st.dataframe(df_raw.head(10), use_container_width=True)
-
-        st.markdown("---")
-
-        if st.button("🚀 Iniciar Classificação em Lote", type="primary",
-                     use_container_width=True):
-
-            resultados = []
-            total      = len(df_raw)
-            progress   = st.progress(0, text="Aguardando...")
-            col_log, col_stat = st.columns([2, 1])
-
-            with col_log:
-                log_area = st.empty()
-            with col_stat:
-                stat_area = st.empty()
-
-            logs   = []
-            ok_n   = 0
-            err_n  = 0
-
-            for i, row in df_raw.iterrows():
-                cnpj_raw = str(row[col_cnpj]).strip()
-                pct      = int((i + 1) / total * 100)
-                progress.progress(pct, text=f"⏳ Processando {i+1}/{total} — {cnpj_raw}")
-
-                # Consulta RF
-                dados_rf = consultar_cnpj(cnpj_raw, delay=delay)
-
-                if dados_rf.get("erro"):
-                    err_n += 1
-                    logs.append(f"❌ {cnpj_raw}: {dados_rf['erro']}")
-                    resultados.append({
-                        "cnpj": cnpj_raw, "razao_social": "", "situacao_cadastral": "",
-                        "cnae_codigo": "", "cnae_descricao": "", "simples_nacional": "",
-                        "codigo_fpas": "", "fpas_descricao": "", "codigo_terceiro": "",
-                        "perc_acid_trabalho": "", "codigo_sat": "", "codigo_gps": "",
-                        "codigo_gfip": "", "total_terceiros_pct": "",
-                        "observacao": dados_rf["erro"], "status": "ERRO_RF",
-                    })
-                else:
-                    simples  = dados_rf.get("simples", False)
-                    classif  = classificar(dados_rf.get("cnae_codigo",""),
-                                           simples=simples, fap=fap, convenios=convenios)
-                    if classif.get("erro"):
-                        err_n += 1
-                        status = "ERRO_FPAS"
-                        logs.append(f"⚠️ {cnpj_raw} | {dados_rf.get('razao_social','')} "
-                                    f"| {classif['erro']}")
-                    else:
-                        ok_n  += 1
-                        status = "OK"
-                        cod3   = classif['codigo_terceiro']
-                        cod3_f = f"{cod3:04d}" if isinstance(cod3, int) else "—"
-                        logs.append(f"✅ {cnpj_raw} | {dados_rf.get('razao_social','')[:30]} "
-                                    f"| FPAS {classif['fpas']} | 3ºs {cod3_f}")
-
-                    resultados.append({
-                        "cnpj":              limpar_cnpj(cnpj_raw),
-                        "razao_social":      dados_rf.get("razao_social",""),
-                        "nome_fantasia":     dados_rf.get("nome_fantasia",""),
-                        "situacao_cadastral":dados_rf.get("situacao",""),
-                        "natureza_juridica": dados_rf.get("natureza_juridica",""),
-                        "porte":             dados_rf.get("porte",""),
-                        "data_inicio":       dados_rf.get("data_inicio",""),
-                        "logradouro":        dados_rf.get("logradouro",""),
-                        "numero":            dados_rf.get("numero",""),
-                        "bairro":            dados_rf.get("bairro",""),
-                        "municipio":         dados_rf.get("municipio",""),
-                        "uf":                dados_rf.get("uf",""),
-                        "cep":               dados_rf.get("cep",""),
-                        "cnae_codigo":       dados_rf.get("cnae_codigo",""),
-                        "cnae_descricao":    dados_rf.get("cnae_descricao",""),
-                        "simples_nacional":  "SIM" if simples else "NÃO",
-                        "codigo_fpas":       classif.get("fpas",""),
-                        "fpas_descricao":    classif.get("fpas_descricao",""),
-                        "codigo_terceiro":   (f"{classif['codigo_terceiro']:04d}"
-                                              if isinstance(classif.get("codigo_terceiro"), int)
-                                              else classif.get("codigo_terceiro","")),
-                        "perc_acid_trabalho":classif.get("perc_acid_trabalho",""),
-                        "codigo_sat":        classif.get("codigo_sat",""),
-                        "codigo_gps":        classif.get("codigo_gps",""),
-                        "codigo_gfip":       classif.get("codigo_gfip",""),
-                        "total_terceiros_pct":classif.get("total_terceiros_pct",""),
-                        "observacao":        classif.get("observacao",""),
-                        "status":            status,
-                    })
-
-                log_area.text_area("📋 Log", "\n".join(logs[-12:]),
-                                   height=260, label_visibility="collapsed")
-                stat_area.markdown(f"""
-                <div class="tr-metrics" style="flex-direction:column;">
-                    {metric_card(i+1, "Processados")}
-                    {metric_card(ok_n, "Sucesso", "success")}
-                    {metric_card(err_n, "Erros", "error")}
-                </div>
-                """, unsafe_allow_html=True)
-
-            progress.progress(100, text="✅ Processamento concluído!")
-
-            # ── RESULTADO ─────────────────────────────────────────────────────
-            df_res = pd.DataFrame(resultados)
-            st.session_state["df_resultado"] = df_res
-
-            st.markdown("---")
-            st.markdown(f'<div class="tr-card-title">📊 Resultado Final</div>',
-                        unsafe_allow_html=True)
-
-            df_ok  = df_res[df_res["status"] == "OK"]
-            df_err = df_res[df_res["status"] != "OK"]
+            chips_html = ""
+            for c in lista_cnpjs:
+                cls  = "" if validar_cnpj(c) else "invalido"
+                icon = "✅" if validar_cnpj(c) else "❌"
+                chips_html += f'<span class="cnpj-chip {cls}">{icon} {c}</span>'
 
             st.markdown(f"""
-            <div class="tr-metrics">
-                {metric_card(total, "Total")}
-                {metric_card(len(df_ok), "Classificados", "success")}
-                {metric_card(len(df_err), "Erros", "error")}
-                {metric_card(f"{len(df_ok)/total*100:.0f}%", "Taxa de Sucesso",
-                             "success" if len(df_ok)/total > 0.8 else "warning")}
+            <div class="cnpj-preview-box">
+                <div style="font-size:11px;color:{TR_TEXT_MUTED};
+                            text-transform:uppercase;letter-spacing:0.5px;
+                            margin-bottom:8px;">
+                    {len(lista_cnpjs)} CNPJ(s) detectado(s) —
+                    <span style="color:{TR_SUCCESS};">{len(validos)} válido(s)</span>
+                    {f'· <span style="color:{TR_ERROR};">{len(invalidos)} inválido(s)</span>' if invalidos else ''}
+                </div>
+                {chips_html}
             </div>
             """, unsafe_allow_html=True)
 
-            st.dataframe(
-                df_res[[
-                    "cnpj","razao_social","situacao_cadastral",
-                    "cnae_codigo","cnae_descricao","simples_nacional",
-                    "codigo_fpas","fpas_descricao","codigo_terceiro",
-                    "perc_acid_trabalho","codigo_sat","codigo_gps",
-                    "codigo_gfip","total_terceiros_pct","status","observacao",
-                ]],
-                use_container_width=True, hide_index=True, height=380,
-            )
+            st.markdown("<br>", unsafe_allow_html=True)
 
-            # Resumo por FPAS
-            if len(df_ok) > 0:
-                with st.expander("📈 Resumo por FPAS"):
-                    resumo = (df_ok.groupby(["codigo_fpas","fpas_descricao"])
-                              .size().reset_index(name="qtd_empresas")
-                              .sort_values("qtd_empresas", ascending=False))
-                    st.dataframe(resumo, use_container_width=True, hide_index=True)
+            col_btn1, col_btn2 = st.columns([2, 2])
+            with col_btn1:
+                iniciar = st.button(
+                    f"🚀 Classificar {len(validos)} CNPJ(s) válido(s)",
+                    type="primary",
+                    use_container_width=True,
+                    disabled=len(validos) == 0,
+                )
+            with col_btn2:
+                if st.button("🗑️ Limpar", use_container_width=True):
+                    st.rerun()
 
-            if len(df_err) > 0:
-                with st.expander(f"⚠️ {len(df_err)} registro(s) com erro"):
-                    st.dataframe(
-                        df_err[["cnpj","razao_social","status","observacao"]],
-                        use_container_width=True, hide_index=True,
+            if iniciar and validos:
+                resultados = []
+                total      = len(validos)
+                progress   = st.progress(0, text="Iniciando...")
+
+                col_log, col_stat = st.columns([2, 1])
+                with col_log:
+                    log_area = st.empty()
+                with col_stat:
+                    stat_area = st.empty()
+
+                logs  = []
+                ok_n  = 0
+                err_n = 0
+
+                for i, cnpj_raw in enumerate(validos):
+                    pct = int((i + 1) / total * 100)
+                    progress.progress(pct, text=f"⏳ {i+1}/{total} — {cnpj_raw}")
+
+                    dados_rf = consultar_cnpj(cnpj_raw, delay=delay)
+
+                    if dados_rf.get("erro"):
+                        err_n += 1
+                        logs.append(f"❌ {cnpj_raw}: {dados_rf['erro']}")
+                        resultados.append({
+                            "cnpj":               cnpj_raw,
+                            "razao_social":        "",
+                            "nome_fantasia":       "",
+                            "situacao_cadastral":  "",
+                            "natureza_juridica":   "",
+                            "porte":               "",
+                            "data_inicio":         "",
+                            "logradouro":          "",
+                            "numero":              "",
+                            "bairro":              "",
+                            "municipio":           "",
+                            "uf":                  "",
+                            "cep":                 "",
+                            "cnae_codigo":         "",
+                            "cnae_descricao":      "",
+                            "simples_nacional":    "",
+                            "codigo_fpas":         "",
+                            "fpas_descricao":      "",
+                            "codigo_terceiro":     "",
+                            "perc_acid_trabalho":  "",
+                            "codigo_sat":          "",
+                            "codigo_gps":          "",
+                            "codigo_gfip":         "",
+                            "total_terceiros_pct": "",
+                            "observacao":          dados_rf["erro"],
+                            "status":              "ERRO_RF",
+                        })
+                    else:
+                        simples = dados_rf.get("simples", False)
+                        classif = classificar(
+                            dados_rf.get("cnae_codigo", ""),
+                            simples=simples, fap=fap, convenios=convenios,
+                        )
+                        if classif.get("erro"):
+                            err_n += 1
+                            status = "ERRO_FPAS"
+                            logs.append(
+                                f"⚠️ {cnpj_raw} | "
+                                f"{dados_rf.get('razao_social','')[:30]} | "
+                                f"{classif['erro']}"
+                            )
+                        else:
+                            ok_n  += 1
+                            status = "OK"
+                            cod3   = classif["codigo_terceiro"]
+                            cod3_f = f"{cod3:04d}" if isinstance(cod3, int) else "—"
+                            logs.append(
+                                f"✅ {cnpj_raw} | "
+                                f"{dados_rf.get('razao_social','')[:28]} | "
+                                f"FPAS {classif['fpas']} | 3ºs {cod3_f}"
+                            )
+
+                        resultados.append({
+                            "cnpj":               limpar_cnpj(cnpj_raw),
+                            "razao_social":        dados_rf.get("razao_social", ""),
+                            "nome_fantasia":       dados_rf.get("nome_fantasia", ""),
+                            "situacao_cadastral":  dados_rf.get("situacao", ""),
+                            "natureza_juridica":   dados_rf.get("natureza_juridica", ""),
+                            "porte":               dados_rf.get("porte", ""),
+                            "data_inicio":         dados_rf.get("data_inicio", ""),
+                            "logradouro":          dados_rf.get("logradouro", ""),
+                            "numero":              dados_rf.get("numero", ""),
+                            "bairro":              dados_rf.get("bairro", ""),
+                            "municipio":           dados_rf.get("municipio", ""),
+                            "uf":                  dados_rf.get("uf", ""),
+                            "cep":                 dados_rf.get("cep", ""),
+                            "cnae_codigo":         dados_rf.get("cnae_codigo", ""),
+                            "cnae_descricao":      dados_rf.get("cnae_descricao", ""),
+                            "simples_nacional":    "SIM" if simples else "NÃO",
+                            "codigo_fpas":         classif.get("fpas", ""),
+                            "fpas_descricao":      classif.get("fpas_descricao", ""),
+                            "codigo_terceiro":     (
+                                f"{classif['codigo_terceiro']:04d}"
+                                if isinstance(classif.get("codigo_terceiro"), int)
+                                else classif.get("codigo_terceiro", "")
+                            ),
+                            "perc_acid_trabalho":  classif.get("perc_acid_trabalho", ""),
+                            "codigo_sat":          classif.get("codigo_sat", ""),
+                            "codigo_gps":          classif.get("codigo_gps", ""),
+                            "codigo_gfip":         classif.get("codigo_gfip", ""),
+                            "total_terceiros_pct": classif.get("total_terceiros_pct", ""),
+                            "observacao":          classif.get("observacao", ""),
+                            "status":              status,
+                        })
+
+                    log_area.text_area(
+                        "log", "\n".join(logs[-12:]),
+                        height=260, label_visibility="collapsed",
+                    )
+                    stat_area.markdown(f"""
+                    <div class="tr-metrics" style="flex-direction:column;">
+                        {metric_card(i+1,  "Processados")}
+                        {metric_card(ok_n,  "Sucesso",  "success")}
+                        {metric_card(err_n, "Erros",    "error")}
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                progress.progress(100, text="✅ Concluído!")
+
+                # ── RESULTADO FINAL ────────────────────────────────────────────
+                df_res = pd.DataFrame(resultados)
+                st.session_state["df_resultado"] = df_res
+                df_ok  = df_res[df_res["status"] == "OK"]
+                df_err = df_res[df_res["status"] != "OK"]
+
+                st.markdown("---")
+                st.markdown(f'<div class="tr-card-title">📊 Resultado Final</div>',
+                            unsafe_allow_html=True)
+
+                taxa = len(df_ok) / total * 100 if total else 0
+                st.markdown(f"""
+                <div class="tr-metrics">
+                    {metric_card(total,         "Total")}
+                    {metric_card(len(df_ok),    "Classificados", "success")}
+                    {metric_card(len(df_err),   "Erros",         "error")}
+                    {metric_card(f"{taxa:.0f}%","Taxa de Sucesso",
+                                 "success" if taxa >= 80 else "warning")}
+                </div>
+                """, unsafe_allow_html=True)
+
+                st.dataframe(
+                    df_res[[
+                        "cnpj", "razao_social", "situacao_cadastral",
+                        "cnae_codigo", "cnae_descricao", "simples_nacional",
+                        "codigo_fpas", "fpas_descricao", "codigo_terceiro",
+                        "perc_acid_trabalho", "codigo_sat", "codigo_gps",
+                        "codigo_gfip", "total_terceiros_pct", "status", "observacao",
+                    ]],
+                    use_container_width=True, hide_index=True, height=380,
+                )
+
+                if len(df_ok) > 0:
+                    with st.expander("📈 Resumo por FPAS"):
+                        resumo = (
+                            df_ok.groupby(["codigo_fpas", "fpas_descricao"])
+                            .size().reset_index(name="qtd_empresas")
+                            .sort_values("qtd_empresas", ascending=False)
+                        )
+                        st.dataframe(resumo, use_container_width=True, hide_index=True)
+
+                if len(df_err) > 0:
+                    with st.expander(f"⚠️ {len(df_err)} registro(s) com erro"):
+                        st.dataframe(
+                            df_err[["cnpj", "razao_social", "status", "observacao"]],
+                            use_container_width=True, hide_index=True,
+                        )
+
+                # ── DOWNLOADS ─────────────────────────────────────────────────
+                st.markdown("---")
+                st.markdown(f'<div class="tr-card-title">⬇️ Download</div>',
+                            unsafe_allow_html=True)
+
+                col_d1, col_d2 = st.columns(2)
+                with col_d1:
+                    buf = io.BytesIO()
+                    with pd.ExcelWriter(buf, engine="openpyxl") as w:
+                        df_res.to_excel(w, sheet_name="Classificacao_FPAS", index=False)
+                        if len(df_err) > 0:
+                            df_err.to_excel(w, sheet_name="Erros", index=False)
+                    st.download_button(
+                        "📥 Baixar Excel Completo (.xlsx)",
+                        data=buf.getvalue(),
+                        file_name="classificacao_fpas_dominio.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        use_container_width=True,
+                    )
+                with col_d2:
+                    csv = df_res.to_csv(index=False, sep=";", encoding="utf-8-sig")
+                    st.download_button(
+                        "📥 Baixar CSV (separador ;)",
+                        data=csv,
+                        file_name="classificacao_fpas_dominio.csv",
+                        mime="text/csv",
+                        use_container_width=True,
                     )
 
-            # ── DOWNLOADS ─────────────────────────────────────────────────────
-            st.markdown("---")
-            st.markdown(f'<div class="tr-card-title">⬇️ Download</div>',
-                        unsafe_allow_html=True)
-
-            col_d1, col_d2 = st.columns(2)
-            with col_d1:
-                buf = io.BytesIO()
-                with pd.ExcelWriter(buf, engine="openpyxl") as w:
-                    df_res.to_excel(w, sheet_name="Classificacao_FPAS", index=False)
-                    if len(df_err) > 0:
-                        df_err.to_excel(w, sheet_name="Erros", index=False)
-                st.download_button(
-                    "📥 Baixar Excel Completo (.xlsx)",
-                    data=buf.getvalue(),
-                    file_name="classificacao_fpas_dominio.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    use_container_width=True,
-                )
-            with col_d2:
-                csv = df_res.to_csv(index=False, sep=";", encoding="utf-8-sig")
-                st.download_button(
-                    "📥 Baixar CSV (separador ;)",
-                    data=csv,
-                    file_name="classificacao_fpas_dominio.csv",
-                    mime="text/csv",
-                    use_container_width=True,
-                )
+        else:
+            st.warning("⚠️ Nenhum CNPJ detectado no texto. Verifique o formato.")
 
 # ══════════════════════════════════════════════════════════════════════════════
 # TAB 2 — CONSULTA INDIVIDUAL
@@ -1045,7 +1068,6 @@ with tab_individual:
         )
     with col_btn:
         buscar = st.button("🔍 Consultar", type="primary", use_container_width=True)
-
     st.markdown('</div>', unsafe_allow_html=True)
 
     if buscar and cnpj_input:
@@ -1056,35 +1078,33 @@ with tab_individual:
             st.error(f"❌ {dados_rf['erro']}")
         else:
             simples = dados_rf.get("simples", False)
-            classif = classificar(dados_rf.get("cnae_codigo",""),
+            classif = classificar(dados_rf.get("cnae_codigo", ""),
                                   simples=simples, fap=fap, convenios=convenios)
 
-            # Card empresa
             st.markdown(f"""
             <div class="tr-card">
                 <div class="tr-card-title">🏢 Dados da Empresa</div>
                 <div class="result-grid">
-                    {result_item("CNPJ", dados_rf['cnpj'])}
-                    {result_item("Razão Social", dados_rf['razao_social'], True)}
-                    {result_item("Nome Fantasia", dados_rf.get('nome_fantasia','—') or '—')}
-                    {result_item("Situação Cadastral", dados_rf.get('situacao','—'))}
-                    {result_item("Natureza Jurídica", dados_rf.get('natureza_juridica','—'))}
-                    {result_item("Porte", dados_rf.get('porte','—'))}
-                    {result_item("Simples Nacional", '✅ SIM' if simples else '❌ NÃO')}
-                    {result_item("Data de Início", dados_rf.get('data_inicio','—'))}
-                    {result_item("Município/UF", f"{dados_rf.get('municipio','—')}/{dados_rf.get('uf','—')}")}
-                    {result_item("CEP", dados_rf.get('cep','—'))}
+                    {result_item("CNPJ",             dados_rf["cnpj"])}
+                    {result_item("Razão Social",      dados_rf["razao_social"], True)}
+                    {result_item("Nome Fantasia",     dados_rf.get("nome_fantasia","—") or "—")}
+                    {result_item("Situação Cadastral",dados_rf.get("situacao","—"))}
+                    {result_item("Natureza Jurídica", dados_rf.get("natureza_juridica","—"))}
+                    {result_item("Porte",             dados_rf.get("porte","—"))}
+                    {result_item("Simples Nacional",  "✅ SIM" if simples else "❌ NÃO")}
+                    {result_item("Data de Início",    dados_rf.get("data_inicio","—"))}
+                    {result_item("Município/UF",      f"{dados_rf.get('municipio','—')}/{dados_rf.get('uf','—')}")}
+                    {result_item("CEP",               dados_rf.get("cep","—"))}
                 </div>
             </div>
             """, unsafe_allow_html=True)
 
-            # Card CNAE
             st.markdown(f"""
             <div class="tr-card">
                 <div class="tr-card-title">🏭 CNAE Principal</div>
                 <div class="result-grid">
-                    {result_item("Código CNAE", dados_rf.get('cnae_codigo','—'), True)}
-                    {result_item("Descrição", dados_rf.get('cnae_descricao','—'))}
+                    {result_item("Código CNAE", dados_rf.get("cnae_codigo","—"), True)}
+                    {result_item("Descrição",   dados_rf.get("cnae_descricao","—"))}
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -1092,43 +1112,42 @@ with tab_individual:
             if classif.get("erro"):
                 st.warning(f"⚠️ {classif['erro']}")
             else:
-                cod3   = classif['codigo_terceiro']
+                cod3   = classif["codigo_terceiro"]
                 cod3_f = f"{cod3:04d}" if isinstance(cod3, int) else "Em branco (Simples)"
 
-                # Card FPAS / SEFIP
                 st.markdown(f"""
                 <div class="tr-card">
                     <div class="tr-card-title">📋 Classificação FPAS / SEFIP</div>
                     <div class="result-grid">
-                        {result_item("Código FPAS", classif['fpas'], True)}
-                        {result_item("Descrição FPAS", classif['fpas_descricao'])}
-                        {result_item("Código Terceiros", cod3_f, True)}
-                        {result_item("RAT (base)", f"{classif['perc_acid_trabalho']}%")}
-                        {result_item("SAT (RAT × FAP)", f"{classif['codigo_sat']}%", True)}
-                        {result_item("Código GPS", classif['codigo_gps'])}
-                        {result_item("Código GFIP", classif['codigo_gfip'])}
-                        {result_item("Total Terceiros", f"{classif['total_terceiros_pct']:.1f}%", True)}
+                        {result_item("Código FPAS",    classif["fpas"],              True)}
+                        {result_item("Descrição FPAS", classif["fpas_descricao"])}
+                        {result_item("Cód. Terceiros", cod3_f,                       True)}
+                        {result_item("RAT (base)",     f"{classif['perc_acid_trabalho']}%")}
+                        {result_item("SAT (RAT×FAP)",  f"{classif['codigo_sat']}%",  True)}
+                        {result_item("Código GPS",     classif["codigo_gps"])}
+                        {result_item("Código GFIP",    classif["codigo_gfip"])}
+                        {result_item("Total Terceiros",f"{classif['total_terceiros_pct']:.1f}%", True)}
                     </div>
                     <div style="margin-top:14px;">
                         <div style="font-size:11px;color:{TR_TEXT_MUTED};
                                     text-transform:uppercase;letter-spacing:0.5px;
                                     margin-bottom:6px;">Entidades Beneficiadas</div>
-                        {entidade_pills(classif['entidades']) or
+                        {entidade_pills(classif["entidades"]) or
                          f'<span style="color:{TR_TEXT_MUTED};font-size:12px;">Nenhuma</span>'}
                     </div>
                     <div style="margin-top:10px;font-size:11px;color:{TR_TEXT_MUTED};">
-                        ℹ️ {classif['observacao']}
+                        ℹ️ {classif["observacao"]}
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
 
-                # Tabela de entidades detalhada
                 if classif["entidades"]:
                     with st.expander("📊 Detalhamento das Entidades e Alíquotas"):
                         df_ent = pd.DataFrame(classif["entidades"])
                         df_ent.columns = ["Sigla", "Entidade", "Alíquota (%)"]
                         total_row = pd.DataFrame([{
-                            "Sigla": "TOTAL", "Entidade": "", "Alíquota (%)": classif["total_terceiros_pct"]
+                            "Sigla": "TOTAL", "Entidade": "",
+                            "Alíquota (%)": classif["total_terceiros_pct"],
                         }])
                         df_ent = pd.concat([df_ent, total_row], ignore_index=True)
                         st.dataframe(df_ent, use_container_width=True, hide_index=True)
@@ -1141,21 +1160,20 @@ with tab_tabela:
     st.markdown('<div class="tr-card"><div class="tr-card-title">📖 Tabela de Referência FPAS / Terceiros</div>',
                 unsafe_allow_html=True)
 
-    # Monta tabela de referência
     ref_rows = []
     for fpas, (terc, rat, gps, gfip, desc) in FPAS_CONFIG.items():
-        ents = decodificar_terceiros(terc)
+        ents      = decodificar_terceiros(terc)
         total_pct = sum(e["aliquota"] for e in ents)
-        siglas = " + ".join(e["sigla"] for e in ents) if ents else "—"
+        siglas    = " + ".join(e["sigla"] for e in ents) if ents else "—"
         ref_rows.append({
-            "FPAS": fpas,
-            "Descrição": desc,
+            "FPAS":           fpas,
+            "Descrição":      desc,
             "Cód. Terceiros": f"{terc:04d}",
-            "Entidades": siglas,
-            "Total 3ºs (%)": f"{total_pct:.1f}%",
-            "RAT Base (%)": f"{rat}%",
-            "Cód. GPS": gps,
-            "Cód. GFIP": gfip,
+            "Entidades":      siglas,
+            "Total 3ºs (%)":  f"{total_pct:.1f}%",
+            "RAT Base (%)":   f"{rat}%",
+            "Cód. GPS":       gps,
+            "Cód. GFIP":      gfip,
         })
     df_ref = pd.DataFrame(ref_rows)
 
@@ -1168,27 +1186,28 @@ with tab_tabela:
                     f'{len(df_ref)} registros na tabela FPAS</div>', unsafe_allow_html=True)
 
     if busca_fpas:
-        mask = (df_ref["FPAS"].astype(str).str.contains(busca_fpas, case=False)
-                | df_ref["Descrição"].str.contains(busca_fpas, case=False)
-                | df_ref["Entidades"].str.contains(busca_fpas, case=False))
+        mask = (
+            df_ref["FPAS"].astype(str).str.contains(busca_fpas, case=False)
+            | df_ref["Descrição"].str.contains(busca_fpas, case=False)
+            | df_ref["Entidades"].str.contains(busca_fpas, case=False)
+        )
         df_ref = df_ref[mask]
 
     st.dataframe(df_ref, use_container_width=True, hide_index=True, height=480)
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # Tabela de entidades bitmask
     with st.expander("🔢 Tabela de Entidades — Lógica Bitmask"):
         ent_rows = [
             {"Código (bitmask)": d["codigo"], "Sigla": s,
              "Nome Completo": d["nome"], "Alíquota (%)": d["aliquota"]}
             for s, d in ENTIDADES.items()
         ]
-        df_ent_ref = pd.DataFrame(ent_rows)
-        st.dataframe(df_ent_ref, use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame(ent_rows), use_container_width=True, hide_index=True)
         st.markdown(f"""
         <div style="font-size:11px;color:{TR_TEXT_MUTED};margin-top:8px;">
-        💡 O <b style="color:{TR_ORANGE};">Código de Terceiros</b> é a <b>soma dos códigos bitmask</b>
-        das entidades ativas. Ex: FNDE(1) + INCRA(2) + SENAC(16) + SESC(32) + SEBRAE(64) = <b>0115</b>
+        💡 O <b style="color:{TR_ORANGE};">Código de Terceiros</b> é a
+        <b>soma dos códigos bitmask</b> das entidades ativas.<br>
+        Ex: FNDE(1) + INCRA(2) + SENAC(16) + SESC(32) + SEBRAE(64) = <b>0115</b>
         </div>
         """, unsafe_allow_html=True)
 
@@ -1198,6 +1217,6 @@ st.markdown(f"""
     <span>DOMÍNIO SISTEMAS</span> &nbsp;·&nbsp; Thomson Reuters &nbsp;·&nbsp;
     Classificador FPAS / Terceiros / SEFIP &nbsp;·&nbsp;
     Base legal: IN RFB nº 971/2009 &nbsp;·&nbsp;
-    <span>v2.0</span>
+    <span>v2.1</span>
 </div>
 """, unsafe_allow_html=True)
