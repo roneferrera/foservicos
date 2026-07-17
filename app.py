@@ -168,58 +168,18 @@ def _normalizar(s: str) -> str:
     return s
 
 def _carregar_municipios():
-    """
-    Carrega o arquivo de municípios e constrói o mapa de busca.
-    Tenta detectar automaticamente as colunas corretas.
-    Retorna dicionário: (UF_norm, NOME_norm) -> codigo_dominio (int)
-    """
     try:
-        df = pd.read_excel("RELAÇÃO DE MUNICÍPIOS.xls",
-                           sheet_name="RELAÇÃO DE MUNICÍPIOS",
-                           dtype=str)
+        df = pd.read_excel(
+            "RELAÇÃO DE MUNICÍPIOS.xls",
+            sheet_name="RELAÇÃO DE MUNICÍPIOS",
+            dtype=str
+        )
         df.columns = [str(c).strip() for c in df.columns]
 
-        # DEBUG: mostra as colunas detectadas no sidebar
-        st.session_state["_mun_cols"] = df.columns.tolist()
-
-        cols = df.columns.tolist()
-
-        # Detecta coluna Código (interno Domínio) — primeiro campo numérico/código
-        col_codigo = None
-        for c in cols:
-            cl = c.lower()
-            if ("digo" in cl or "codigo" in cl or c.strip().startswith("C")) \
-               and "receita" not in cl and "ibge" not in cl and "rais" not in cl:
-                col_codigo = c
-                break
-        if col_codigo is None:
-            col_codigo = cols[0]  # fallback: primeira coluna
-
-        # Detecta coluna Nome
-        col_nome = None
-        for c in cols:
-            if "nome" in c.lower():
-                col_nome = c
-                break
-        if col_nome is None:
-            col_nome = cols[1]
-
-        # Detecta coluna UF/Estado
-        col_uf = None
-        for c in cols:
-            cl = c.lower().strip()
-            if cl in ("uf", "estado", "uf ", "estado ") or cl.startswith("estado"):
-                col_uf = c
-                break
-        if col_uf is None:
-            # tenta achar coluna com valores de 2 letras (siglas UF)
-            for c in cols:
-                sample = df[c].dropna().head(20).tolist()
-                if all(len(str(v).strip()) == 2 for v in sample if str(v).strip()):
-                    col_uf = c
-                    break
-        if col_uf is None:
-            col_uf = cols[-1]
+        # Colunas fixas conforme estrutura real da planilha
+        col_codigo = "Código"
+        col_nome   = "Nome"
+        col_uf     = "Estado"
 
         mapa = {}
         for _, row in df.iterrows():
@@ -227,7 +187,6 @@ def _carregar_municipios():
                 uf   = _normalizar(str(row[col_uf]))
                 nome = _normalizar(str(row[col_nome]))
                 cod  = str(row[col_codigo]).strip()
-                # Limpa o código: remove ".0" se vier como float
                 cod  = cod.split(".")[0] if "." in cod else cod
                 if uf and nome and cod and cod not in ("nan", "None", ""):
                     mapa[(uf, nome)] = cod
@@ -239,17 +198,6 @@ def _carregar_municipios():
     except Exception as e:
         st.session_state["_mun_error"] = str(e)
         return {}, "", "", ""
-
-
-# Carrega na inicialização
-if "MUNICIPIOS_MAP" not in st.session_state:
-    _mapa, _cc, _cn, _cu = _carregar_municipios()
-    st.session_state["MUNICIPIOS_MAP"] = _mapa
-    st.session_state["_mun_col_codigo"] = _cc
-    st.session_state["_mun_col_nome"]   = _cn
-    st.session_state["_mun_col_uf"]     = _cu
-
-MUNICIPIOS_MAP: dict = st.session_state.get("MUNICIPIOS_MAP", {})
 
 
 def buscar_codigo_municipio(municipio: str, uf: str) -> str:
