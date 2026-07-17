@@ -1755,7 +1755,7 @@ with tab_importacao:
                 <div style="font-size:11px;color:{TR_TEXT_MUTED};margin-top:4px;">
                     Tabela: <b style="color:{TR_TEXT};">FOVIGENCIAS_SERVICO</b><br>
                     Vigencias e aliquotas FPAS / Terceiros / eSocial.<br>
-                    90 colunas &nbsp;|&nbsp; TAB-delimitado
+                    59 colunas &nbsp;|&nbsp; TAB-delimitado
                 </div>
             </div>
         </div>
@@ -1798,7 +1798,7 @@ with tab_importacao:
     with col_l2:
         if leiaute_vig:
             st.download_button(
-                label="Leiaute FOVIGENCIAS_SERVICO.txt\n(90 colunas - referencia)",
+                label="Leiaute FOVIGENCIAS_SERVICO.txt\n(59 colunas - referencia)",
                 data=leiaute_vig,
                 file_name="FOVIGENCIAS_SERVICO.txt",
                 mime="text/plain",
@@ -1855,7 +1855,7 @@ with tab_importacao:
             use_container_width=True, hide_index=True,
         )
 
-    with st.expander("Ver resumo das colunas principais - FOVIGENCIAS_SERVICO (90 colunas)"):
+    with st.expander("Ver resumo das colunas principais - FOVIGENCIAS_SERVICO (59 colunas)"):
         colunas_vig = [
             ("1",  "codi_emp",                 "integer",  "Codigo da empresa"),
             ("2",  "i_servicos",               "integer",  "Codigo do servico (FK -> FOSERVICOS)"),
