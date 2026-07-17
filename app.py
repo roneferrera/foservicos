@@ -715,13 +715,17 @@ st.markdown("""
 
 # ── SIDEBAR ───────────────────────────────────────────────────────────────────
 with st.sidebar:
-   st.markdown(
+with st.sidebar:
+    st.markdown(
         f'<p style="color:{TR_ORANGE};font-size:13px;font-weight:700;letter-spacing:1px;margin-bottom:16px;">⚙ CONFIGURAÇÕES</p>',
         unsafe_allow_html=True
     )
 
     # ✅ PRIMEIRO CAMPO — Código Interno da Empresa no Domínio
-    st.markdown(f'<p style="font-size:10px;font-weight:700;color:{TR_ORANGE};text-transform:uppercase;letter-spacing:1px;">🏢 Empresa no Domínio</p>', unsafe_allow_html=True)
+    st.markdown(
+        f'<p style="font-size:10px;font-weight:700;color:{TR_ORANGE};text-transform:uppercase;letter-spacing:1px;">🏢 Empresa no Domínio</p>',
+        unsafe_allow_html=True
+    )
     codigo_empresa_dom = st.number_input(
         "Código Interno da Empresa",
         min_value=1, max_value=999999,
@@ -734,19 +738,17 @@ with st.sidebar:
 
     st.divider()
 
-    st.markdown(f'<p style="font-size:10px;font-weight:700;color:{TR_ORANGE};text-transform:uppercase;letter-spacing:1px;">📊 Parâmetros SEFIP</p>', unsafe_allow_html=True)
-    fap   = st.number_input("FAP", min_value=0.5, max_value=2.0, value=1.0, step=0.01)
-    delay = st.number_input("Intervalo (s)", min_value=0.3, max_value=5.0, value=1.0, step=0.1)
-    # ... resto da sidebar igual
     st.markdown(
-        f'<p style="color:{TR_ORANGE};font-size:13px;font-weight:700;letter-spacing:1px;margin-bottom:16px;">⚙ CONFIGURAÇÕES</p>',
+        f'<p style="font-size:10px;font-weight:700;color:{TR_ORANGE};text-transform:uppercase;letter-spacing:1px;">📊 Parâmetros SEFIP</p>',
         unsafe_allow_html=True
     )
-    st.markdown(f'<p style="font-size:10px;font-weight:700;color:{TR_ORANGE};text-transform:uppercase;letter-spacing:1px;">📊 Parâmetros SEFIP</p>', unsafe_allow_html=True)
     fap   = st.number_input("FAP", min_value=0.5, max_value=2.0, value=1.0, step=0.01)
     delay = st.number_input("Intervalo (s)", min_value=0.3, max_value=5.0, value=1.0, step=0.1)
 
-    st.markdown(f'<p style="font-size:10px;font-weight:700;color:{TR_ORANGE};text-transform:uppercase;letter-spacing:1px;margin-top:12px;">🤝 Convênios</p>', unsafe_allow_html=True)
+    st.markdown(
+        f'<p style="font-size:10px;font-weight:700;color:{TR_ORANGE};text-transform:uppercase;letter-spacing:1px;margin-top:12px;">🤝 Convênios</p>',
+        unsafe_allow_html=True
+    )
     convenios = st.multiselect(
         "Entidades", label_visibility="collapsed",
         options=["SENAI","SESI","SENAC","SESC","SEBRAE","SENAR","SEST","SENAT","SESCOOP"]
@@ -783,11 +785,15 @@ with st.sidebar:
                 st.error("❌ Não encontrado")
                 uf_n   = _normalizar(teste_uf)
                 nome_n = _normalizar(teste_mun)
-                sugestoes = [f"{n} → {c}" for (u,n),c in list(mapa.items()) if u == uf_n and nome_n[:4] in n][:8]
+                sugestoes = [
+                    f"{n} → {c}"
+                    for (u, n), c in list(mapa.items())
+                    if u == uf_n and nome_n[:4] in n
+                ][:8]
                 if sugestoes:
                     st.write("Sugestões:", sugestoes)
                 else:
-                    todos_uf = [n for (u,n),_ in list(mapa.items()) if u == uf_n][:10]
+                    todos_uf = [n for (u, n), _ in list(mapa.items()) if u == uf_n][:10]
                     if todos_uf:
                         st.write(f"Municípios de {teste_uf.upper()}:", todos_uf)
 
@@ -795,11 +801,6 @@ with st.sidebar:
         for k in ["MUNICIPIOS_MAP", "_mun_debug"]:
             st.session_state.pop(k, None)
         st.rerun()
-
-# ── TABS ──────────────────────────────────────────────────────────────────────
-tab_lote, tab_individual, tab_tabela = st.tabs([
-    "📋  Consulta em Lote", "🔍  Consulta Individual", "📖  Tabela FPAS"
-])
 
 # ══════════════════════════════════════════════════════════════════════════════
 # TAB 1 — CONSULTA EM LOTE
