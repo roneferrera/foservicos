@@ -984,101 +984,101 @@ with tab_lote:
         """, unsafe_allow_html=True)
 
         col_seq1, col_seq2, _ = st.columns([1, 1, 2])
-        with col_seq1:
-            # ✅ Usa on_change para detectar mudança imediatamente
-            seq_anterior = st.session_state.get("seq_inicio_val", 1)
+with col_seq1:
+    seq_inicio = st.number_input(
+        "🔢 Número inicial da sequência",
+        min_value=1, max_value=999999,
+        value=1,
+        step=1,
+        key="seq_inicio_input",
+        help="Cada empresa receberá um código sequencial a partir deste número."
+    )
+    confirmar_seq = st.button("✅ Confirmar sequência", use_container_width=True)
 
-            seq_inicio = st.number_input(
-                "🔢 Número inicial da sequência",
-                min_value=1, max_value=999999,
-                value=seq_anterior,
-                step=1,
-                key="seq_inicio_input",
-                help="Cada empresa receberá um código sequencial a partir deste número."
-            )
+    if confirmar_seq:
+        # Ao confirmar, limpa todos os individuais e salva o novo valor
+        for i in range(len(resultados_proc)):
+            st.session_state.pop(f"cod_srv_{i}", None)
+        st.session_state["seq_inicio_val"]       = seq_inicio
+        st.session_state["seq_confirmada"]        = True
+        st.rerun()
 
-            # ✅ CORREÇÃO: detecta mudança e força reset dos campos individuais
-            if seq_inicio != seq_anterior:
-                st.session_state["seq_inicio_val"] = seq_inicio
-                # Remove todas as chaves individuais do session_state
-                for i in range(len(resultados_proc)):
-                    key = f"cod_srv_{i}"
-                    if key in st.session_state:
-                        del st.session_state[key]
-                st.rerun()
-
-            # Salva o valor atual
-            st.session_state["seq_inicio_val"] = seq_inicio
-
-        with col_seq2:
-            st.markdown(f"""
-            <div style="background:{TR_CARD2};border:1px solid {TR_BORDER};border-radius:8px;
-                        padding:12px;margin-top:28px;font-size:11px;color:{TR_TEXT_MUTED};">
-                📌 Sequência gerada:<br>
-                <b style="color:{TR_ORANGE};font-size:14px;">
-                    {seq_inicio} → {seq_inicio + len(resultados_proc) - 1}
-                </b>
-            </div>""", unsafe_allow_html=True)
-
-        st.markdown("<br>", unsafe_allow_html=True)
+with col_seq2:
+    seq_val = st.session_state.get("seq_inicio_val", None)
+    if seq_val:
         st.markdown(f"""
-        <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;
-                    padding:6px 12px;background:{TR_CARD};border-radius:6px;
-                    font-size:10px;font-weight:700;color:{TR_ORANGE};
-                    text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">
-            <div>Empresa</div><div>Cód. Serviço</div><div>Tipo</div>
+        <div style="background:{TR_CARD2};border:1px solid {TR_BORDER};border-radius:8px;
+                    padding:12px;margin-top:28px;font-size:11px;color:{TR_TEXT_MUTED};">
+            📌 Sequência confirmada:<br>
+            <b style="color:{TR_ORANGE};font-size:14px;">
+                {seq_val} → {seq_val + len(resultados_proc) - 1}
+            </b>
         </div>""", unsafe_allow_html=True)
 
-        tipos_selecionados = {}
-        codigos_servico    = {}
+st.markdown("<br>", unsafe_allow_html=True)
 
-        for idx, row in enumerate(resultados_proc):
-            status  = row.get("_status", "")
-            mun     = row.get("municipio", "") or ""
-            uf      = row.get("uf", "") or ""
-            cod_mun = row.get("cod_municipio_dom", "")
-            cor_mun = TR_SUCCESS if cod_mun and "não" not in str(cod_mun) else TR_ERROR
-            cor_st  = TR_SUCCESS if status == "OK" else TR_ERROR
-            icone   = "✅" if status == "OK" else "❌"
-            seq_auto = seq_inicio + idx
+# ✅ SÓ renderiza a tabela de empresas se a sequência foi confirmada
+if not st.session_state.get("seq_confirmada"):
+    st.info("ℹ️ Informe e confirme o número inicial da sequência para exibir os campos de Código de Serviço.")
+else:
+    seq_inicio = st.session_state["seq_inicio_val"]
 
-            col_info, col_cod_srv, col_tipo = st.columns([2, 1, 1])
-            with col_info:
-                st.markdown(f"""
-                <div class="tipo-row">
-                    <div style="font-size:12px;font-weight:700;color:{TR_TEXT};">
-                        {icone} <code style="color:{TR_ORANGE};">{row['cnpj']}</code>
-                        &nbsp; {(row.get('razao_social','') or '—')[:40]}
-                    </div>
-                    <div style="font-size:10px;color:{TR_TEXT_MUTED};margin-top:3px;">
-                        FPAS <b style="color:{TR_ORANGE};">{row.get('codigo_fpas','—')}</b>
-                        &nbsp;·&nbsp; {mun}/{uf}
-                        &nbsp;·&nbsp; Cód.Mun: <b style="color:{cor_mun};">{cod_mun or '⚠️'}</b>
-                        &nbsp;·&nbsp; <span style="color:{cor_st};">{status}</span>
-                    </div>
-                </div>""", unsafe_allow_html=True)
-            with col_cod_srv:
-                cod_srv = st.number_input(
-                    f"Cód. Serviço #{idx+1}",
-                    min_value=1, max_value=999999,
-                    value=seq_auto,   # ✅ sempre usa seq_auto como padrão após reset
-                    step=1,
-                    key=f"cod_srv_{idx}",
-                    label_visibility="collapsed",
-                    help=f"Automático: {seq_auto} — edite se necessário"
-                )
-                codigos_servico[idx] = int(cod_srv)
-            with col_tipo:
-                tipos_selecionados[idx] = st.selectbox(
-                    f"Tipo #{idx+1}",
-                    options=list(TIPOS_EMPRESA.keys()),
-                    format_func=lambda k: f"{k} — {TIPOS_EMPRESA[k]}",
-                    key=f"tipo_{idx}",
-                    label_visibility="collapsed",
-                )
+    st.markdown(f"""
+    <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;
+                padding:6px 12px;background:{TR_CARD};border-radius:6px;
+                font-size:10px;font-weight:700;color:{TR_ORANGE};
+                text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">
+        <div>Empresa</div><div>Cód. Serviço</div><div>Tipo</div>
+    </div>""", unsafe_allow_html=True)
 
-        st.markdown('</div>', unsafe_allow_html=True)
+    tipos_selecionados = {}
+    codigos_servico    = {}
 
+    for idx, row in enumerate(resultados_proc):
+        status  = row.get("_status", "")
+        mun     = row.get("municipio", "") or ""
+        uf      = row.get("uf", "") or ""
+        cod_mun = row.get("cod_municipio_dom", "")
+        cor_mun = TR_SUCCESS if cod_mun and "não" not in str(cod_mun) else TR_ERROR
+        cor_st  = TR_SUCCESS if status == "OK" else TR_ERROR
+        icone   = "✅" if status == "OK" else "❌"
+        seq_auto = seq_inicio + idx  # ✅ valor correto desde o início
+
+        col_info, col_cod_srv, col_tipo = st.columns([2, 1, 1])
+        with col_info:
+            st.markdown(f"""
+            <div class="tipo-row">
+                <div style="font-size:12px;font-weight:700;color:{TR_TEXT};">
+                    {icone} <code style="color:{TR_ORANGE};">{row['cnpj']}</code>
+                    &nbsp; {(row.get('razao_social','') or '—')[:40]}
+                </div>
+                <div style="font-size:10px;color:{TR_TEXT_MUTED};margin-top:3px;">
+                    FPAS <b style="color:{TR_ORANGE};">{row.get('codigo_fpas','—')}</b>
+                    &nbsp;·&nbsp; {mun}/{uf}
+                    &nbsp;·&nbsp; Cód.Mun: <b style="color:{cor_mun};">{cod_mun or '⚠️'}</b>
+                    &nbsp;·&nbsp; <span style="color:{cor_st};">{status}</span>
+                </div>
+            </div>""", unsafe_allow_html=True)
+        with col_cod_srv:
+            cod_srv = st.number_input(
+                f"Cód. Serviço #{idx+1}",
+                min_value=1, max_value=999999,
+                value=seq_auto,   # ✅ já nasce correto, sem necessidade de reset posterior
+                step=1,
+                key=f"cod_srv_{idx}",
+                label_visibility="collapsed",
+                help=f"Sequência: {seq_auto}"
+            )
+            codigos_servico[idx] = int(cod_srv)
+        with col_tipo:
+            tipos_selecionados[idx] = st.selectbox(
+                f"Tipo #{idx+1}",
+                options=list(TIPOS_EMPRESA.keys()),
+                format_func=lambda k: f"{k} — {TIPOS_EMPRESA[k]}",
+                key=f"tipo_{idx}",
+                label_visibility="collapsed",
+            )
+          
         # ── Passo 4 ───────────────────────────────────────────────────────────
         st.markdown(f'<div class="tr-card"><div class="tr-card-title">⬇️ Passo 4 — Gerar e Baixar Arquivos</div></div>', unsafe_allow_html=True)
 
