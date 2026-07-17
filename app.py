@@ -584,7 +584,6 @@ COLUNAS_LEIAUTE = [
 ]
 
 def _formatar_data(data_raw: str) -> str:
-    """Converte qualquer formato de data para YYYY-MM-DD."""
     from datetime import datetime
     s = str(data_raw or "2020-01-01")[:10]
     for fmt in ("%d/%m/%Y", "%Y-%m-%d", "%d-%m-%Y"):
@@ -609,11 +608,11 @@ def montar_linha_dominio(r: dict, tipo_cod: int, cod_servico: int, codigo_empres
     data_ini  = _formatar_data(r.get("data_inicio", ""))
 
     return [
-        codigo_empresa,                       # 0  Codigo_empresa  ✅ CORRIGIDO
-        cod_servico,                          # 1  Codigo_Servicos
-        cnpj_limpo,                           # 2  CNPJ_CPF
-        1,                                    # 3  Tipo_Inscricao
-        cod_terceiro,                         # 4  Codigo_Terceiro
+        codigo_empresa,
+        cod_servico,
+        cnpj_limpo,
+        1,
+        cod_terceiro,
         str(r.get("perc_acid_trabalho", "") or ""),
         str(r.get("codigo_fpas", "") or ""),
         str(r.get("cnae_codigo", "") or ""),
@@ -626,14 +625,14 @@ def montar_linha_dominio(r: dict, tipo_cod: int, cod_servico: int, codigo_empres
         cep,
         municipio,
         uf,
-        cod_servico,                          # 17 Codigo_Filial
-        1,                                    # 18 Sequencia_GPS
-        tipo_cod,                             # 19 Tipo
-        cod_mun,                              # 20 Codigo_Municipio
-        data_ini,                             # 21 Data_Inicio
-        1,                                    # 22 Situacao
-        cod_servico,                          # 23 Codigo_eSocial
-        "",                                   # 24 Origem_Reg
+        cod_servico,
+        1,
+        tipo_cod,
+        cod_mun,
+        data_ini,
+        1,
+        cod_servico,
+        "",
     ]
 
 def gerar_txt_leiaute(linhas: list[list]) -> bytes:
@@ -802,6 +801,15 @@ with st.sidebar:
         st.rerun()
 
 # ══════════════════════════════════════════════════════════════════════════════
+# TABS
+# ══════════════════════════════════════════════════════════════════════════════
+tab_lote, tab_individual, tab_tabela = st.tabs([
+    "📋 Consulta em Lote",
+    "🔍 Consulta Individual",
+    "📖 Tabela FPAS"
+])
+
+# ══════════════════════════════════════════════════════════════════════════════
 # TAB 1 — CONSULTA EM LOTE
 # ══════════════════════════════════════════════════════════════════════════════
 with tab_lote:
@@ -852,15 +860,13 @@ with tab_lote:
                 )
             with col_b2:
                 if st.button("🗑️ Limpar", use_container_width=True):
-                    for k in ["resultados_proc", "dados_brutos"]:
+                    for k in ["resultados_proc", "dados_brutos", "seq_confirmada", "seq_inicio_val", "_txt", "_xlsx"]:
                         st.session_state.pop(k, None)
                     st.rerun()
 
             if iniciar and validos:
-                # ✅ CORREÇÃO PRINCIPAL: salvar dados_brutos separado de resultados_proc
-                # dados_brutos guarda o r_merged completo para cada índice
                 resultados_proc = []
-                dados_brutos    = {}   # idx → r_merged dict completo
+                dados_brutos    = {}
 
                 total    = len(validos)
                 progress = st.progress(0, text="Iniciando...")
@@ -892,7 +898,7 @@ with tab_lote:
                             "_status":           "ERRO_RF",
                             "_obs":              dados_rf["erro"],
                         })
-                        dados_brutos[i] = None  # sem dados para linha de erro
+                        dados_brutos[i] = None
 
                     else:
                         simples = dados_rf.get("simples", False)
@@ -914,7 +920,6 @@ with tab_lote:
                         uf        = dados_rf.get("uf", "")
                         cod_mun   = buscar_codigo_municipio(municipio, uf)
 
-                        # ✅ r_merged com TODOS os campos necessários para montar_linha_dominio
                         r_merged = {
                             "cnpj":               limpar_cnpj(cnpj_raw),
                             "razao_social":       dados_rf.get("razao_social", ""),
@@ -932,7 +937,7 @@ with tab_lote:
                             "codigo_gps":         classif.get("codigo_gps", ""),
                             "codigo_gfip":        classif.get("codigo_gfip", ""),
                         }
-                        dados_brutos[i] = r_merged  # ✅ salva separado
+                        dados_brutos[i] = r_merged
 
                         resultados_proc.append({
                             "cnpj":               limpar_cnpj(cnpj_raw),
@@ -964,9 +969,11 @@ with tab_lote:
                     </div>""", unsafe_allow_html=True)
 
                 progress.progress(100, text="✅ Concluído!")
-                # ✅ Salva os dois separadamente no session_state
                 st.session_state["resultados_proc"] = resultados_proc
                 st.session_state["dados_brutos"]    = dados_brutos
+                # Limpa sequência anterior ao processar novos CNPJs
+                for k in ["seq_confirmada", "seq_inicio_val", "_txt", "_xlsx"]:
+                    st.session_state.pop(k, None)
 
         else:
             st.warning("⚠️ Nenhum CNPJ detectado. Verifique o formato.")
@@ -996,173 +1003,175 @@ with tab_lote:
         <div class="tr-card">
             <div class="tr-card-title">🏷️ Passo 3 — Código de Serviço, Tipo e Revisão</div>
             <div style="font-size:12px;color:{TR_TEXT_MUTED};margin-bottom:16px;">
-                Defina o número inicial da sequência de <b style="color:{TR_ORANGE};">Código de Serviço</b> —
-                o sistema preencherá automaticamente. Você pode editar individualmente se necessário.<br>
+                Informe o número inicial da sequência e clique em <b style="color:{TR_ORANGE};">Confirmar</b>.
+                Os campos de Código de Serviço serão gerados automaticamente com a sequência correta.<br>
                 <b>Código de Serviço = Codigo_Servicos = Codigo_Filial = Codigo_eSocial</b>
             </div>
         """, unsafe_allow_html=True)
 
         col_seq1, col_seq2, _ = st.columns([1, 1, 2])
-with col_seq1:
-    seq_inicio = st.number_input(
-        "🔢 Número inicial da sequência",
-        min_value=1, max_value=999999,
-        value=1,
-        step=1,
-        key="seq_inicio_input",
-        help="Cada empresa receberá um código sequencial a partir deste número."
-    )
-    confirmar_seq = st.button("✅ Confirmar sequência", use_container_width=True)
-
-    if confirmar_seq:
-        # Ao confirmar, limpa todos os individuais e salva o novo valor
-        for i in range(len(resultados_proc)):
-            st.session_state.pop(f"cod_srv_{i}", None)
-        st.session_state["seq_inicio_val"]       = seq_inicio
-        st.session_state["seq_confirmada"]        = True
-        st.rerun()
-
-with col_seq2:
-    seq_val = st.session_state.get("seq_inicio_val", None)
-    if seq_val:
-        st.markdown(f"""
-        <div style="background:{TR_CARD2};border:1px solid {TR_BORDER};border-radius:8px;
-                    padding:12px;margin-top:28px;font-size:11px;color:{TR_TEXT_MUTED};">
-            📌 Sequência confirmada:<br>
-            <b style="color:{TR_ORANGE};font-size:14px;">
-                {seq_val} → {seq_val + len(resultados_proc) - 1}
-            </b>
-        </div>""", unsafe_allow_html=True)
-
-st.markdown("<br>", unsafe_allow_html=True)
-
-# ✅ SÓ renderiza a tabela de empresas se a sequência foi confirmada
-if not st.session_state.get("seq_confirmada"):
-    st.info("ℹ️ Informe e confirme o número inicial da sequência para exibir os campos de Código de Serviço.")
-else:
-    seq_inicio = st.session_state["seq_inicio_val"]
-
-    st.markdown(f"""
-    <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;
-                padding:6px 12px;background:{TR_CARD};border-radius:6px;
-                font-size:10px;font-weight:700;color:{TR_ORANGE};
-                text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">
-        <div>Empresa</div><div>Cód. Serviço</div><div>Tipo</div>
-    </div>""", unsafe_allow_html=True)
-
-    tipos_selecionados = {}
-    codigos_servico    = {}
-
-    for idx, row in enumerate(resultados_proc):
-        status  = row.get("_status", "")
-        mun     = row.get("municipio", "") or ""
-        uf      = row.get("uf", "") or ""
-        cod_mun = row.get("cod_municipio_dom", "")
-        cor_mun = TR_SUCCESS if cod_mun and "não" not in str(cod_mun) else TR_ERROR
-        cor_st  = TR_SUCCESS if status == "OK" else TR_ERROR
-        icone   = "✅" if status == "OK" else "❌"
-        seq_auto = seq_inicio + idx  # ✅ valor correto desde o início
-
-        col_info, col_cod_srv, col_tipo = st.columns([2, 1, 1])
-        with col_info:
-            st.markdown(f"""
-            <div class="tipo-row">
-                <div style="font-size:12px;font-weight:700;color:{TR_TEXT};">
-                    {icone} <code style="color:{TR_ORANGE};">{row['cnpj']}</code>
-                    &nbsp; {(row.get('razao_social','') or '—')[:40]}
-                </div>
-                <div style="font-size:10px;color:{TR_TEXT_MUTED};margin-top:3px;">
-                    FPAS <b style="color:{TR_ORANGE};">{row.get('codigo_fpas','—')}</b>
-                    &nbsp;·&nbsp; {mun}/{uf}
-                    &nbsp;·&nbsp; Cód.Mun: <b style="color:{cor_mun};">{cod_mun or '⚠️'}</b>
-                    &nbsp;·&nbsp; <span style="color:{cor_st};">{status}</span>
-                </div>
-            </div>""", unsafe_allow_html=True)
-        with col_cod_srv:
-            cod_srv = st.number_input(
-                f"Cód. Serviço #{idx+1}",
+        with col_seq1:
+            seq_inicio = st.number_input(
+                "🔢 Número inicial da sequência",
                 min_value=1, max_value=999999,
-                value=seq_auto,   # ✅ já nasce correto, sem necessidade de reset posterior
+                value=st.session_state.get("seq_inicio_val", 1),
                 step=1,
-                key=f"cod_srv_{idx}",
-                label_visibility="collapsed",
-                help=f"Sequência: {seq_auto}"
+                key="seq_inicio_input",
+                help="Cada empresa receberá um código sequencial a partir deste número."
             )
-            codigos_servico[idx] = int(cod_srv)
-        with col_tipo:
-            tipos_selecionados[idx] = st.selectbox(
-                f"Tipo #{idx+1}",
-                options=list(TIPOS_EMPRESA.keys()),
-                format_func=lambda k: f"{k} — {TIPOS_EMPRESA[k]}",
-                key=f"tipo_{idx}",
-                label_visibility="collapsed",
-            )
-          
-        # ── Passo 4 ───────────────────────────────────────────────────────────
-        st.markdown(f'<div class="tr-card"><div class="tr-card-title">⬇️ Passo 4 — Gerar e Baixar Arquivos</div></div>', unsafe_allow_html=True)
+            confirmar_seq = st.button("✅ Confirmar sequência", use_container_width=True)
 
-        col_d1, _ = st.columns(2)
-        with col_d1:
-            if st.button("⚙️ Gerar Arquivos", type="primary", use_container_width=True):
-                codigo_empresa_dom = st.session_state.get("codigo_empresa_dom_val", 1)
+            if confirmar_seq:
+                for i in range(len(resultados_proc)):
+                    st.session_state.pop(f"cod_srv_{i}", None)
+                st.session_state["seq_inicio_val"] = seq_inicio
+                st.session_state["seq_confirmada"] = True
+                st.rerun()
 
-                linhas_finais = []
-                for idx, row in enumerate(resultados_proc):
-                    cod_srv  = codigos_servico.get(idx, seq_inicio + idx)
-                    tipo_cod = tipos_selecionados.get(idx, 1)
-                    r_merged = dados_brutos.get(idx)
+        with col_seq2:
+            seq_val = st.session_state.get("seq_inicio_val", None)
+            if seq_val and st.session_state.get("seq_confirmada"):
+                st.markdown(f"""
+                <div style="background:{TR_CARD2};border:1px solid {TR_BORDER};border-radius:8px;
+                            padding:12px;margin-top:28px;font-size:11px;color:{TR_TEXT_MUTED};">
+                    📌 Sequência confirmada:<br>
+                    <b style="color:{TR_ORANGE};font-size:14px;">
+                        {seq_val} → {seq_val + len(resultados_proc) - 1}
+                    </b>
+                </div>""", unsafe_allow_html=True)
 
-                    if r_merged:
-                        linha = montar_linha_dominio(
-                            r_merged,
-                            tipo_cod=tipo_cod,
-                            cod_servico=cod_srv,
-                            codigo_empresa=codigo_empresa_dom
-                        )
-                    else:
-                        linha = [""] * 25
-                        linha[0]  = codigo_empresa_dom
-                        linha[1]  = cod_srv
-                        linha[2]  = row["cnpj"]
-                        linha[3]  = 1
-                        linha[17] = cod_srv
-                        linha[18] = 1
-                        linha[19] = tipo_cod
-                        linha[21] = "2020-01-01"
-                        linha[22] = 1
-                        linha[23] = cod_srv
-                    linhas_finais.append(linha)
+        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
 
-                df_conf = pd.DataFrame(linhas_finais, columns=COLUNAS_LEIAUTE)
-                df_conf["_status"] = [r["_status"] for r in resultados_proc]
-                df_err  = df_conf[df_conf["_status"] != "OK"]
-                cols_xl = [c for c in df_conf.columns if c != "_status"]
+        # ✅ Só renderiza campos individuais após confirmar sequência
+        if not st.session_state.get("seq_confirmada"):
+            st.info("ℹ️ Informe e confirme o número inicial da sequência para exibir os campos de Código de Serviço.")
+        else:
+            seq_inicio = st.session_state["seq_inicio_val"]
 
-                st.session_state["_txt"]  = gerar_txt_leiaute(linhas_finais)
-                st.session_state["_xlsx"] = gerar_excel_conferencia(
-                    df_conf[cols_xl + ["_status"]],
-                    df_err[cols_xl + ["_status"]] if len(df_err) > 0 else None,
-                )
-                st.success("✅ Arquivos gerados!")
+            st.markdown(f"""
+            <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;
+                        padding:6px 12px;background:{TR_CARD};border-radius:6px;
+                        font-size:10px;font-weight:700;color:{TR_ORANGE};
+                        text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">
+                <div>Empresa</div><div>Cód. Serviço</div><div>Tipo</div>
+            </div>""", unsafe_allow_html=True)
 
-        if "_txt" in st.session_state:
-            col_dl1, col_dl2 = st.columns(2)
-            with col_dl1:
-                st.download_button(
-                    "📄 TXT Importação Domínio\n(sem cabeçalho · 25 colunas · TAB)",
-                    data=st.session_state["_txt"],
-                    file_name="dominio_importacao.txt",
-                    mime="text/plain",
-                    use_container_width=True,
-                )
-            with col_dl2:
-                st.download_button(
-                    "📊 Excel Conferência\n(.xlsx formatado)",
-                    data=st.session_state["_xlsx"],
-                    file_name="dominio_conferencia.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    use_container_width=True,
-                )
+            tipos_selecionados = {}
+            codigos_servico    = {}
+
+            for idx, row in enumerate(resultados_proc):
+                status  = row.get("_status", "")
+                mun     = row.get("municipio", "") or ""
+                uf      = row.get("uf", "") or ""
+                cod_mun = row.get("cod_municipio_dom", "")
+                cor_mun = TR_SUCCESS if cod_mun and "não" not in str(cod_mun) else TR_ERROR
+                cor_st  = TR_SUCCESS if status == "OK" else TR_ERROR
+                icone   = "✅" if status == "OK" else "❌"
+                seq_auto = seq_inicio + idx
+
+                col_info, col_cod_srv, col_tipo = st.columns([2, 1, 1])
+                with col_info:
+                    st.markdown(f"""
+                    <div class="tipo-row">
+                        <div style="font-size:12px;font-weight:700;color:{TR_TEXT};">
+                            {icone} <code style="color:{TR_ORANGE};">{row['cnpj']}</code>
+                            &nbsp; {(row.get('razao_social','') or '—')[:40]}
+                        </div>
+                        <div style="font-size:10px;color:{TR_TEXT_MUTED};margin-top:3px;">
+                            FPAS <b style="color:{TR_ORANGE};">{row.get('codigo_fpas','—')}</b>
+                            &nbsp;·&nbsp; {mun}/{uf}
+                            &nbsp;·&nbsp; Cód.Mun: <b style="color:{cor_mun};">{cod_mun or '⚠️'}</b>
+                            &nbsp;·&nbsp; <span style="color:{cor_st};">{status}</span>
+                        </div>
+                    </div>""", unsafe_allow_html=True)
+                with col_cod_srv:
+                    cod_srv = st.number_input(
+                        f"Cód. Serviço #{idx+1}",
+                        min_value=1, max_value=999999,
+                        value=seq_auto,
+                        step=1,
+                        key=f"cod_srv_{idx}",
+                        label_visibility="collapsed",
+                        help=f"Sequência: {seq_auto}"
+                    )
+                    codigos_servico[idx] = int(cod_srv)
+                with col_tipo:
+                    tipos_selecionados[idx] = st.selectbox(
+                        f"Tipo #{idx+1}",
+                        options=list(TIPOS_EMPRESA.keys()),
+                        format_func=lambda k: f"{k} — {TIPOS_EMPRESA[k]}",
+                        key=f"tipo_{idx}",
+                        label_visibility="collapsed",
+                    )
+
+            # ── Passo 4 ───────────────────────────────────────────────────────
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown(f'<div class="tr-card"><div class="tr-card-title">⬇️ Passo 4 — Gerar e Baixar Arquivos</div></div>', unsafe_allow_html=True)
+
+            col_d1, _ = st.columns(2)
+            with col_d1:
+                if st.button("⚙️ Gerar Arquivos", type="primary", use_container_width=True):
+                    codigo_empresa_dom = st.session_state.get("codigo_empresa_dom_val", 1)
+
+                    linhas_finais = []
+                    for idx, row in enumerate(resultados_proc):
+                        cod_srv  = codigos_servico.get(idx, seq_inicio + idx)
+                        tipo_cod = tipos_selecionados.get(idx, 1)
+                        r_merged = dados_brutos.get(idx)
+
+                        if r_merged:
+                            linha = montar_linha_dominio(
+                                r_merged,
+                                tipo_cod=tipo_cod,
+                                cod_servico=cod_srv,
+                                codigo_empresa=codigo_empresa_dom
+                            )
+                        else:
+                            linha = [""] * 25
+                            linha[0]  = codigo_empresa_dom
+                            linha[1]  = cod_srv
+                            linha[2]  = row["cnpj"]
+                            linha[3]  = 1
+                            linha[17] = cod_srv
+                            linha[18] = 1
+                            linha[19] = tipo_cod
+                            linha[21] = "2020-01-01"
+                            linha[22] = 1
+                            linha[23] = cod_srv
+                        linhas_finais.append(linha)
+
+                    df_conf = pd.DataFrame(linhas_finais, columns=COLUNAS_LEIAUTE)
+                    df_conf["_status"] = [r["_status"] for r in resultados_proc]
+                    df_err  = df_conf[df_conf["_status"] != "OK"]
+                    cols_xl = [c for c in df_conf.columns if c != "_status"]
+
+                    st.session_state["_txt"]  = gerar_txt_leiaute(linhas_finais)
+                    st.session_state["_xlsx"] = gerar_excel_conferencia(
+                        df_conf[cols_xl + ["_status"]],
+                        df_err[cols_xl + ["_status"]] if len(df_err) > 0 else None,
+                    )
+                    st.success("✅ Arquivos gerados com sucesso!")
+
+            if "_txt" in st.session_state:
+                col_dl1, col_dl2 = st.columns(2)
+                with col_dl1:
+                    st.download_button(
+                        "📄 TXT Importação Domínio\n(sem cabeçalho · 25 colunas · TAB)",
+                        data=st.session_state["_txt"],
+                        file_name="dominio_importacao.txt",
+                        mime="text/plain",
+                        use_container_width=True,
+                    )
+                with col_dl2:
+                    st.download_button(
+                        "📊 Excel Conferência\n(.xlsx formatado)",
+                        data=st.session_state["_xlsx"],
+                        file_name="dominio_conferencia.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        use_container_width=True,
+                    )
+
 # ══════════════════════════════════════════════════════════════════════════════
 # TAB 2 — CONSULTA INDIVIDUAL
 # ══════════════════════════════════════════════════════════════════════════════
