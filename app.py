@@ -1515,11 +1515,11 @@ with tab_lote:
                         r_merged = dados_brutos.get(idx)
 
                         if r_merged:
-                    linha_fo = montar_linha_dominio(
-                    r_merged,
-                    cod_servico=cod_srv,
-                    codigo_empresa=codigo_empresa_dom,
-                    )
+                            linha_fo = montar_linha_dominio(
+                                r_merged,
+                                cod_servico=cod_srv,
+                                codigo_empresa=codigo_empresa_dom,
+                            )
                         else:
                             linha_fo = [""] * 24
                             linha_fo[0]  = codigo_empresa_dom
@@ -1750,7 +1750,7 @@ with tab_importacao:
                 <div style="font-size:11px;color:{TR_TEXT_MUTED};margin-top:4px;">
                     Tabela: <b style="color:{TR_TEXT};">FOSERVICOS</b><br>
                     Cadastro principal do prestador de servico.<br>
-                    25 colunas &nbsp;|&nbsp; TAB-delimitado
+                    24 colunas &nbsp;|&nbsp; TAB-delimitado
                 </div>
             </div>
             <div style="background:{TR_CARD2};border:1px solid {TR_BORDER};border-radius:8px;padding:14px 18px;">
@@ -1790,7 +1790,7 @@ with tab_importacao:
     with col_l1:
         if leiaute_fo:
             st.download_button(
-                label="Leiaute FOSERVICOS.txt\n(25 colunas - referencia)",
+                label="Leiaute FOSERVICOS.txt\n(24 colunas - referencia)",
                 data=leiaute_fo,
                 file_name="FOSERVICOS.txt",
                 mime="text/plain",
@@ -1828,7 +1828,7 @@ with tab_importacao:
             st.warning("Um ou mais arquivos de leiaute nao encontrados no repositorio.")
 
     # ── Resumo das colunas ────────────────────────────────────────────────────
-    with st.expander("Ver resumo das colunas - FOSERVICOS (25 colunas)"):
+    with st.expander("Ver resumo das colunas - FOSERVICOS (24 colunas)"):
         colunas_fo = [
             ("1",  "codi_emp",           "integer",  "Codigo da empresa no Dominio"),
             ("2",  "i_servicos",         "integer",  "Codigo do servico (sequencial)"),
@@ -1847,13 +1847,12 @@ with tab_importacao:
             ("15", "cep",                "char 8",   "CEP so digitos"),
             ("16", "cidade",             "char 20",  "Municipio"),
             ("17", "estado",             "char 2",   "UF"),
-            ("18", "i_filiais",          "integer",  "Filial (= i_servicos)"),
-            ("19", "sequencia_gps",      "integer",  "Sequencia GPS (= 1)"),
-            ("21", "codigo_municipio",   "integer",  "Codigo municipio Dominio"),
-            ("22", "DATA_INICIO",        "date",     "DD/MM/AAAA"),
-            ("23", "SITUACAO",           "smallint", "0=Inativo / 1=Ativo"),
-            ("24", "CODIGO_ESOCIAL",     "varchar",  "Codigo eSocial (= i_servicos)"),
-            ("25", "origem_reg",         "tinyint",  "1 = Imp. Tabelas"),
+            ("19", "sequencia_gps",    "integer",  "Sequencia GPS (= 1)"),
+            ("20", "codigo_municipio", "integer",  "Codigo municipio Dominio"),
+            ("21", "DATA_INICIO",      "date",     "DD/MM/AAAA"),
+            ("22", "SITUACAO",         "smallint", "0=Inativo / 1=Ativo"),
+            ("23", "CODIGO_ESOCIAL",   "varchar",  "Codigo eSocial (= i_servicos)"),
+            ("24", "origem_reg",       "tinyint",  "1 = Imp. Tabelas"),
         ]
         st.dataframe(
             pd.DataFrame(colunas_fo, columns=["Col", "Campo", "Tipo", "Descricao"]),
