@@ -204,18 +204,71 @@ def _resolver_caminho_arquivo(nome_arquivo: str) -> str | None:
     return None
 
 def _carregar_municipios():
-    caminho = _resolver_caminho_arquivo("RELACAO DE MUNICIPIOS.xlsx")
-    if not caminho:
-        return {}, {"erro_fatal": "Arquivo 'RELACAO DE MUNICIPIOS.xlsx' nao encontrado. "
-                                  "Verifique se o arquivo esta na raiz do repositorio.", "total": 0}
+    import os, unicodedata
+
+    # Candidatos de nome do arquivo (com e sem acento/cedilha)
+    NOMES_CANDIDATOS = [
+        "RELAÇÃO DE MUNICÍPIOS.xlsx",
+        "RELACAO DE MUNICIPIOS.xlsx",
+        "Relação de Municípios.xlsx",
+        "Relacao de Municipios.xlsx",
+        "relacao de municipios.xlsx",
+        "RELAÇÃO DE MUNICIPIOS.xlsx",
+        "RELACAO DE MUNICÍPIOS.xlsx",
+    ]
+
+    # Diretorios onde procurar
+    DIRETORIOS = [
+        "/mount/src/foservicos",
+        os.path.dirname(os.path.abspath(__file__)),
+        os.getcwd(),
+        ".",
+    ]
+
+    caminho_encontrado = None
+    for pasta in DIRETORIOS:
+        for nome in NOMES_CANDIDATOS:
+            tentativa = os.path.join(pasta, nome)
+            if os.path.isfile(tentativa):
+                caminho_encontrado = tentativa
+                break
+        if caminho_encontrado:
+            break
+
+    # Varredura por similaridade caso nenhum nome exato bata
+    if not caminho_encontrado:
+        for pasta in DIRETORIOS:
+            if not os.path.isdir(pasta):
+                continue
+            for arq in os.listdir(pasta):
+                arq_norm = unicodedata.normalize("NFD", arq.upper())
+                arq_norm = "".join(c for c in arq_norm if unicodedata.category(c) != "Mn")
+                if "RELACAO" in arq_norm and "MUNICIPIO" in arq_norm and arq.endswith(".xlsx"):
+                    caminho_encontrado = os.path.join(pasta, arq)
+                    break
+            if caminho_encontrado:
+                break
+
+    if not caminho_encontrado:
+        return {}, {
+            "erro_fatal": (
+                "Arquivo de municipios nao encontrado. "
+                "Nomes tentados: " + ", ".join(NOMES_CANDIDATOS)
+            ),
+            "total": 0,
+        }
+
     try:
         df = pd.read_excel(
-            caminho,
-            sheet_name="RELACAO DE MUNICIPIOS",
-            engine="openpyxl", dtype=str, header=0,
+            caminho_encontrado,
+            sheet_name=0,          # pega a primeira aba, seja qual for o nome
+            engine="openpyxl",
+            dtype=str,
+            header=0,
         )
         df.columns = [
-            unicodedata.normalize('NFC', str(c)).strip().lstrip('\ufeff').replace('\xa0', ' ').replace('\u200b', '')
+            unicodedata.normalize("NFC", str(c)).strip()
+            .lstrip("\ufeff").replace("\xa0", " ").replace("\u200b", "")
             for c in df.columns
         ]
         col_codigo = col_nome = col_uf = None
@@ -231,6 +284,7 @@ def _carregar_municipios():
         if col_nome   is None and len(df.columns) >= 2: col_nome   = df.columns[1]
         if col_uf     is None and len(df.columns) >= 5: col_uf     = df.columns[4]
         elif col_uf   is None and len(df.columns) >= 3: col_uf     = df.columns[2]
+
         mapa, erros = {}, []
         for idx, row in df.iterrows():
             try:
@@ -249,9 +303,10 @@ def _carregar_municipios():
                     mapa[(uf_n, nome_n)] = cod_raw
             except Exception as e:
                 erros.append(f"Linha {idx}: {e}")
-        debug = {
+
+        return mapa, {
             "total":      len(mapa),
-            "caminho":    caminho,
+            "caminho":    caminho_encontrado,
             "col_codigo": col_codigo,
             "col_nome":   col_nome,
             "col_uf":     col_uf,
@@ -259,14 +314,8 @@ def _carregar_municipios():
             "amostra":    [f"({u},{n})->{c}" for (u, n), c in list(mapa.items())[:8]],
             "erros":      erros[:5],
         }
-        return mapa, debug
     except Exception as e:
-        return {}, {"erro_fatal": str(e), "total": 0}
-
-if "MUNICIPIOS_MAP" not in st.session_state:
-    _mapa, _debug = _carregar_municipios()
-    st.session_state["MUNICIPIOS_MAP"] = _mapa
-    st.session_state["_mun_debug"]     = _debug
+        return {}, {"erro_fatal": str(e), "caminho_tentado": caminho_encontrado, "total": 0}
 
 def buscar_codigo_municipio(municipio: str, uf: str) -> str:
     if not municipio or not uf: return ""
