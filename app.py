@@ -1085,39 +1085,67 @@ with st.sidebar:
     else:
         st.warning(f"Municipios nao carregados: {debug.get('erro_fatal', 'arquivo nao encontrado')}")
 
-    with st.expander("Debug municipios"):
-        st.json({
-            "total":      debug.get("total", 0),
-            "caminho":    debug.get("caminho", "nao encontrado"),
-            "col_codigo": debug.get("col_codigo", ""),
-            "col_nome":   debug.get("col_nome", ""),
-            "col_uf":     debug.get("col_uf", ""),
-            "colunas":    debug.get("colunas", []),
-            "amostra":    debug.get("amostra", []),
-            "erros":      debug.get("erros", []),
-        })
-        teste_mun = st.text_input("Testar municipio", placeholder="SAO PAULO")
-        teste_uf  = st.text_input("UF", placeholder="SP")
-        if teste_mun and teste_uf:
-            cod_teste = buscar_codigo_municipio(teste_mun, teste_uf)
-            if cod_teste:
-                st.success(f"Codigo: {cod_teste}")
-            else:
-                st.error("Nao encontrado")
-                uf_n   = _normalizar(teste_uf)
-                nome_n = _normalizar(teste_mun)
-                sugestoes = [
-                    f"{n}->{c}"
-                    for (u, n), c in list(mapa.items())
-                    if u == uf_n and nome_n[:4] in n
-                ][:8]
-                if sugestoes:
-                    st.write("Sugestoes:", sugestoes)
+   with st.expander("Debug municipios"):
+    # Listagem real dos arquivos no repositorio
+    _dirs_debug = [
+        "/mount/src/foservicos",
+        os.path.dirname(os.path.abspath(__file__)),
+        os.getcwd(),
+    ]
+    for _d in _dirs_debug:
+        try:
+            _lista = os.listdir(_d)
+            _xlsx  = [f for f in _lista if f.endswith(".xlsx")]
+            st.markdown(
+                f'<p style="font-size:10px;color:{TR_TEXT_MUTED};">'
+                f'<b style="color:{TR_ORANGE};">{_d}</b><br>'
+                + "<br>".join(
+                    f'<span style="color:{"#2ECC71" if f.endswith(".xlsx") else TR_TEXT_MUTED};">{f}</span>'
+                    for f in sorted(_lista)
+                    if not f.startswith("__") and not f.startswith(".")
+                )
+                + "</p>",
+                unsafe_allow_html=True,
+            )
+        except Exception as _e:
+            st.markdown(
+                f'<p style="font-size:10px;color:{TR_ERROR};">{_d}: {_e}</p>',
+                unsafe_allow_html=True,
+            )
 
-    if st.button("Recarregar municipios"):
-        for k in ["MUNICIPIOS_MAP", "_mun_debug"]:
-            st.session_state.pop(k, None)
-        st.rerun()
+    st.json({
+        "total":      debug.get("total", 0),
+        "caminho":    debug.get("caminho", "nao encontrado"),
+        "col_codigo": debug.get("col_codigo", ""),
+        "col_nome":   debug.get("col_nome", ""),
+        "col_uf":     debug.get("col_uf", ""),
+        "colunas":    debug.get("colunas", []),
+        "amostra":    debug.get("amostra", []),
+        "erros":      debug.get("erros", []),
+        "erro_fatal": debug.get("erro_fatal", ""),
+    })
+    teste_mun = st.text_input("Testar municipio", placeholder="SAO PAULO")
+    teste_uf  = st.text_input("UF", placeholder="SP")
+    if teste_mun and teste_uf:
+        cod_teste = buscar_codigo_municipio(teste_mun, teste_uf)
+        if cod_teste:
+            st.success(f"Codigo: {cod_teste}")
+        else:
+            st.error("Nao encontrado")
+            uf_n   = _normalizar(teste_uf)
+            nome_n = _normalizar(teste_mun)
+            sugestoes = [
+                f"{n}->{c}"
+                for (u, n), c in list(mapa.items())
+                if u == uf_n and nome_n[:4] in n
+            ][:8]
+            if sugestoes:
+                st.write("Sugestoes:", sugestoes)
+
+if st.button("Recarregar municipios"):
+    for k in ["MUNICIPIOS_MAP", "_mun_debug"]:
+        st.session_state.pop(k, None)
+    st.rerun()
 
 # ══════════════════════════════════════════════════════════════════════════════
 # TABS
