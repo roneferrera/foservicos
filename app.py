@@ -164,13 +164,14 @@ CSS = f"""
 </script>
 """
 
+# CORRETO (conforme leiaute campo 29 - tipo)
 TIPOS_EMPRESA = {
     1: "Empresa",
-    2: "Tomador de Servico",
-    3: "Empreitada Parcial",
-    4: "Obra Propria",
-    5: "Empreitada Total",
-    6: "Cooperativa de Trabalho",
+    2: "Obra Propria",
+    3: "Cooperativa de Trabalho",
+    4: "Tomador de Servico",
+    5: "Empreitada Parcial",
+    6: "Empreitada Total",
 }
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -875,13 +876,13 @@ def montar_linha_vigencia(
         1,                  # 25 i_filiais
         0,                  # 26 sequencia_gps
         0,                  # 27 filantropia
-        0,                  # 28 origem_reg
-        tipo_cod,           # 29 tipo
+        1,                  # 28 origem_reg       — 1 = Imp. Tabelas
+        tipo_cod,           # 29 tipo             — 1=Empresa/2=Obra Propria/3=Cooperativa/4=Tomador/5=Empreitada Parcial/6=Empreitada Total
         0,                  # 30 codi_mun
         cod_mun,            # 31 codigo_municipio
         0,                  # 32 I_FPAS
         0,                  # 33 CALCULA_INSS_EMPRESA_LEI_12546
-        0,                  # 34 TIPO_SERVICO_TOMADOR
+        None,               # 34 TIPO_SERVICO_TOMADOR — NULL evita constraint
         0,                  # 35 TIPO_ENDERECO
         "",                 # 36 COMPLEMENTO
         "",                 # 37 INSCRICAO_CONTRATANTE_EMPREITADA_PARCIAL
