@@ -957,6 +957,12 @@ def _linha_vigencia_vazia(
         vigencia=vigencia, descricao_vigencia=descricao_vigencia,
         cod_mun="",
     )
+def gerar_txt_leiaute(linhas: list) -> bytes:
+    linhas_txt = []
+    for campos in linhas:
+        row = [str(v) if v is not None else "" for v in campos]
+        linhas_txt.append("\t".join(row))
+    return ("\r\n".join(linhas_txt) + "\r\n").encode("utf-8")
 
 def gerar_txt_vigencias(linhas: list) -> bytes:
     linhas_txt = []
