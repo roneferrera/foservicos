@@ -355,8 +355,13 @@ def _carregar_municipios():
         }
 
 def buscar_codigo_municipio(municipio: str, uf: str) -> str:
-    if "MUNICIPIOS_MAP" not in st.session_state or not st.session_state["MUNICIPIOS_MAP"]:
-    if not mapa: return ""
+    mapa = st.session_state.get("MUNICIPIOS_MAP", {})
+    if not mapa:
+        return ""
+    uf_n      = _normalizar(uf)
+    nome_orig = _normalizar(municipio)
+    if not uf_n or not nome_orig: return ""
+
     uf_n      = _normalizar(uf)
     nome_orig = _normalizar(municipio)
     if not uf_n or not nome_orig: return ""
@@ -1079,7 +1084,7 @@ with st.sidebar:
 
     st.divider()
 
-    # CORRECAO 1: recarrega se vazio (evita cache de erro entre deploys)
+    # CORRECAO: recarrega se vazio (evita cache de erro entre deploys)
     if "MUNICIPIOS_MAP" not in st.session_state or not st.session_state["MUNICIPIOS_MAP"]:
         _mapa, _debug = _carregar_municipios()
         st.session_state["MUNICIPIOS_MAP"] = _mapa
@@ -1093,9 +1098,7 @@ with st.sidebar:
     else:
         st.warning(f"Municipios nao carregados: {debug.get('erro_fatal', 'arquivo nao encontrado')}")
 
-    # CORRECAO 2: expander DENTRO do with st.sidebar (indentacao correta)
     with st.expander("Debug municipios"):
-        # Listagem real dos arquivos no repositorio
         _dirs_debug = [
             "/mount/src/foservicos",
             os.path.dirname(os.path.abspath(__file__)),
@@ -1150,11 +1153,13 @@ with st.sidebar:
                 if sugestoes:
                     st.write("Sugestoes:", sugestoes)
 
-    # CORRECAO 3: botao DENTRO do with st.sidebar
     if st.button("Recarregar municipios"):
         for k in ["MUNICIPIOS_MAP", "_mun_debug"]:
             st.session_state.pop(k, None)
         st.rerun()
+
+# ══════════════════════════════════════════════════════════════════════════════
+# TABS
 # ══════════════════════════════════════════════════════════════════════════════
 # TABS
 # ══════════════════════════════════════════════════════════════════════════════
