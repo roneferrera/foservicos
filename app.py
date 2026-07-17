@@ -880,8 +880,8 @@ with tab_lote:
         <div style="background:{TR_CARD2};border:1px solid {TR_BORDER};border-radius:8px;
                     padding:14px;font-size:11px;color:{TR_TEXT_MUTED};line-height:1.8;">
             <b style="color:{TR_ORANGE};">Formatos aceitos:</b><br>
-            ✅ <code>08.795.211/0001-70</code><br>
-            ✅ <code>08795211000170</code><br>
+            ✅ <code>00.000.000/0000-00</code><br>
+            ✅ <code>00000000000000</code><br>
             ✅ Vírgula, ponto-e-vírgula,<br>&nbsp;&nbsp;&nbsp;quebra de linha, tab<br>
             ✅ Duplicatas removidas
         </div>""", unsafe_allow_html=True)
