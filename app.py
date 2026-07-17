@@ -42,7 +42,6 @@ CSS = f"""
   section[data-testid="stSidebar"] * {{
       color: {TR_TEXT} !important;
   }}
-  /* Botão de colapso sempre visível */
   [data-testid="collapsedControl"] {{
       display: flex !important;
       visibility: visible !important;
@@ -147,7 +146,6 @@ CSS = f"""
   ::-webkit-scrollbar-track {{ background:{TR_BG}; }}
   ::-webkit-scrollbar-thumb {{ background:{TR_ORANGE}; border-radius:3px; }}
 
-  /* Esconde menu e footer SEM afetar a sidebar */
   #MainMenu {{ visibility: hidden; height: 0; }}
   footer {{ visibility: hidden; height: 0; }}
   header {{ visibility: hidden; height: 0; }}
@@ -162,10 +160,8 @@ CSS = f"""
         var doc = window.parent.document;
         var sidebar = doc.querySelector('section[data-testid="stSidebar"]');
         if (!sidebar) return;
-        var collapsed =
-          sidebar.getAttribute('aria-expanded') === 'false' ||
-          getComputedStyle(sidebar).transform.includes('matrix') ||
-          sidebar.getBoundingClientRect().width < 50;
+        var rect = sidebar.getBoundingClientRect();
+        var collapsed = rect.width < 50;
         if (collapsed) {{
           var btn = doc.querySelector('[data-testid="collapsedControl"] button');
           if (btn) btn.click();
@@ -173,22 +169,23 @@ CSS = f"""
       }} catch(e) {{}}
     }}
     if (document.readyState === 'complete') {{
-      setTimeout(abrirSidebar, 400);
+      setTimeout(abrirSidebar, 500);
     }} else {{
-      window.addEventListener('load', function() {{ setTimeout(abrirSidebar, 400); }});
+      window.addEventListener('load', function() {{ setTimeout(abrirSidebar, 500); }});
     }}
   }})();
 </script>
 """
 
-TIPOS_EMPRESA = {{
+# ── FORA da f-string — chaves simples ────────────────────────────────────────
+TIPOS_EMPRESA = {
     1: "Empresa",
     2: "Tomador de Serviço",
     3: "Empreitada Parcial",
     4: "Obra Própria",
     5: "Empreitada Total",
     6: "Cooperativa de Trabalho",
-}}
+}
 
 # ──────────────────────────────────────────────────────────────────────────────
 # MUNICÍPIOS
@@ -246,18 +243,18 @@ def _carregar_municipios():
                     mapa[(uf_n, nome_n)] = cod_raw
             except Exception as e:
                 erros.append(f"Linha {idx}: {e}")
-        debug = {{
+        debug = {
             "total":      len(mapa),
             "col_codigo": col_codigo,
             "col_nome":   col_nome,
             "col_uf":     col_uf,
             "colunas":    list(df.columns),
-            "amostra":    [f"({{u}},{{n}}) → {{c}}" for (u,n),c in list(mapa.items())[:8]],
+            "amostra":    [f"({u},{n}) → {c}" for (u,n),c in list(mapa.items())[:8]],
             "erros":      erros[:5],
-        }}
+        }
         return mapa, debug
     except Exception as e:
-        return {}, {{"erro_fatal": str(e), "total": 0}}
+        return {}, {"erro_fatal": str(e), "total": 0}
 
 
 if "MUNICIPIOS_MAP" not in st.session_state:
@@ -911,7 +908,7 @@ with tab_lote:
                 logs, ok_n, err_n = [], 0, 0
 
                 for i, cnpj_raw in enumerate(validos):
-                    progress.progress(int((i + 1) / total * 100), text=f"⏳ {i+1}/{total} — {cnpj_raw}")
+                    progress.progress(int((i+1)/total*100), text=f"⏳ {i+1}/{total} — {cnpj_raw}")
                     dados_rf = consultar_cnpj(cnpj_raw, delay=delay)
 
                     if dados_rf.get("erro"):
