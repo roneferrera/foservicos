@@ -594,11 +594,7 @@ def _formatar_data(data_raw: str) -> str:
             continue
     return "2020-01-01"
 
-def montar_linha_dominio(r: dict, tipo_cod: int, cod_servico: int) -> list:
-    """
-    ✅ CORRIGIDO: monta a linha completa diretamente do dict r_merged.
-    Todos os 25 campos são preenchidos aqui, sem depender de session_state posterior.
-    """
+def montar_linha_dominio(r: dict, tipo_cod: int, cod_servico: int, codigo_empresa: int = 1) -> list:
     cnpj_limpo   = limpar_cnpj(r.get("cnpj", ""))
     cod_terceiro = r.get("codigo_terceiro", "")
     if isinstance(cod_terceiro, int):
@@ -613,23 +609,23 @@ def montar_linha_dominio(r: dict, tipo_cod: int, cod_servico: int) -> list:
     data_ini  = _formatar_data(r.get("data_inicio", ""))
 
     return [
-        cod_servico,                          # 0  Codigo_empresa
+        codigo_empresa,                       # 0  Codigo_empresa  ✅ CORRIGIDO
         cod_servico,                          # 1  Codigo_Servicos
         cnpj_limpo,                           # 2  CNPJ_CPF
         1,                                    # 3  Tipo_Inscricao
         cod_terceiro,                         # 4  Codigo_Terceiro
-        str(r.get("perc_acid_trabalho", "") or ""),  # 5  Perc_Acidente_Trabalho
-        str(r.get("codigo_fpas", "") or ""),         # 6  Codigo_FPAS
-        str(r.get("cnae_codigo", "") or ""),         # 7  CNAE
-        str(r.get("codigo_gfip", "") or ""),         # 8  Codigo_GFIP
-        str(r.get("codigo_gps", "") or ""),          # 9  Codigo_GPS
-        str(r.get("razao_social", "") or ""),        # 10 Nome
-        str(r.get("logradouro", "") or ""),          # 11 Endereco
-        str(r.get("numero", "") or ""),              # 12 Numero
-        str(r.get("bairro", "") or ""),              # 13 Bairro
-        cep,                                  # 14 CEP
-        municipio,                            # 15 Cidade
-        uf,                                   # 16 Estado
+        str(r.get("perc_acid_trabalho", "") or ""),
+        str(r.get("codigo_fpas", "") or ""),
+        str(r.get("cnae_codigo", "") or ""),
+        str(r.get("codigo_gfip", "") or ""),
+        str(r.get("codigo_gps", "") or ""),
+        str(r.get("razao_social", "") or ""),
+        str(r.get("logradouro", "") or ""),
+        str(r.get("numero", "") or ""),
+        str(r.get("bairro", "") or ""),
+        cep,
+        municipio,
+        uf,
         cod_servico,                          # 17 Codigo_Filial
         1,                                    # 18 Sequencia_GPS
         tipo_cod,                             # 19 Tipo
@@ -719,6 +715,29 @@ st.markdown("""
 
 # ── SIDEBAR ───────────────────────────────────────────────────────────────────
 with st.sidebar:
+   st.markdown(
+        f'<p style="color:{TR_ORANGE};font-size:13px;font-weight:700;letter-spacing:1px;margin-bottom:16px;">⚙ CONFIGURAÇÕES</p>',
+        unsafe_allow_html=True
+    )
+
+    # ✅ PRIMEIRO CAMPO — Código Interno da Empresa no Domínio
+    st.markdown(f'<p style="font-size:10px;font-weight:700;color:{TR_ORANGE};text-transform:uppercase;letter-spacing:1px;">🏢 Empresa no Domínio</p>', unsafe_allow_html=True)
+    codigo_empresa_dom = st.number_input(
+        "Código Interno da Empresa",
+        min_value=1, max_value=999999,
+        value=st.session_state.get("codigo_empresa_dom_val", 1),
+        step=1,
+        key="codigo_empresa_dom_input",
+        help="Código da empresa no Domínio Sistemas. Preenche a coluna 'Codigo_empresa' (coluna 0) do leiaute."
+    )
+    st.session_state["codigo_empresa_dom_val"] = codigo_empresa_dom
+
+    st.divider()
+
+    st.markdown(f'<p style="font-size:10px;font-weight:700;color:{TR_ORANGE};text-transform:uppercase;letter-spacing:1px;">📊 Parâmetros SEFIP</p>', unsafe_allow_html=True)
+    fap   = st.number_input("FAP", min_value=0.5, max_value=2.0, value=1.0, step=0.01)
+    delay = st.number_input("Intervalo (s)", min_value=0.3, max_value=5.0, value=1.0, step=0.1)
+    # ... resto da sidebar igual
     st.markdown(
         f'<p style="color:{TR_ORANGE};font-size:13px;font-weight:700;letter-spacing:1px;margin-bottom:16px;">⚙ CONFIGURAÇÕES</p>',
         unsafe_allow_html=True
@@ -1084,30 +1103,35 @@ else:
 
         col_d1, _ = st.columns(2)
         with col_d1:
-            if st.button("⚙️ Gerar Arquivos", type="primary", use_container_width=True):
-                linhas_finais = []
-                for idx, row in enumerate(resultados_proc):
-                    cod_srv  = codigos_servico.get(idx, seq_inicio + idx)
-                    tipo_cod = tipos_selecionados.get(idx, 1)
-                    r_merged = dados_brutos.get(idx)  # ✅ recupera do dict separado
+           if st.button("⚙️ Gerar Arquivos", type="primary", use_container_width=True):
+    codigo_empresa_dom = st.session_state.get("codigo_empresa_dom_val", 1)  # ✅ recupera da sidebar
 
-                    if r_merged:
-                        # ✅ monta linha com todos os dados da API + classificação
-                        linha = montar_linha_dominio(r_merged, tipo_cod=tipo_cod, cod_servico=cod_srv)
-                    else:
-                        # Linha de erro — campos mínimos
-                        linha = [""] * 25
-                        linha[0]  = cod_srv
-                        linha[1]  = cod_srv
-                        linha[2]  = row["cnpj"]
-                        linha[3]  = 1
-                        linha[17] = cod_srv
-                        linha[18] = 1
-                        linha[19] = tipo_cod
-                        linha[21] = "2020-01-01"
-                        linha[22] = 1
-                        linha[23] = cod_srv
-                    linhas_finais.append(linha)
+    linhas_finais = []
+    for idx, row in enumerate(resultados_proc):
+        cod_srv  = codigos_servico.get(idx, seq_inicio + idx)
+        tipo_cod = tipos_selecionados.get(idx, 1)
+        r_merged = dados_brutos.get(idx)
+
+        if r_merged:
+            linha = montar_linha_dominio(
+                r_merged,
+                tipo_cod=tipo_cod,
+                cod_servico=cod_srv,
+                codigo_empresa=codigo_empresa_dom  # ✅ passa o código da empresa
+            )
+        else:
+            linha = [""] * 25
+            linha[0]  = codigo_empresa_dom  # ✅ coluna 0 = código da empresa
+            linha[1]  = cod_srv             # ✅ coluna 1 = código do serviço
+            linha[2]  = row["cnpj"]
+            linha[3]  = 1
+            linha[17] = cod_srv
+            linha[18] = 1
+            linha[19] = tipo_cod
+            linha[21] = "2020-01-01"
+            linha[22] = 1
+            linha[23] = cod_srv
+        linhas_finais.append(linha)
 
                 df_conf = pd.DataFrame(linhas_finais, columns=COLUNAS_LEIAUTE)
                 df_conf["_status"] = [r["_status"] for r in resultados_proc]
