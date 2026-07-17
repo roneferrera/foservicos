@@ -848,7 +848,9 @@ def montar_linha_vigencia(
             cod_terc_str = "0000"
 
     entidades = r.get("entidades", []) or []
-    perc_terc = sum(e.get("aliquota", 0) for e in entidades)
+    perc_terc = round(sum(e.get("aliquota", 0) for e in entidades) / 100, 6)
+
+    rat = round((r.get("perc_acid_trabalho", 0) or 0) / 100, 6)
 
     rat  = r.get("perc_acid_trabalho", 0) or 0
     fpas = r.get("codigo_fpas", 0) or 0
