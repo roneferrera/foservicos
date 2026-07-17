@@ -874,7 +874,7 @@ with tab_lote:
     col_input, col_dica = st.columns([3, 1])
     with col_input:
         texto_cnpjs = st.text_area("CNPJs", label_visibility="collapsed", height=180,
-            placeholder="Cole aqui os CNPJs — um por linha, vírgula, ponto-e-vírgula ou espaço.\n\nExemplos:\n08.795.211/0001-70\n11222333000181")
+            placeholder="Cole aqui os CNPJs — um por linha, vírgula, ponto-e-vírgula ou espaço.\n\nExemplos:\n00.000.000/0000-00\n11222333000181")
     with col_dica:
         st.markdown(f"""
         <div style="background:{TR_CARD2};border:1px solid {TR_BORDER};border-radius:8px;
