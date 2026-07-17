@@ -985,24 +985,29 @@ with tab_lote:
 
         col_seq1, col_seq2, _ = st.columns([1, 1, 2])
         with col_seq1:
+            # ✅ Usa on_change para detectar mudança imediatamente
+            seq_anterior = st.session_state.get("seq_inicio_val", 1)
+
             seq_inicio = st.number_input(
                 "🔢 Número inicial da sequência",
                 min_value=1, max_value=999999,
-                value=st.session_state.get("seq_inicio_val", 1),
+                value=seq_anterior,
                 step=1,
                 key="seq_inicio_input",
                 help="Cada empresa receberá um código sequencial a partir deste número."
             )
 
-            # ✅ CORREÇÃO: detecta mudança no número inicial e reseta os individuais
-            seq_anterior = st.session_state.get("seq_inicio_val", 1)
+            # ✅ CORREÇÃO: detecta mudança e força reset dos campos individuais
             if seq_inicio != seq_anterior:
-                # Remove todas as chaves individuais para forçar recálculo
-                for i in range(len(resultados_proc)):
-                    st.session_state.pop(f"cod_srv_{i}", None)
                 st.session_state["seq_inicio_val"] = seq_inicio
+                # Remove todas as chaves individuais do session_state
+                for i in range(len(resultados_proc)):
+                    key = f"cod_srv_{i}"
+                    if key in st.session_state:
+                        del st.session_state[key]
                 st.rerun()
 
+            # Salva o valor atual
             st.session_state["seq_inicio_val"] = seq_inicio
 
         with col_seq2:
