@@ -204,20 +204,7 @@ def _resolver_caminho_arquivo(nome_arquivo: str) -> str | None:
     return None
 
 def _carregar_municipios():
-    import os, unicodedata
 
-    # Candidatos de nome do arquivo (com e sem acento/cedilha)
-    NOMES_CANDIDATOS = [
-        "RELAÇÃO DE MUNICÍPIOS.xlsx",
-        "RELACAO DE MUNICIPIOS.xlsx",
-        "Relação de Municípios.xlsx",
-        "Relacao de Municipios.xlsx",
-        "relacao de municipios.xlsx",
-        "RELAÇÃO DE MUNICIPIOS.xlsx",
-        "RELACAO DE MUNICÍPIOS.xlsx",
-    ]
-
-    # Diretorios onde procurar
     DIRETORIOS = [
         "/mount/src/foservicos",
         os.path.dirname(os.path.abspath(__file__)),
@@ -225,7 +212,20 @@ def _carregar_municipios():
         ".",
     ]
 
+    # Nomes exatos para tentar primeiro (do mais provavel ao menos)
+    NOMES_CANDIDATOS = [
+        "RELACAO DE MUNICIPIOS.xlsx",
+        "RELAÇÃO DE MUNICÍPIOS.xlsx",
+        "Relação de Municípios.xlsx",
+        "Relacao de Municipios.xlsx",
+        "RELAÇÃO DE MUNICIPIOS.xlsx",
+        "RELACAO DE MUNICÍPIOS.xlsx",
+        "relacao de municipios.xlsx",
+    ]
+
     caminho_encontrado = None
+
+    # Tentativa 1: nomes exatos
     for pasta in DIRETORIOS:
         for nome in NOMES_CANDIDATOS:
             tentativa = os.path.join(pasta, nome)
@@ -235,33 +235,63 @@ def _carregar_municipios():
         if caminho_encontrado:
             break
 
-    # Varredura por similaridade caso nenhum nome exato bata
+    # Tentativa 2: varredura por similaridade (pega qualquer xlsx com MUNICIPIO no nome)
     if not caminho_encontrado:
         for pasta in DIRETORIOS:
             if not os.path.isdir(pasta):
                 continue
-            for arq in os.listdir(pasta):
-                arq_norm = unicodedata.normalize("NFD", arq.upper())
-                arq_norm = "".join(c for c in arq_norm if unicodedata.category(c) != "Mn")
-                if "RELACAO" in arq_norm and "MUNICIPIO" in arq_norm and arq.endswith(".xlsx"):
-                    caminho_encontrado = os.path.join(pasta, arq)
-                    break
+            try:
+                for arq in os.listdir(pasta):
+                    if not arq.lower().endswith(".xlsx"):
+                        continue
+                    arq_norm = unicodedata.normalize("NFD", arq.upper())
+                    arq_norm = "".join(
+                        c for c in arq_norm if unicodedata.category(c) != "Mn"
+                    )
+                    if "MUNICIPIO" in arq_norm:
+                        caminho_encontrado = os.path.join(pasta, arq)
+                        break
+            except Exception:
+                continue
             if caminho_encontrado:
                 break
 
+    # Tentativa 3: qualquer xlsx no diretório (último recurso)
     if not caminho_encontrado:
+        for pasta in DIRETORIOS:
+            if not os.path.isdir(pasta):
+                continue
+            try:
+                xlsx_list = [
+                    os.path.join(pasta, f)
+                    for f in os.listdir(pasta)
+                    if f.lower().endswith(".xlsx")
+                ]
+                if xlsx_list:
+                    # Registra todos encontrados no debug para o usuário escolher
+                    caminho_encontrado = xlsx_list[0]
+                    break
+            except Exception:
+                continue
+
+    if not caminho_encontrado:
+        # Monta lista de todos os arquivos para debug
+        _todos = {}
+        for pasta in DIRETORIOS:
+            try:
+                _todos[pasta] = os.listdir(pasta)
+            except Exception as e:
+                _todos[pasta] = [str(e)]
         return {}, {
-            "erro_fatal": (
-                "Arquivo de municipios nao encontrado. "
-                "Nomes tentados: " + ", ".join(NOMES_CANDIDATOS)
-            ),
+            "erro_fatal": "Nenhum arquivo .xlsx encontrado. Verifique o repositorio.",
             "total": 0,
+            "diretorios_listados": _todos,
         }
 
     try:
         df = pd.read_excel(
             caminho_encontrado,
-            sheet_name=0,          # pega a primeira aba, seja qual for o nome
+            sheet_name=0,
             engine="openpyxl",
             dtype=str,
             header=0,
@@ -271,6 +301,7 @@ def _carregar_municipios():
             .lstrip("\ufeff").replace("\xa0", " ").replace("\u200b", "")
             for c in df.columns
         ]
+
         col_codigo = col_nome = col_uf = None
         for col in df.columns:
             col_n = _normalizar(col)
@@ -280,6 +311,7 @@ def _carregar_municipios():
                 col_nome = col
             elif col_n in ("ESTADO", "UF", "SIGLA", "SIGLA UF") and col_uf is None:
                 col_uf = col
+
         if col_codigo is None and len(df.columns) >= 1: col_codigo = df.columns[0]
         if col_nome   is None and len(df.columns) >= 2: col_nome   = df.columns[1]
         if col_uf     is None and len(df.columns) >= 5: col_uf     = df.columns[4]
@@ -314,8 +346,13 @@ def _carregar_municipios():
             "amostra":    [f"({u},{n})->{c}" for (u, n), c in list(mapa.items())[:8]],
             "erros":      erros[:5],
         }
+
     except Exception as e:
-        return {}, {"erro_fatal": str(e), "caminho_tentado": caminho_encontrado, "total": 0}
+        return {}, {
+            "erro_fatal": str(e),
+            "caminho_tentado": caminho_encontrado,
+            "total": 0,
+        }
 
 def buscar_codigo_municipio(municipio: str, uf: str) -> str:
     if not municipio or not uf: return ""
