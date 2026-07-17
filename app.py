@@ -1493,8 +1493,8 @@ with tab_lote:
                             key=f"tipo_servico_tomador_{idx}",
                         )
                         tipos_servico_tomador[idx] = int(tst)   # 1, 2 ou 3
-else:
-    tipos_servico_tomador[idx] = 1              # ← era None, agora 1 (evita constraint ASA6232)
+                else:                                            # ← CORRETO: mesmo nível do if
+                    tipos_servico_tomador[idx] = 1
 
             st.markdown("<br>", unsafe_allow_html=True)
             st.markdown(
