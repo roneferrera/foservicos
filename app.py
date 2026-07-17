@@ -738,31 +738,46 @@ COMP_FIM = "31/12/3000"
 # LEIAUTE FOSERVICOS - 25 colunas
 # ──────────────────────────────────────────────────────────────────────────────
 COLUNAS_LEIAUTE = [
-    "Codigo_empresa", "Codigo_Servicos", "CNPJ_CPF", "Tipo_Inscricao",
-    "Codigo_Terceiro", "Perc_Acidente_Trabalho", "Codigo_FPAS", "CNAE",
-    "Codigo_GFIP", "Codigo_GPS", "Nome", "Endereco", "Numero", "Bairro",
-    "CEP", "Cidade", "Estado", "Codigo_Filial", "Sequencia_GPS", "Tipo",
-    "Codigo_Municipio", "Data_Inicio", "Situacao", "Codigo_eSocial", "Origem_Reg",
+    "Codigo_empresa",        # 1  codi_emp
+    "Codigo_Servicos",       # 2  i_servicos
+    "CNPJ_CPF",              # 3  cgc
+    "Tipo_Inscricao",        # 4  tipo_insc
+    "Codigo_Terceiro",       # 5  codigo_terceiro
+    "Perc_Acidente_Trabalho",# 6  perc_acid_trabalho
+    "Codigo_FPAS",           # 7  codigo_fpas
+    "CNAE",                  # 8  codigo_atividade
+    "Codigo_GFIP",           # 9  codigo_gfip
+    "Codigo_GPS",            # 10 codigo_gps
+    "Nome",                  # 11 nome
+    "Endereco",              # 12 endereco
+    "Numero",                # 13 numero
+    "Bairro",                # 14 bairro
+    "CEP",                   # 15 cep
+    "Cidade",                # 16 cidade
+    "Estado",                # 17 estado
+    "Codigo_Filial",         # 18 i_filiais
+    "Sequencia_GPS",         # 19 sequencia_gps
+    "Codigo_Municipio",      # 20 codigo_municipio  ← era "Tipo" ERRADO
+    "Data_Inicio",           # 21 DATA_INICIO
+    "Situacao",              # 22 SITUACAO
+    "Codigo_eSocial",        # 23 CODIGO_ESOCIAL
+    "Origem_Reg",            # 24 origem_reg        ← era coluna 25
 ]
 
-def montar_linha_dominio(r: dict, tipo_cod: int, cod_servico: int, codigo_empresa: int = 1) -> list:
+def montar_linha_dominio(r: dict, cod_servico: int, codigo_empresa: int = 1) -> list:
+    # tipo_cod REMOVIDO — campo não existe em FOSERVICOS
     cnpj_limpo = limpar_cnpj(r.get("cnpj", ""))
 
-    # Codigo terceiro: sempre inteiro formatado 4 digitos
     cod_terc_raw = r.get("codigo_terceiro", 0)
     if isinstance(cod_terc_raw, int):
         cod_terc_str = f"{cod_terc_raw:04d}"
-        i_terceiros  = cod_terc_raw
     elif cod_terc_raw is None:
         cod_terc_str = "0000"
-        i_terceiros  = 0
     else:
         s = str(cod_terc_raw).strip()
         try:
-            i_terceiros  = int(s) if s else 0
-            cod_terc_str = f"{i_terceiros:04d}"
+            cod_terc_str = f"{int(s):04d}" if s else "0000"
         except Exception:
-            i_terceiros  = 0
             cod_terc_str = "0000"
 
     cep       = re.sub(r"\D", "", str(r.get("cep", "") or ""))
@@ -777,29 +792,30 @@ def montar_linha_dominio(r: dict, tipo_cod: int, cod_servico: int, codigo_empres
     gps  = str(r.get("codigo_gps",  "") or "2100")
 
     return [
-        codigo_empresa,   # 1  codi_emp
-        cod_servico,      # 2  i_servicos
-        cnpj_limpo,       # 3  cgc
-        1,                # 4  tipo_insc
-        cod_terc_str,     # 5  codigo_terceiro
-        rat,              # 6  perc_acid_trabalho
-        fpas,             # 7  codigo_fpas
-        str(r.get("cnae_codigo", "") or ""),  # 8  codigo_atividade
-        gfip,             # 9  codigo_gfip
-        gps,              # 10 codigo_gps
-        str(r.get("razao_social", "") or ""),
-        str(r.get("logradouro", "") or ""),
-        str(r.get("numero", "") or ""),
-        str(r.get("bairro", "") or ""),
-        cep, municipio, uf,
-        cod_servico,      # 18 i_filiais
-        1,                # 19 sequencia_gps
-        tipo_cod,         # 20 tipo
-        cod_mun,          # 21 codigo_municipio
-        data_ini,         # 22 DATA_INICIO
-        1,                # 23 SITUACAO
-        cod_servico,      # 24 CODIGO_ESOCIAL
-        "",               # 25 origem_reg
+        codigo_empresa,                              # 1  codi_emp
+        cod_servico,                                 # 2  i_servicos
+        cnpj_limpo,                                  # 3  cgc
+        1,                                           # 4  tipo_insc
+        cod_terc_str,                                # 5  codigo_terceiro
+        rat,                                         # 6  perc_acid_trabalho
+        fpas,                                        # 7  codigo_fpas
+        str(r.get("cnae_codigo", "") or ""),         # 8  codigo_atividade
+        gfip,                                        # 9  codigo_gfip
+        gps,                                         # 10 codigo_gps
+        str(r.get("razao_social", "") or ""),        # 11 nome
+        str(r.get("logradouro", "") or ""),          # 12 endereco
+        str(r.get("numero", "") or ""),              # 13 numero
+        str(r.get("bairro", "") or ""),              # 14 bairro
+        cep,                                         # 15 cep
+        municipio,                                   # 16 cidade
+        uf,                                          # 17 estado
+        cod_servico,                                 # 18 i_filiais
+        1,                                           # 19 sequencia_gps
+        cod_mun,                                     # 20 codigo_municipio ← era tipo ERRADO
+        data_ini,                                    # 21 DATA_INICIO
+        1,                                           # 22 SITUACAO
+        cod_servico,                                 # 23 CODIGO_ESOCIAL
+        1,                                           # 24 origem_reg       ← era coluna 25
     ]
 
 
