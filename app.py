@@ -1521,16 +1521,18 @@ with tab_lote:
                     codigo_empresa=codigo_empresa_dom,
                     )
                         else:
-                            linha_fo = [""] * 25
+                            linha_fo = [""] * 24
                             linha_fo[0]  = codigo_empresa_dom
                             linha_fo[1]  = cod_srv
                             linha_fo[2]  = row["cnpj"]
                             linha_fo[3]  = 1
                             linha_fo[17] = cod_srv
                             linha_fo[18] = 1
-                            linha_fo[21] = "01/01/2020"
-                            linha_fo[22] = 1
-                            linha_fo[23] = cod_srv
+                            linha_fo[19] = ""          # codigo_municipio (desconhecido)
+                            linha_fo[20] = "01/01/2020"  # DATA_INICIO  ← era [21]
+                            linha_fo[21] = 1             # SITUACAO     ← era [22]
+                            linha_fo[22] = cod_srv       # CODIGO_ESOCIAL ← era [23]
+                            linha_fo[23] = 1             # origem_reg   ← era [24], não existia
                         linhas_fo.append(linha_fo)
 
                         if r_merged:
