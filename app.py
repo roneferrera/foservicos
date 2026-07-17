@@ -1,7 +1,9 @@
 import io
+import os
 import re
 import time
 import unicodedata
+import zipfile
 import requests
 import pandas as pd
 import streamlit as st
@@ -181,39 +183,63 @@ def _normalizar(s: str) -> str:
     s = re.sub(r"\s+", " ", s).strip()
     return s
 
+def _resolver_caminho_arquivo(nome_arquivo: str) -> str | None:
+    """
+    Tenta localizar o arquivo em múltiplos caminhos:
+    1. Caminho absoluto do Streamlit Cloud (/mount/src/foservicos/)
+    2. Diretório do próprio app.py (__file__)
+    3. Diretório de trabalho atual (os.getcwd())
+    4. Nome direto (relativo)
+    Retorna o primeiro caminho válido encontrado ou None.
+    """
+    candidatos = [
+        os.path.join("/mount/src/foservicos", nome_arquivo),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), nome_arquivo),
+        os.path.join(os.getcwd(), nome_arquivo),
+        nome_arquivo,
+    ]
+    for c in candidatos:
+        if os.path.isfile(c):
+            return c
+    return None
+
 def _carregar_municipios():
+    caminho = _resolver_caminho_arquivo("RELACAO DE MUNICIPIOS.xlsx")
+    if not caminho:
+        return {}, {"erro_fatal": "Arquivo 'RELACAO DE MUNICIPIOS.xlsx' nao encontrado. "
+                                  "Verifique se o arquivo esta na raiz do repositorio.", "total": 0}
     try:
         df = pd.read_excel(
-            "RELACAO DE MUNICIPIOS.xlsx",
+            caminho,
             sheet_name="RELACAO DE MUNICIPIOS",
             engine="openpyxl", dtype=str, header=0,
         )
         df.columns = [
-            unicodedata.normalize('NFC', str(c)).strip().lstrip('\ufeff').replace('\xa0',' ').replace('\u200b','')
+            unicodedata.normalize('NFC', str(c)).strip().lstrip('\ufeff').replace('\xa0', ' ').replace('\u200b', '')
             for c in df.columns
         ]
         col_codigo = col_nome = col_uf = None
         for col in df.columns:
             col_n = _normalizar(col)
-            if col_n in ("CODIGO","COD","CODIGO MUNICIPIO","CODIGO_MUNICIPIO") and col_codigo is None:
+            if col_n in ("CODIGO", "COD", "CODIGO MUNICIPIO", "CODIGO_MUNICIPIO") and col_codigo is None:
                 col_codigo = col
-            elif col_n in ("NOME","MUNICIPIO","NOME MUNICIPIO") and col_nome is None:
+            elif col_n in ("NOME", "MUNICIPIO", "NOME MUNICIPIO") and col_nome is None:
                 col_nome = col
-            elif col_n in ("ESTADO","UF","SIGLA","SIGLA UF") and col_uf is None:
+            elif col_n in ("ESTADO", "UF", "SIGLA", "SIGLA UF") and col_uf is None:
                 col_uf = col
-        if col_codigo is None and len(df.columns)>=1: col_codigo=df.columns[0]
-        if col_nome   is None and len(df.columns)>=2: col_nome=df.columns[1]
-        if col_uf     is None and len(df.columns)>=5: col_uf=df.columns[4]
-        elif col_uf   is None and len(df.columns)>=3: col_uf=df.columns[2]
+        if col_codigo is None and len(df.columns) >= 1: col_codigo = df.columns[0]
+        if col_nome   is None and len(df.columns) >= 2: col_nome   = df.columns[1]
+        if col_uf     is None and len(df.columns) >= 5: col_uf     = df.columns[4]
+        elif col_uf   is None and len(df.columns) >= 3: col_uf     = df.columns[2]
         mapa, erros = {}, []
         for idx, row in df.iterrows():
             try:
                 uf_raw   = str(row[col_uf]).strip()
                 nome_raw = str(row[col_nome]).strip()
                 cod_raw  = str(row[col_codigo]).strip()
-                if cod_raw.lower()  in ("nan","none","","0"): continue
-                if uf_raw.lower()   in ("nan","none",""): continue
-                if nome_raw.lower() in ("nan","none",""): continue
+                if cod_raw.lower()  in ("nan", "none", "", "0"): continue
+                if uf_raw.lower()   in ("nan", "none", ""):      continue
+                if nome_raw.lower() in ("nan", "none", ""):      continue
                 if "." in cod_raw:
                     try: cod_raw = str(int(float(cod_raw)))
                     except: pass
@@ -225,11 +251,12 @@ def _carregar_municipios():
                 erros.append(f"Linha {idx}: {e}")
         debug = {
             "total":      len(mapa),
+            "caminho":    caminho,
             "col_codigo": col_codigo,
             "col_nome":   col_nome,
             "col_uf":     col_uf,
             "colunas":    list(df.columns),
-            "amostra":    [f"({u},{n})->{c}" for (u,n),c in list(mapa.items())[:8]],
+            "amostra":    [f"({u},{n})->{c}" for (u, n), c in list(mapa.items())[:8]],
             "erros":      erros[:5],
         }
         return mapa, debug
@@ -253,10 +280,10 @@ def buscar_codigo_municipio(municipio: str, uf: str) -> str:
     variacoes = set()
     variacoes.add(re.sub(r"^(DO|DE|DA|DOS|DAS)\s+", "", nome_orig).strip())
     variacoes.add(re.sub(r"\s+(DO|DE|DA|DOS|DAS)\s+", " ", nome_orig).strip())
-    variacoes.add(nome_orig.replace("STO ","SANTO ").replace("STA ","SANTA "))
-    variacoes.add(nome_orig.replace("SANTO ","STO ").replace("SANTA ","STA "))
+    variacoes.add(nome_orig.replace("STO ", "SANTO ").replace("STA ", "SANTA "))
+    variacoes.add(nome_orig.replace("SANTO ", "STO ").replace("SANTA ", "STA "))
     variacoes.add(re.sub(r"['\-]", " ", nome_orig).strip())
-    variacoes.add(nome_orig.replace("D ","DE ").replace("D'","DE "))
+    variacoes.add(nome_orig.replace("D ", "DE ").replace("D'", "DE "))
     variacoes.discard(nome_orig)
     for v in variacoes:
         if not v: continue
@@ -597,7 +624,7 @@ def extrair_cnpjs_do_texto(texto: str) -> list:
 
 # ──────────────────────────────────────────────────────────────────────────────
 # HELPERS DE DATA
-# Todas as datas nos arquivos gerados em DD/MM/AAAA
+# CORRECAO: sem sufixo 00:00:00 em nenhuma data dos arquivos gerados
 # ──────────────────────────────────────────────────────────────────────────────
 def _formatar_data(data_raw: str) -> str:
     """Converte qualquer data para DD/MM/AAAA (foservicos.txt)."""
@@ -610,11 +637,11 @@ def _formatar_data(data_raw: str) -> str:
     return "01/01/2020"
 
 def _data_para_vigencia(d: date) -> str:
-    """date -> DD/MM/AAAA 00:00:00 (formato FOVIGENCIAS)."""
-    return d.strftime("%d/%m/%Y") + " 00:00:00"
+    """date -> DD/MM/AAAA (formato FOVIGENCIAS — sem sufixo de hora)."""
+    return d.strftime("%d/%m/%Y")
 
-# Competencia fim fixa: 31/12/3000 (vigencia aberta)
-COMP_FIM = "31/12/3000 00:00:00"
+# Competencia fim fixa: 31/12/3000 (vigencia aberta — sem sufixo de hora)
+COMP_FIM = "31/12/3000"
 
 # ──────────────────────────────────────────────────────────────────────────────
 # LEIAUTE FOSERVICOS - 25 colunas
@@ -665,12 +692,6 @@ def gerar_txt_leiaute(linhas: list) -> bytes:
 
 # ──────────────────────────────────────────────────────────────────────────────
 # LEIAUTE FOVIGENCIAS_SERVICOS
-# Fiel ao xlsx real:
-#   VIGENCIA e COMPETENCIA_FIM_VIGENCIA em DD/MM/AAAA HH:MM:SS
-#   i_filiais   = 1      (todos os registros reais)
-#   origem_reg  = 0      (todos os registros reais = 0=Sistema)
-#   I_TERCEIROS = valor numerico inteiro do codigo_terceiro
-#   I_CNAE_ESOCIAL = mesmo valor de I_CNAE20
 # ──────────────────────────────────────────────────────────────────────────────
 def montar_linha_vigencia(
     r: dict,
@@ -718,10 +739,10 @@ def montar_linha_vigencia(
     return [
         codigo_empresa,          # codi_emp
         cod_servico,             # i_servicos
-        vigencia,                # VIGENCIA  DD/MM/AAAA 00:00:00
+        vigencia,                # VIGENCIA  DD/MM/AAAA
         descricao_vigencia,      # DESCRICAO
         cnpj_limpo,              # cgc
-        1,                       # tipo_insc  1=CNPJ
+        1,                       # tipo_insc
         cod_terc_str,            # codigo_terceiro
         perc_terc,               # perc_terceiro
         0,                       # perc_inss_empresa
@@ -740,10 +761,10 @@ def montar_linha_vigencia(
         cep,                     # cep
         municipio,               # cidade
         uf,                      # estado
-        1,                       # i_filiais  (sempre 1 conforme xlsx real)
+        1,                       # i_filiais
         0,                       # sequencia_gps
         0,                       # filantropia
-        0,                       # origem_reg (0=Sistema conforme xlsx real)
+        0,                       # origem_reg
         tipo_cod,                # tipo
         0,                       # codi_mun
         cod_mun,                 # codigo_municipio
@@ -759,45 +780,45 @@ def montar_linha_vigencia(
         "",                      # INSCRICAO_PROPRIETARIO_CEI_EMPREITADA_PARCIAL
         "",                      # NOME_PROPRIETARIO_CEI_EMPREITADA_PARCIAL
         cnae_num,                # I_CNAE20
-        1,                       # TIPO_INFORMACAO_ALIQUOTA_ACIDENTE_TRABALHO (1=Informado)
+        1,                       # TIPO_INFORMACAO_ALIQUOTA_ACIDENTE_TRABALHO
         0,                       # I_PROCESSO
         0,                       # I_SCP
         "",                      # DDD
         "",                      # TELEFONE
-        COMP_FIM,                # COMPETENCIA_FIM_VIGENCIA  DD/MM/AAAA 00:00:00
+        COMP_FIM,                # COMPETENCIA_FIM_VIGENCIA  DD/MM/AAAA
         0,                       # TIPO_LOTACAO_ESOCIAL
         0,                       # I_PROCESSO_TERCEIROS
         "",                      # CAEPF
         0,                       # TIPO_CAEPF
         0,                       # REGISTRO_PONTO
-        1,                       # CONTRATACAO_APRENDIZ (1=Dispensado)
+        1,                       # CONTRATACAO_APRENDIZ
         0,                       # I_PROCESSO_CONTRATACAO_APRENDIZ
         0,                       # REALIZA_CONTRATACAO_APRENDIZ_INTERMEDIO
         "",                      # CODIGO_SUSPENSAO_PROCESSO_RAT
         0,                       # SOMA_CODIGOS_SUSPENSAO_TERCEIROS
         perc_terc,               # PERCENTUAL_TERCEIRO_BRUTO
-        0,                       # I_DADOS_EVENTOS_ESOCIAL_S_1005  **SEM USO**
-        0,                       # I_LOTE_ESOCIAL_S_1005           **SEM USO**
-        0,                       # STATUS_ESOCIAL_S_1005           **SEM USO**
+        0,                       # I_DADOS_EVENTOS_ESOCIAL_S_1005
+        0,                       # I_LOTE_ESOCIAL_S_1005
+        0,                       # STATUS_ESOCIAL_S_1005
         1,                       # ENVIAR_ESOCIAL_S_1005
-        0,                       # INCLUSAO_VALIDADA_ESOCIAL_S_1005 **SEM USO**
+        0,                       # INCLUSAO_VALIDADA_ESOCIAL_S_1005
         0,                       # GERAR_RETIFICACAO_ESOCIAL_S_1005
-        0,                       # I_DADOS_EVENTOS_ESOCIAL_S_1020  **SEM USO**
-        0,                       # I_LOTE_ESOCIAL_S_1020           **SEM USO**
-        0,                       # STATUS_ESOCIAL_S_1020           **SEM USO**
+        0,                       # I_DADOS_EVENTOS_ESOCIAL_S_1020
+        0,                       # I_LOTE_ESOCIAL_S_1020
+        0,                       # STATUS_ESOCIAL_S_1020
         1,                       # ENVIAR_ESOCIAL_S_1020
-        0,                       # INCLUSAO_VALIDADA_ESOCIAL_S_1020 **SEM USO**
+        0,                       # INCLUSAO_VALIDADA_ESOCIAL_S_1020
         0,                       # GERAR_RETIFICACAO_ESOCIAL_S_1020
-        cnae_num,                # I_CNAE_ESOCIAL (igual I_CNAE20)
-        i_terceiros,             # I_TERCEIROS (valor numerico inteiro)
+        cnae_num,                # I_CNAE_ESOCIAL
+        i_terceiros,             # I_TERCEIROS
         0,                       # PROCESSAR_EXCLUSAO_ESOCIAL_S_1005
         0,                       # PROCESSAR_EXCLUSAO_ESOCIAL_S_1020
-        1,                       # ORIGEM_ALTERACAO (1=Sistema)
-        0,                       # I_DADOS_EVENTOS_ESOCIAL_S_1080  **SEM USO**
-        0,                       # I_LOTE_ESOCIAL_S_1080           **SEM USO**
-        0,                       # STATUS_ESOCIAL_S_1080           **SEM USO**
+        1,                       # ORIGEM_ALTERACAO
+        0,                       # I_DADOS_EVENTOS_ESOCIAL_S_1080
+        0,                       # I_LOTE_ESOCIAL_S_1080
+        0,                       # STATUS_ESOCIAL_S_1080
         1,                       # ENVIAR_ESOCIAL_S_1080
-        0,                       # INCLUSAO_VALIDADA_ESOCIAL_S_1080 **SEM USO**
+        0,                       # INCLUSAO_VALIDADA_ESOCIAL_S_1080
         0,                       # GERAR_RETIFICACAO_ESOCIAL_S_1080
         0,                       # PROCESSAR_EXCLUSAO_ESOCIAL_S_1080
         0,                       # EFETUAR_RETENCAO_INSS_NOTAS_FISCAIS
@@ -831,6 +852,25 @@ def gerar_txt_vigencias(linhas: list) -> bytes:
         row = [str(v) if v is not None else "" for v in campos]
         linhas_txt.append("\t".join(row))
     return ("\r\n".join(linhas_txt) + "\r\n").encode("utf-8")
+
+def gerar_zip(txt_fo: bytes, txt_vig: bytes) -> bytes:
+    """Empacota foservicos.txt e fovigencias_servicos.txt num unico .zip."""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("foservicos.txt", txt_fo)
+        zf.writestr("fovigencias_servicos.txt", txt_vig)
+    return buf.getvalue()
+
+def _ler_leiaute(nome_arquivo: str) -> bytes | None:
+    """Le arquivo de leiaute do repositorio tentando multiplos caminhos."""
+    caminho = _resolver_caminho_arquivo(nome_arquivo)
+    if not caminho:
+        return None
+    try:
+        with open(caminho, "rb") as f:
+            return f.read()
+    except Exception:
+        return None
 
 def gerar_excel_conferencia(df, df_err) -> bytes:
     buf = io.BytesIO()
@@ -901,7 +941,7 @@ st.markdown("""
         <div class="tr-title">Classificador FPAS / Terceiros / SEFIP</div>
         <div class="tr-subtitle">DOMINIO SISTEMAS &nbsp;.&nbsp; Thomson Reuters &nbsp;.&nbsp; IN RFB no 971/2009</div>
     </div>
-    <div class="tr-badge">v8.3</div>
+    <div class="tr-badge">v8.4</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -962,6 +1002,7 @@ with st.sidebar:
     with st.expander("Debug municipios"):
         st.json({
             "total":      debug.get("total", 0),
+            "caminho":    debug.get("caminho", "nao encontrado"),
             "col_codigo": debug.get("col_codigo", ""),
             "col_nome":   debug.get("col_nome", ""),
             "col_uf":     debug.get("col_uf", ""),
@@ -995,10 +1036,11 @@ with st.sidebar:
 # ══════════════════════════════════════════════════════════════════════════════
 # TABS
 # ══════════════════════════════════════════════════════════════════════════════
-tab_lote, tab_individual, tab_tabela = st.tabs([
+tab_lote, tab_individual, tab_tabela, tab_importacao = st.tabs([
     "Consulta em Lote",
     "Consulta Individual",
     "Tabela FPAS",
+    "Importacao Dominio",
 ])
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1054,7 +1096,7 @@ with tab_lote:
             with col_b2:
                 if st.button("Limpar", use_container_width=True):
                     for k in ["resultados_proc", "dados_brutos", "seq_confirmada",
-                              "seq_inicio_val", "_txt", "_xlsx", "_vig"]:
+                              "seq_inicio_val", "_txt", "_xlsx", "_vig", "_zip"]:
                         st.session_state.pop(k, None)
                     st.rerun()
 
@@ -1163,7 +1205,7 @@ with tab_lote:
                 progress.progress(100, text="Concluido!")
                 st.session_state["resultados_proc"] = resultados_proc
                 st.session_state["dados_brutos"]    = dados_brutos
-                for k in ["seq_confirmada", "seq_inicio_val", "_txt", "_xlsx", "_vig"]:
+                for k in ["seq_confirmada", "seq_inicio_val", "_txt", "_xlsx", "_vig", "_zip"]:
                     st.session_state.pop(k, None)
         else:
             st.warning("Nenhum CNPJ detectado. Verifique o formato.")
@@ -1300,7 +1342,6 @@ with tab_lote:
                         tipo_cod = tipos_selecionados.get(idx, 1)
                         r_merged = dados_brutos.get(idx)
 
-                        # foservicos.txt
                         if r_merged:
                             linha_fo = montar_linha_dominio(
                                 r_merged, tipo_cod=tipo_cod,
@@ -1320,7 +1361,6 @@ with tab_lote:
                             linha_fo[23] = cod_srv
                         linhas_fo.append(linha_fo)
 
-                        # fovigencias_servicos.txt
                         if r_merged:
                             cod_mun_v = buscar_codigo_municipio(
                                 r_merged.get("municipio", ""), r_merged.get("uf", "")
@@ -1346,19 +1386,25 @@ with tab_lote:
                     df_err  = df_conf[df_conf["_status"] != "OK"]
                     cols_xl = [c for c in df_conf.columns if c != "_status"]
 
-                    st.session_state["_txt"]  = gerar_txt_leiaute(linhas_fo)
-                    st.session_state["_xlsx"] = gerar_excel_conferencia(
+                    _txt  = gerar_txt_leiaute(linhas_fo)
+                    _vig  = gerar_txt_vigencias(linhas_vig)
+                    _xlsx = gerar_excel_conferencia(
                         df_conf[cols_xl + ["_status"]],
                         df_err[cols_xl + ["_status"]] if len(df_err) > 0 else None,
                     )
-                    st.session_state["_vig"]  = gerar_txt_vigencias(linhas_vig)
+                    _zip  = gerar_zip(_txt, _vig)
+
+                    st.session_state["_txt"]  = _txt
+                    st.session_state["_vig"]  = _vig
+                    st.session_state["_xlsx"] = _xlsx
+                    st.session_state["_zip"]  = _zip
                     st.success("Arquivos gerados com sucesso!")
 
             if "_txt" in st.session_state and "_vig" in st.session_state:
-                col_dl1, col_dl2, col_dl3 = st.columns(3)
+                col_dl1, col_dl2, col_dl3, col_dl4 = st.columns(4)
                 with col_dl1:
                     st.download_button(
-                        "foservicos.txt\n(Importacao Dominio - 25 col - TAB)",
+                        "foservicos.txt\n(25 col - TAB)",
                         data=st.session_state["_txt"],
                         file_name="foservicos.txt",
                         mime="text/plain",
@@ -1378,6 +1424,14 @@ with tab_lote:
                         data=st.session_state["_xlsx"],
                         file_name="dominio_conferencia.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        use_container_width=True,
+                    )
+                with col_dl4:
+                    st.download_button(
+                        "Baixar Tudo (.zip)\nfoservicos + fovigencias",
+                        data=st.session_state["_zip"],
+                        file_name="dominio_importacao.zip",
+                        mime="application/zip",
                         use_container_width=True,
                     )
 
@@ -1477,8 +1531,212 @@ with tab_tabela:
     st.dataframe(df_ref, use_container_width=True, hide_index=True, height=480)
     st.markdown('</div>', unsafe_allow_html=True)
 
+# ══════════════════════════════════════════════════════════════════════════════
+# TAB 4 - IMPORTACAO DOMINIO
+# ══════════════════════════════════════════════════════════════════════════════
+with tab_importacao:
+
+    st.markdown(f"""
+    <div class="tr-card">
+        <div class="tr-card-title">Como Importar os Arquivos no Dominio Sistemas</div>
+        <div style="font-size:12px;color:{TR_TEXT_MUTED};line-height:2;">
+            Siga o caminho abaixo no menu do Dominio Folha de Pagamento:
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    passos = [
+        ("1", "Utilitarios",       "Menu principal superior"),
+        ("2", "Importacao",        "Submenu lateral"),
+        ("3", "de Arquivo Texto",  "Submenu lateral"),
+        ("4", "de Tabelas",        "Opcao final"),
+    ]
+    setas_html = ""
+    for num, titulo, sub in passos:
+        setas_html += f"""
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <div style="background:{TR_ORANGE};color:#fff;font-weight:900;font-size:13px;
+                        border-radius:50%;width:26px;height:26px;display:flex;
+                        align-items:center;justify-content:center;flex-shrink:0;">{num}</div>
+            <div style="background:{TR_CARD2};border:1px solid {TR_BORDER};border-radius:8px;
+                        padding:8px 16px;flex:1;">
+                <span style="color:{TR_ORANGE};font-weight:700;font-size:13px;">{titulo}</span>
+                <span style="color:{TR_TEXT_MUTED};font-size:11px;margin-left:10px;">{sub}</span>
+            </div>
+        </div>"""
+    st.markdown(setas_html, unsafe_allow_html=True)
+
+    st.markdown(f"""
+    <div style="background:{TR_CARD2};border:1px dashed {TR_ORANGE};border-radius:8px;
+                padding:14px 18px;margin:16px 0;font-size:12px;color:{TR_TEXT_MUTED};line-height:2;">
+        <b style="color:{TR_ORANGE};">Caminho completo:</b><br>
+        <code style="color:{TR_TEXT};font-size:13px;">
+            Utilitarios &nbsp;&rarr;&nbsp; Importacao &nbsp;&rarr;&nbsp;
+            de Arquivo Texto &nbsp;&rarr;&nbsp; de Tabelas
+        </code><br><br>
+        <b style="color:{TR_ORANGE};">Configuracoes na janela de importacao:</b><br>
+        Delimitador: <b style="color:{TR_TEXT};">Com Separador</b> &nbsp;|&nbsp;
+        Separador: <b style="color:{TR_TEXT};">Tab</b>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown(f"""
+    <div class="tr-card" style="margin-top:8px;">
+        <div class="tr-card-title">Ordem de Importacao</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div style="background:{TR_CARD2};border:1px solid {TR_BORDER};border-radius:8px;padding:14px 18px;">
+                <div style="font-size:11px;color:{TR_TEXT_MUTED};text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">1 Importar primeiro</div>
+                <div style="font-size:16px;font-weight:700;color:{TR_ORANGE};">foservicos.txt</div>
+                <div style="font-size:11px;color:{TR_TEXT_MUTED};margin-top:4px;">
+                    Tabela: <b style="color:{TR_TEXT};">FOSERVICOS</b><br>
+                    Cadastro principal do prestador de servico.<br>
+                    25 colunas &nbsp;|&nbsp; TAB-delimitado
+                </div>
+            </div>
+            <div style="background:{TR_CARD2};border:1px solid {TR_BORDER};border-radius:8px;padding:14px 18px;">
+                <div style="font-size:11px;color:{TR_TEXT_MUTED};text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">2 Importar segundo</div>
+                <div style="font-size:16px;font-weight:700;color:{TR_ORANGE};">fovigencias_servicos.txt</div>
+                <div style="font-size:11px;color:{TR_TEXT_MUTED};margin-top:4px;">
+                    Tabela: <b style="color:{TR_TEXT};">FOVIGENCIAS_SERVICO</b><br>
+                    Vigencias e aliquotas FPAS / Terceiros / eSocial.<br>
+                    90 colunas &nbsp;|&nbsp; TAB-delimitado
+                </div>
+            </div>
+        </div>
+        <div style="margin-top:12px;padding:10px 14px;background:#1a1200;
+                    border:1px solid {TR_WARNING};border-radius:6px;
+                    font-size:11px;color:{TR_WARNING};">
+            ATENCAO: Importe sempre o <b>foservicos.txt primeiro</b>.
+            O FOVIGENCIAS depende do registro pai ja existir na tabela FOSERVICOS.
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── Download dos arquivos de leiaute ──────────────────────────────────────
+    st.markdown(f"""
+    <div class="tr-card" style="margin-top:8px;">
+        <div class="tr-card-title">Arquivos de Leiaute (Definicao das Colunas)</div>
+        <div style="font-size:12px;color:{TR_TEXT_MUTED};margin-bottom:14px;">
+            Estes arquivos definem o leiaute de importacao aceito pelo Dominio.
+            Faca o download e mantenha-os salvos para configurar ou reconfigurar a importacao.
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    leiaute_fo  = _ler_leiaute("FOSERVICOS.txt")
+    leiaute_vig = _ler_leiaute("FOVIGENCIAS_SERVICO.txt")
+
+    col_l1, col_l2, col_l3 = st.columns(3)
+    with col_l1:
+        if leiaute_fo:
+            st.download_button(
+                label="Leiaute FOSERVICOS.txt\n(25 colunas - referencia)",
+                data=leiaute_fo,
+                file_name="FOSERVICOS.txt",
+                mime="text/plain",
+                use_container_width=True,
+            )
+        else:
+            st.error("FOSERVICOS.txt nao encontrado no repositorio.")
+
+    with col_l2:
+        if leiaute_vig:
+            st.download_button(
+                label="Leiaute FOVIGENCIAS_SERVICO.txt\n(90 colunas - referencia)",
+                data=leiaute_vig,
+                file_name="FOVIGENCIAS_SERVICO.txt",
+                mime="text/plain",
+                use_container_width=True,
+            )
+        else:
+            st.error("FOVIGENCIAS_SERVICO.txt nao encontrado no repositorio.")
+
+    with col_l3:
+        if leiaute_fo and leiaute_vig:
+            buf_leiautes = io.BytesIO()
+            with zipfile.ZipFile(buf_leiautes, "w", zipfile.ZIP_DEFLATED) as zf:
+                zf.writestr("FOSERVICOS.txt", leiaute_fo)
+                zf.writestr("FOVIGENCIAS_SERVICO.txt", leiaute_vig)
+            st.download_button(
+                label="Baixar Ambos os Leiautes (.zip)",
+                data=buf_leiautes.getvalue(),
+                file_name="leiautes_dominio.zip",
+                mime="application/zip",
+                use_container_width=True,
+            )
+        else:
+            st.warning("Um ou mais arquivos de leiaute nao encontrados no repositorio.")
+
+    # ── Resumo das colunas ────────────────────────────────────────────────────
+    with st.expander("Ver resumo das colunas - FOSERVICOS (25 colunas)"):
+        colunas_fo = [
+            ("1",  "codi_emp",           "integer",  "Codigo da empresa no Dominio"),
+            ("2",  "i_servicos",         "integer",  "Codigo do servico (sequencial)"),
+            ("3",  "cgc",                "char 14",  "CNPJ sem mascara (so digitos)"),
+            ("4",  "tipo_insc",          "smallint", "1=CNPJ / 2=CPF / 3=CEI"),
+            ("5",  "codigo_terceiro",    "numeric",  "Codigo terceiros (ex: 0115)"),
+            ("6",  "perc_acid_trabalho", "numeric",  "RAT (%)"),
+            ("7",  "codigo_fpas",        "numeric",  "Codigo FPAS (ex: 515)"),
+            ("8",  "codigo_atividade",   "numeric",  "CNAE so digitos (ex: 6201500)"),
+            ("9",  "codigo_gfip",        "numeric",  "Codigo SEFIP (ex: 115)"),
+            ("10", "codigo_gps",         "numeric",  "Codigo GPS (ex: 2100)"),
+            ("11", "nome",               "char 40",  "Razao social"),
+            ("12", "endereco",           "char 31",  "Logradouro"),
+            ("13", "numero",             "integer",  "Numero do endereco"),
+            ("14", "bairro",             "char 20",  "Bairro"),
+            ("15", "cep",                "char 8",   "CEP so digitos"),
+            ("16", "cidade",             "char 20",  "Municipio"),
+            ("17", "estado",             "char 2",   "UF"),
+            ("18", "i_filiais",          "integer",  "Filial (= i_servicos)"),
+            ("19", "sequencia_gps",      "integer",  "Sequencia GPS (= 1)"),
+            ("20", "tipo",               "integer",  "1=Empresa / 2=Tomador..."),
+            ("21", "codigo_municipio",   "integer",  "Codigo municipio Dominio"),
+            ("22", "DATA_INICIO",        "date",     "DD/MM/AAAA"),
+            ("23", "SITUACAO",           "smallint", "0=Inativo / 1=Ativo"),
+            ("24", "CODIGO_ESOCIAL",     "varchar",  "Codigo eSocial (= i_servicos)"),
+            ("25", "origem_reg",         "tinyint",  "1 = Imp. Tabelas"),
+        ]
+        st.dataframe(
+            pd.DataFrame(colunas_fo, columns=["Col", "Campo", "Tipo", "Descricao"]),
+            use_container_width=True, hide_index=True,
+        )
+
+    with st.expander("Ver resumo das colunas principais - FOVIGENCIAS_SERVICO (90 colunas)"):
+        colunas_vig = [
+            ("1",  "codi_emp",                 "integer",  "Codigo da empresa"),
+            ("2",  "i_servicos",               "integer",  "Codigo do servico (FK -> FOSERVICOS)"),
+            ("3",  "VIGENCIA",                 "date",     "DD/MM/AAAA - inicio da vigencia"),
+            ("4",  "DESCRICAO",                "char 80",  "Descricao da vigencia"),
+            ("5",  "cgc",                      "char 14",  "CNPJ so digitos"),
+            ("6",  "tipo_insc",                "smallint", "1=CNPJ"),
+            ("7",  "codigo_terceiro",          "numeric",  "Codigo terceiros"),
+            ("8",  "perc_terceiro",            "numeric",  "Total % terceiros"),
+            ("9",  "perc_inss_empresa",        "numeric",  "INSS Empresa % (0)"),
+            ("10", "perc_acid_trabalho",       "numeric",  "RAT %"),
+            ("13", "codigo_fpas",              "numeric",  "Codigo FPAS"),
+            ("15", "codigo_gfip",              "numeric",  "Codigo SEFIP"),
+            ("16", "codigo_gps",               "numeric",  "Codigo GPS"),
+            ("25", "i_filiais",                "integer",  "Filial (sempre 1)"),
+            ("28", "origem_reg",               "tinyint",  "0=Sistema"),
+            ("29", "tipo",                     "integer",  "Tipo servico"),
+            ("31", "codigo_municipio",         "integer",  "Codigo municipio Dominio"),
+            ("43", "I_CNAE20",                 "char 15",  "CNAE so digitos"),
+            ("49", "COMPETENCIA_FIM_VIGENCIA", "date",     "DD/MM/AAAA - fim vigencia (31/12/3000)"),
+            ("64", "ENVIAR_ESOCIAL_S_1005",    "smallint", "1=Sim"),
+            ("70", "ENVIAR_ESOCIAL_S_1020",    "smallint", "1=Sim"),
+            ("73", "I_CNAE_ESOCIAL",           "varchar",  "= I_CNAE20"),
+            ("74", "I_TERCEIROS",              "integer",  "Valor inteiro codigo_terceiro"),
+            ("77", "ORIGEM_ALTERACAO",         "smallint", "1=Sistema"),
+            ("81", "ENVIAR_ESOCIAL_S_1080",    "smallint", "1=Sim"),
+        ]
+        st.dataframe(
+            pd.DataFrame(colunas_vig, columns=["Col", "Campo", "Tipo", "Descricao"]),
+            use_container_width=True, hide_index=True,
+        )
+
+# ── FOOTER ────────────────────────────────────────────────────────────────────
 st.markdown(f"""
 <div class="tr-footer">
     <span>DOMINIO SISTEMAS</span> &nbsp;.&nbsp; Thomson Reuters &nbsp;.&nbsp;
-    Classificador FPAS / Terceiros / SEFIP &nbsp;.&nbsp; IN RFB no 971/2009 &nbsp;.&nbsp; <span>v8.3</span>
+    Classificador FPAS / Terceiros / SEFIP &nbsp;.&nbsp; IN RFB no 971/2009 &nbsp;.&nbsp; <span>v8.4</span>
 </div>""", unsafe_allow_html=True)
