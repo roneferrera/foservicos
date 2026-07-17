@@ -610,6 +610,12 @@ APIS = [
 ]
 HEADERS = {"User-Agent": "Mozilla/5.0 (classificador-fpas/2.0)"}
 
+
+def limpar_cnpj(cnpj: str) -> str:
+    """Remove qualquer caractere não numérico do CNPJ."""
+    return re.sub(r"\D", "", str(cnpj))
+
+
 def validar_cnpj(cnpj: str) -> bool:
     """
     Valida CNPJ usando os pesos oficiais da Receita Federal.
@@ -618,23 +624,21 @@ def validar_cnpj(cnpj: str) -> bool:
     """
     c = limpar_cnpj(cnpj)
 
-    # Deve ter 14 dígitos e não pode ser sequência repetida
     if len(c) != 14 or len(set(c)) == 1:
         return False
 
-    def calc_dv(digits: str, pesos: list[int]) -> int:
-        soma = sum(int(d) * p for d, p in zip(digits, pesos))
+    def calc_dv(digits: str, pesos: list) -> int:
+        soma  = sum(int(d) * p for d, p in zip(digits, pesos))
         resto = soma % 11
         return 0 if resto < 2 else 11 - resto
 
     pesos1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
     pesos2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
 
-    dv1 = calc_dv(c[:12], pesos1)
-    dv2 = calc_dv(c[:13], pesos2)
+    return (int(c[12]) == calc_dv(c[:12], pesos1) and
+            int(c[13]) == calc_dv(c[:13], pesos2))
 
-    return int(c[12]) == dv1 and int(c[13]) == dv2
-  
+
 def normalizar_resposta(data: dict, cnpj: str) -> dict:
     cnae_codigo = (
         data.get("cnae_fiscal")
@@ -648,44 +652,58 @@ def normalizar_resposta(data: dict, cnpj: str) -> dict:
             if isinstance(data.get("atividade_principal"), list) else "")
     )
     cnae_str = str(cnae_codigo).zfill(7) if cnae_codigo else ""
-    cnae_fmt = f"{cnae_str[:4]}-{cnae_str[4]}/{cnae_str[5:]}" if len(cnae_str) == 7 else cnae_str
-    simples  = (data.get("opcao_pelo_simples")
-                or (data.get("simples", {}).get("optante", False)
-                    if isinstance(data.get("simples"), dict) else False))
+    cnae_fmt = (f"{cnae_str[:4]}-{cnae_str[4]}/{cnae_str[5:]}"
+                if len(cnae_str) == 7 else cnae_str)
+
+    simples = (
+        data.get("opcao_pelo_simples")
+        or (data.get("simples", {}).get("optante", False)
+            if isinstance(data.get("simples"), dict) else False)
+    )
+
     return {
-        "cnpj":             cnpj,
-        "razao_social":     data.get("razao_social") or data.get("nome", ""),
-        "nome_fantasia":    data.get("nome_fantasia", ""),
-        "situacao":         data.get("descricao_situacao_cadastral") or data.get("situacao", ""),
-        "cnae_codigo":      cnae_fmt,
-        "cnae_descricao":   cnae_descricao,
-        "simples":          bool(simples),
-        "natureza_juridica":data.get("descricao_natureza_juridica") or data.get("natureza_juridica", ""),
-        "porte":            data.get("descricao_porte") or data.get("porte", ""),
-        "logradouro":       data.get("logradouro", ""),
-        "numero":           data.get("numero", ""),
-        "bairro":           data.get("bairro", ""),
-        "municipio":        data.get("municipio", ""),
-        "uf":               data.get("uf", ""),
-        "cep":              data.get("cep", ""),
-        "data_inicio":      data.get("data_inicio_atividade") or data.get("abertura", ""),
-        "erro":             None,
+        "cnpj":              cnpj,
+        "razao_social":      data.get("razao_social") or data.get("nome", ""),
+        "nome_fantasia":     data.get("nome_fantasia", ""),
+        "situacao":          data.get("descricao_situacao_cadastral") or data.get("situacao", ""),
+        "cnae_codigo":       cnae_fmt,
+        "cnae_descricao":    cnae_descricao,
+        "simples":           bool(simples),
+        "natureza_juridica": data.get("descricao_natureza_juridica") or data.get("natureza_juridica", ""),
+        "porte":             data.get("descricao_porte") or data.get("porte", ""),
+        "logradouro":        data.get("logradouro", ""),
+        "numero":            data.get("numero", ""),
+        "bairro":            data.get("bairro", ""),
+        "municipio":         data.get("municipio", ""),
+        "uf":                data.get("uf", ""),
+        "cep":               data.get("cep", ""),
+        "data_inicio":       data.get("data_inicio_atividade") or data.get("abertura", ""),
+        "erro":              None,
     }
+
 
 def consultar_cnpj(cnpj_raw: str, delay: float = 1.0) -> dict:
     cnpj = limpar_cnpj(cnpj_raw)
+
     if not validar_cnpj(cnpj):
         return {"erro": f"CNPJ inválido: {cnpj_raw}"}
+
     time.sleep(delay)
+
     for url_tpl in APIS:
         try:
-            r = requests.get(url_tpl.format(cnpj=cnpj), headers=HEADERS, timeout=12)
+            r = requests.get(
+                url_tpl.format(cnpj=cnpj),
+                headers=HEADERS,
+                timeout=12,
+            )
             if r.status_code == 200:
                 return normalizar_resposta(r.json(), cnpj)
             if r.status_code == 429:
-                time.sleep(60)
+                time.sleep(60)  # rate limit: aguarda 1 min e tenta próxima API
         except Exception:
             continue
+
     return {"erro": f"CNPJ {cnpj} não encontrado em nenhuma API."}
 
 # ──────────────────────────────────────────────────────────────────────────────
