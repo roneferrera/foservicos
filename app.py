@@ -990,9 +990,21 @@ with tab_lote:
                 min_value=1, max_value=999999,
                 value=st.session_state.get("seq_inicio_val", 1),
                 step=1,
+                key="seq_inicio_input",
                 help="Cada empresa receberá um código sequencial a partir deste número."
             )
+
+            # ✅ CORREÇÃO: detecta mudança no número inicial e reseta os individuais
+            seq_anterior = st.session_state.get("seq_inicio_val", 1)
+            if seq_inicio != seq_anterior:
+                # Remove todas as chaves individuais para forçar recálculo
+                for i in range(len(resultados_proc)):
+                    st.session_state.pop(f"cod_srv_{i}", None)
+                st.session_state["seq_inicio_val"] = seq_inicio
+                st.rerun()
+
             st.session_state["seq_inicio_val"] = seq_inicio
+
         with col_seq2:
             st.markdown(f"""
             <div style="background:{TR_CARD2};border:1px solid {TR_BORDER};border-radius:8px;
@@ -1044,7 +1056,8 @@ with tab_lote:
                 cod_srv = st.number_input(
                     f"Cód. Serviço #{idx+1}",
                     min_value=1, max_value=999999,
-                    value=seq_auto, step=1,
+                    value=seq_auto,   # ✅ sempre usa seq_auto como padrão após reset
+                    step=1,
                     key=f"cod_srv_{idx}",
                     label_visibility="collapsed",
                     help=f"Automático: {seq_auto} — edite se necessário"
