@@ -153,7 +153,7 @@ TIPOS_EMPRESA = {
 }
 
 # ──────────────────────────────────────────────────────────────────────────────
-# MUNICÍPIOS — normalização robusta (CORRIGIDO)
+# MUNICÍPIOS — normalização robusta (CORRIGIDO para .xlsx)
 # ──────────────────────────────────────────────────────────────────────────────
 def _normalizar(s: str) -> str:
     """Remove acentos, converte para maiúsculas e elimina espaços extras."""
@@ -170,19 +170,22 @@ def _normalizar(s: str) -> str:
 def _carregar_municipios():
     """
     Carrega o mapa (UF_normalizada, NOME_normalizado) -> codigo_interno_dominio
-    CORREÇÕES:
-    - Não usa dtype=str (não funciona com xlrd/.xls)
-    - Usa converters por posição para forçar string
+    a partir do arquivo RELAÇÃO DE MUNICÍPIOS.xlsx
+
+    CORREÇÕES APLICADAS:
+    - Usa engine='openpyxl' para .xlsx (dtype=str funciona corretamente)
     - Remove BOM e espaços invisíveis dos nomes de coluna
     - Detecta colunas por nome normalizado com fallback por posição
-    - Trata código float: "5345.0" -> "5345"
+    - Trata código float residual: "5345.0" -> "5345"
+    - Ignora linhas com valores inválidos (nan, None, vazio)
     """
     try:
-        # Lê o arquivo sem dtype=str — xlrd ignora esse parâmetro
-        # Usamos header=0 explícito e engine padrão (xlrd para .xls)
+        # ── Leitura com openpyxl — dtype=str funciona corretamente ────────────
         df = pd.read_excel(
-            "RELAÇÃO DE MUNICÍPIOS.xls",
+            "RELAÇÃO DE MUNICÍPIOS.xlsx",
             sheet_name="RELAÇÃO DE MUNICÍPIOS",
+            engine="openpyxl",
+            dtype=str,
             header=0,
         )
 
@@ -192,7 +195,7 @@ def _carregar_municipios():
             .strip()
             .lstrip('\ufeff')
             .replace('\xa0', ' ')
-            .replace('\u200b', '')  # zero-width space
+            .replace('\u200b', '')
             for c in df.columns
         ]
 
@@ -210,8 +213,8 @@ def _carregar_municipios():
             elif col_n in ("ESTADO", "UF", "SIGLA", "SIGLA UF") and col_uf is None:
                 col_uf = col
 
-        # ── Fallback por posição (estrutura conhecida do arquivo) ──────────────
-        # Col 0 = Código | Col 1 = Nome | Col 2 = Cód RF | Col 3 = IBGE | Col 4 = Estado
+        # ── Fallback por posição ───────────────────────────────────────────────
+        # Estrutura conhecida: Código(0) | Nome(1) | Cód.RF(2) | IBGE(3) | Estado(4)
         if col_codigo is None and len(df.columns) >= 1:
             col_codigo = df.columns[0]
         if col_nome is None and len(df.columns) >= 2:
@@ -222,8 +225,8 @@ def _carregar_municipios():
             col_uf = df.columns[2]
 
         # ── Constrói o mapa ────────────────────────────────────────────────────
-        mapa   = {}
-        erros  = []
+        mapa  = {}
+        erros = []
 
         for idx, row in df.iterrows():
             try:
@@ -239,11 +242,10 @@ def _carregar_municipios():
                 if nome_raw.lower() in ("nan", "none", ""):
                     continue
 
-                # Converte float para int string: "5345.0" → "5345"
+                # Trata float residual: "5345.0" → "5345"
                 if "." in cod_raw:
                     try:
-                        cod_int = int(float(cod_raw))
-                        cod_raw = str(cod_int)
+                        cod_raw = str(int(float(cod_raw)))
                     except (ValueError, OverflowError):
                         pass
 
@@ -263,7 +265,7 @@ def _carregar_municipios():
             "col_nome":   col_nome,
             "col_uf":     col_uf,
             "colunas":    list(df.columns),
-            "amostra":    list(mapa.items())[:8],
+            "amostra":    [f"({u},{n}) → {c}" for (u, n), c in list(mapa.items())[:8]],
             "erros":      erros[:5],
         }
         return mapa, debug
@@ -275,12 +277,8 @@ def _carregar_municipios():
 # ── CARREGAMENTO INICIAL (executado uma vez por sessão) ───────────────────────
 if "MUNICIPIOS_MAP" not in st.session_state:
     _mapa, _debug = _carregar_municipios()
-    st.session_state["MUNICIPIOS_MAP"]   = _mapa
-    st.session_state["_mun_debug"]       = _debug
-    st.session_state["_mun_col_codigo"]  = _debug.get("col_codigo", "")
-    st.session_state["_mun_col_nome"]    = _debug.get("col_nome", "")
-    st.session_state["_mun_col_uf"]      = _debug.get("col_uf", "")
-    st.session_state["_mun_cols"]        = _debug.get("colunas", [])
+    st.session_state["MUNICIPIOS_MAP"] = _mapa
+    st.session_state["_mun_debug"]     = _debug
 
 MUNICIPIOS_MAP: dict = st.session_state.get("MUNICIPIOS_MAP", {})
 
@@ -289,10 +287,10 @@ def buscar_codigo_municipio(municipio: str, uf: str) -> str:
     """
     Busca o código interno Domínio para o município.
     Estratégia em 4 camadas:
-    1. Busca exata normalizada
-    2. Variações do nome (preposições, abreviações, apóstrofos)
-    3. Busca parcial (containment)
-    4. Busca por prefixo (primeiros 5 caracteres)
+      1. Busca exata normalizada
+      2. Variações do nome (preposições, abreviações, apóstrofos)
+      3. Busca parcial (containment)
+      4. Busca por prefixo (primeiros 5 caracteres)
     """
     if not municipio or not uf:
         return ""
@@ -314,27 +312,13 @@ def buscar_codigo_municipio(municipio: str, uf: str) -> str:
 
     # ── 2. Variações do nome ───────────────────────────────────────────────────
     variacoes = set()
-
-    # Remove preposições iniciais
-    nome_sem_prep = re.sub(r"^(DO|DE|DA|DOS|DAS)\s+", "", nome_orig).strip()
-    variacoes.add(nome_sem_prep)
-
-    # Remove preposições do meio
-    nome_sem_artigos = re.sub(r"\s+(DO|DE|DA|DOS|DAS)\s+", " ", nome_orig).strip()
-    variacoes.add(nome_sem_artigos)
-
-    # Expande abreviações
+    variacoes.add(re.sub(r"^(DO|DE|DA|DOS|DAS)\s+", "", nome_orig).strip())
+    variacoes.add(re.sub(r"\s+(DO|DE|DA|DOS|DAS)\s+", " ", nome_orig).strip())
     variacoes.add(nome_orig.replace("STO ", "SANTO ").replace("STA ", "SANTA "))
     variacoes.add(nome_orig.replace("SANTO ", "STO ").replace("SANTA ", "STA "))
-
-    # Trata apóstrofos e hifens
     variacoes.add(re.sub(r"['\-]", " ", nome_orig).strip())
-    variacoes.add(re.sub(r"\s+", "", nome_orig))
-
-    # Substitui D' por DE
     variacoes.add(nome_orig.replace("D ", "DE ").replace("D'", "DE "))
-
-    variacoes.discard(nome_orig)  # já testado acima
+    variacoes.discard(nome_orig)
 
     for v in variacoes:
         if not v:
@@ -806,7 +790,7 @@ st.markdown("""
         <div class="tr-title">Classificador FPAS / Terceiros / SEFIP</div>
         <div class="tr-subtitle">DOMÍNIO SISTEMAS &nbsp;·&nbsp; Thomson Reuters &nbsp;·&nbsp; IN RFB nº 971/2009</div>
     </div>
-    <div class="tr-badge">v7.1</div>
+    <div class="tr-badge">v7.2</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -847,7 +831,7 @@ with st.sidebar:
             "col_nome":   debug.get("col_nome", ""),
             "col_uf":     debug.get("col_uf", ""),
             "colunas":    debug.get("colunas", []),
-            "amostra":    [f"{k} → {v}" for k, v in (debug.get("amostra") or [])[:5]],
+            "amostra":    debug.get("amostra", []),
             "erros":      debug.get("erros", []),
         })
         teste_mun = st.text_input("Testar município", placeholder="SAO PAULO")
@@ -858,7 +842,6 @@ with st.sidebar:
                 st.success(f"✅ Código: **{cod_teste}**")
             else:
                 st.error("❌ Não encontrado")
-                # Mostra municípios disponíveis para a UF
                 uf_n = _normalizar(teste_uf)
                 nome_n = _normalizar(teste_mun)
                 sugestoes = [
@@ -873,10 +856,8 @@ with st.sidebar:
                     if todos_uf:
                         st.write(f"Municípios de {teste_uf.upper()}:", todos_uf)
 
-    # Botão para forçar recarregamento
     if st.button("🔄 Recarregar municípios"):
-        for k in ["MUNICIPIOS_MAP", "_mun_debug", "_mun_col_codigo",
-                  "_mun_col_nome", "_mun_col_uf", "_mun_cols"]:
+        for k in ["MUNICIPIOS_MAP", "_mun_debug"]:
             st.session_state.pop(k, None)
         st.rerun()
 
@@ -889,7 +870,6 @@ tab_lote, tab_individual, tab_tabela = st.tabs([
 # TAB 1 — CONSULTA EM LOTE
 # ══════════════════════════════════════════════════════════════════════════════
 with tab_lote:
-
     st.markdown(f'<div class="tr-card"><div class="tr-card-title">📋 Passo 1 — Cole os CNPJs</div>', unsafe_allow_html=True)
     col_input, col_dica = st.columns([3, 1])
     with col_input:
@@ -1192,6 +1172,7 @@ with tab_individual:
             mun     = dados_rf.get("municipio","")
             uf_val  = dados_rf.get("uf","")
             cod_mun = buscar_codigo_municipio(mun, uf_val)
+            cor_mun = TR_SUCCESS if cod_mun else TR_ERROR
             st.markdown(f"""
             <div class="tr-card">
                 <div class="tr-card-title">🏢 Dados</div>
@@ -1219,6 +1200,8 @@ with tab_individual:
                         {result_item("GFIP",          classif["codigo_gfip"])}
                     </div>
                 </div>""", unsafe_allow_html=True)
+            else:
+                st.warning(f"⚠️ {classif['erro']}")
 
 # ══════════════════════════════════════════════════════════════════════════════
 # TAB 3 — TABELA FPAS
@@ -1246,5 +1229,5 @@ with tab_tabela:
 st.markdown(f"""
 <div class="tr-footer">
     <span>DOMÍNIO SISTEMAS</span> &nbsp;·&nbsp; Thomson Reuters &nbsp;·&nbsp;
-    Classificador FPAS / Terceiros / SEFIP &nbsp;·&nbsp; IN RFB nº 971/2009 &nbsp;·&nbsp; <span>v7.1</span>
+    Classificador FPAS / Terceiros / SEFIP &nbsp;·&nbsp; IN RFB nº 971/2009 &nbsp;·&nbsp; <span>v7.2</span>
 </div>""", unsafe_allow_html=True)
