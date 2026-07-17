@@ -811,7 +811,9 @@ def montar_linha_vigencia(
     vigencia: str,
     descricao_vigencia: str,
     cod_mun: str,
+    tipo_servico_tomador_val: int | None = None,    # NOVO PARAMETRO
 ) -> list:
+  
     cnpj_limpo = limpar_cnpj(r.get("cnpj", ""))
 
     cod_terc_raw = r.get("codigo_terceiro", 0)
@@ -882,7 +884,7 @@ def montar_linha_vigencia(
         cod_mun,            # 31 codigo_municipio
         0,                  # 32 I_FPAS
         0,                  # 33 CALCULA_INSS_EMPRESA_LEI_12546
-        None,               # 34 TIPO_SERVICO_TOMADOR — NULL evita constraint
+        tipo_servico_tomador_val,   # 34 tipo_servico_tomador — 1,2,3 se Tomador; NULL caso contrario
         0,                  # 35 TIPO_ENDERECO
         "",                 # 36 COMPLEMENTO
         "",                 # 37 INSCRICAO_CONTRATANTE_EMPREITADA_PARCIAL
@@ -917,6 +919,7 @@ def montar_linha_vigencia(
 def _linha_vigencia_vazia(
     cnpj: str, cod_servico: int, tipo_cod: int,
     codigo_empresa: int, vigencia: str, descricao_vigencia: str,
+    tipo_servico_tomador_val: int | None = None,    # NOVO PARAMETRO
 ) -> list:
     return montar_linha_vigencia(
         r={
@@ -929,7 +932,9 @@ def _linha_vigencia_vazia(
         codigo_empresa=codigo_empresa,
         vigencia=vigencia, descricao_vigencia=descricao_vigencia,
         cod_mun="",
+        tipo_servico_tomador_val=tipo_servico_tomador_val,    # NOVO
     )
+  
 def gerar_txt_leiaute(linhas: list) -> bytes:
     linhas_txt = []
     for campos in linhas:
@@ -1409,6 +1414,10 @@ with tab_lote:
             tipos_selecionados = {}
             codigos_servico    = {}
 
+            tipos_selecionados          = {}
+            codigos_servico             = {}
+            tipos_servico_tomador       = {}
+
             for idx, row in enumerate(resultados_proc):
                 status   = row.get("_status", "")
                 mun      = row.get("municipio", "") or ""
@@ -1444,13 +1453,33 @@ with tab_lote:
                     )
                     codigos_servico[idx] = int(cod_srv)
                 with col_tipo:
-                    tipos_selecionados[idx] = st.selectbox(
+                    tipo_sel = st.selectbox(
                         f"Tipo #{idx+1}",
                         options=list(TIPOS_EMPRESA.keys()),
                         format_func=lambda k: f"{k} - {TIPOS_EMPRESA[k]}",
                         key=f"tipo_{idx}",
                         label_visibility="collapsed",
                     )
+                    tipos_selecionados[idx] = tipo_sel
+
+                # Se Tomador de Servico, exibe campo adicional
+                if tipo_sel == 4:
+                    TIPOS_SERVICO_TOMADOR = {
+                        1: "Cessao de Mao de Obra (inclusive cooperativa de trabalho PJ)",
+                        2: "Trabalho temporario - substituicao de pessoal",
+                        3: "Trabalho temporario - servicos extraordinarios",
+                    }
+                    col_esp, _ = st.columns([2, 2])
+                    with col_esp:
+                        tst = st.selectbox(
+                            f"Tipo de Servico do Tomador #{idx+1}",
+                            options=list(TIPOS_SERVICO_TOMADOR.keys()),
+                            format_func=lambda k: f"{k} - {TIPOS_SERVICO_TOMADOR[k]}",
+                            key=f"tipo_servico_tomador_{idx}",
+                        )
+                        tipos_servico_tomador[idx] = tst
+                else:
+                    tipos_servico_tomador[idx] = None
 
             st.markdown("<br>", unsafe_allow_html=True)
             st.markdown(
@@ -1501,11 +1530,13 @@ with tab_lote:
                                 vigencia=vigencia_str,
                                 descricao_vigencia=descricao_vig,
                                 cod_mun=cod_mun_v,
+                                tipo_servico_tomador_val=tipos_servico_tomador.get(idx),
                             )
                         else:
                             linha_vig = _linha_vigencia_vazia(
                                 row["cnpj"], cod_srv, tipo_cod,
                                 codigo_empresa_dom, vigencia_str, descricao_vig,
+                                tipo_servico_tomador_val=tipos_servico_tomador.get(idx),
                             )
                         linhas_vig.append(linha_vig)
 
