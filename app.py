@@ -153,7 +153,7 @@ TIPOS_EMPRESA = {
 }
 
 # ──────────────────────────────────────────────────────────────────────────────
-# MUNICÍPIOS — normalização robusta
+# MUNICÍPIOS — normalização robusta (versão corrigida)
 # ──────────────────────────────────────────────────────────────────────────────
 def _normalizar(s: str) -> str:
     """Remove acentos, converte para maiúsculas e elimina espaços extras."""
@@ -166,61 +166,139 @@ def _normalizar(s: str) -> str:
     s = re.sub(r"\s+", " ", s).strip()
     return s
 
+
 def _carregar_municipios():
+    """
+    Carrega o mapa (UF_normalizada, NOME_normalizado) -> codigo_interno_dominio
+    a partir do arquivo RELAÇÃO DE MUNICÍPIOS.xls.
+    
+    Correções aplicadas:
+    - Detecção automática de colunas (não depende de nome exato)
+    - Suporte a .xls com xlrd (dtype=str não funciona, usa converters)
+    - Remove BOM e espaços invisíveis dos nomes de coluna
+    - Trata código como float (ex: 1.0 -> "1")
+    """
     try:
+        # Lê sem dtype=str — usa converters para forçar string nas colunas relevantes
+        # O xlrd não respeita dtype=str, então usamos converters
         df = pd.read_excel(
             "RELAÇÃO DE MUNICÍPIOS.xls",
             sheet_name="RELAÇÃO DE MUNICÍPIOS",
-            dtype=str
+            converters={
+                # Converte qualquer coisa para str limpo
+                0: lambda x: str(int(x)) if isinstance(x, float) and not pd.isna(x) else str(x).strip(),
+                1: lambda x: str(x).strip(),
+                2: lambda x: str(x).strip(),
+                3: lambda x: str(x).strip(),
+                4: lambda x: str(x).strip(),
+            }
         )
-        df.columns = [str(c).strip() for c in df.columns]
 
-        col_codigo = "Código"
-        col_nome   = "Nome"
-        col_uf     = "Estado"
+        # Remove BOM e espaços dos nomes de coluna
+        df.columns = [
+            str(c).strip().lstrip('\ufeff').replace('\xa0', ' ')
+            for c in df.columns
+        ]
 
+        # ── Detecção automática de colunas ────────────────────────────────────
+        # Procura a coluna "Código" (com ou sem acento)
+        col_codigo = None
+        col_nome   = None
+        col_uf     = None
+
+        for col in df.columns:
+            col_norm = _normalizar(col)
+            if col_norm in ("CODIGO", "CÓDIGO", "COD", "CODIGO_MUNICIPIO") and col_codigo is None:
+                col_codigo = col
+            elif col_norm in ("NOME", "MUNICIPIO", "MUNICÍPIO", "NOME_MUNICIPIO") and col_nome is None:
+                col_nome = col
+            elif col_norm in ("ESTADO", "UF", "SIGLA", "SIGLA_UF") and col_uf is None:
+                col_uf = col
+
+        # Fallback: usa posição das colunas se não encontrou por nome
+        # Estrutura esperada: Código(0), Nome(1), Cod.RF(2), Cod.IBGE(3), Estado(4)
+        if col_codigo is None and len(df.columns) >= 1:
+            col_codigo = df.columns[0]
+        if col_nome is None and len(df.columns) >= 2:
+            col_nome = df.columns[1]
+        if col_uf is None and len(df.columns) >= 5:
+            col_uf = df.columns[4]
+
+        # ── Constrói o mapa ───────────────────────────────────────────────────
         mapa = {}
-        for _, row in df.iterrows():
+        erros = []
+        for idx, row in df.iterrows():
             try:
-                uf   = _normalizar(str(row[col_uf]))
-                nome = _normalizar(str(row[col_nome]))
-                cod  = str(row[col_codigo]).strip()
-                cod  = cod.split(".")[0] if "." in cod else cod
-                if uf and nome and cod and cod not in ("nan", "None", ""):
-                    mapa[(uf, nome)] = cod
-            except Exception:
+                uf_raw   = str(row[col_uf]).strip()
+                nome_raw = str(row[col_nome]).strip()
+                cod_raw  = str(row[col_codigo]).strip()
+
+                # Limpa código: "1.0" -> "1", "nan" -> ignora
+                if cod_raw.lower() in ("nan", "none", "", "0"):
+                    continue
+                # Remove ".0" de floats convertidos para string
+                if "." in cod_raw:
+                    try:
+                        cod_raw = str(int(float(cod_raw)))
+                    except ValueError:
+                        pass
+
+                if not uf_raw or uf_raw.lower() in ("nan", "none"):
+                    continue
+                if not nome_raw or nome_raw.lower() in ("nan", "none"):
+                    continue
+
+                uf_n   = _normalizar(uf_raw)
+                nome_n = _normalizar(nome_raw)
+
+                if uf_n and nome_n and cod_raw:
+                    mapa[(uf_n, nome_n)] = cod_raw
+
+            except Exception as e:
+                erros.append(f"Linha {idx}: {e}")
                 continue
 
-        return mapa, col_codigo, col_nome, col_uf
+        debug_info = {
+            "total":      len(mapa),
+            "col_codigo": col_codigo,
+            "col_nome":   col_nome,
+            "col_uf":     col_uf,
+            "colunas":    list(df.columns),
+            "amostra":    list(mapa.items())[:5],
+            "erros":      erros[:5],
+        }
+        return mapa, debug_info
 
     except Exception as e:
-        return {}, "", "", str(e)
+        return {}, {"erro_fatal": str(e), "total": 0}
 
 
-# ── CARREGAMENTO INICIAL DOS MUNICÍPIOS (executado na inicialização do app) ───
+# ── CARREGAMENTO INICIAL (executado uma vez por sessão) ───────────────────────
 if "MUNICIPIOS_MAP" not in st.session_state:
-    _mapa, _col_cod, _col_nom, _col_uf = _carregar_municipios()
-    st.session_state["MUNICIPIOS_MAP"]    = _mapa
-    st.session_state["_mun_col_codigo"]   = _col_cod
-    st.session_state["_mun_col_nome"]     = _col_nom
-    st.session_state["_mun_col_uf"]       = _col_uf
-    st.session_state["_mun_cols"]         = list(_mapa.keys())[:5] if _mapa else []
-    if not _mapa:
-        st.session_state["_mun_error"] = _col_uf  # _col_uf contém o erro neste caso
+    _mapa, _debug = _carregar_municipios()
+    st.session_state["MUNICIPIOS_MAP"]   = _mapa
+    st.session_state["_mun_debug"]       = _debug
+    st.session_state["_mun_col_codigo"]  = _debug.get("col_codigo", "")
+    st.session_state["_mun_col_nome"]    = _debug.get("col_nome", "")
+    st.session_state["_mun_col_uf"]      = _debug.get("col_uf", "")
+    st.session_state["_mun_cols"]        = _debug.get("amostra", [])
 
-# Variável global segura — sempre definida
 MUNICIPIOS_MAP: dict = st.session_state.get("MUNICIPIOS_MAP", {})
 
 
 def buscar_codigo_municipio(municipio: str, uf: str) -> str:
     """
     Busca o código interno Domínio para o município.
-    Tenta variações do nome para aumentar a taxa de acerto.
+    
+    Estratégia em camadas:
+    1. Busca exata normalizada
+    2. Variações de nome (preposições, abreviações)
+    3. Busca parcial (containment)
+    4. Busca por similaridade de prefixo
     """
     if not municipio or not uf:
         return ""
 
-    # Sempre lê do session_state — nunca usa MUNICIPIOS_MAP global diretamente
     mapa = st.session_state.get("MUNICIPIOS_MAP", {})
     if not mapa:
         return ""
@@ -228,27 +306,59 @@ def buscar_codigo_municipio(municipio: str, uf: str) -> str:
     uf_n      = _normalizar(uf)
     nome_orig = _normalizar(municipio)
 
-    variacoes = [nome_orig]
+    if not uf_n or not nome_orig:
+        return ""
 
-    # Remove preposições iniciais
+    # ── 1. Busca exata ────────────────────────────────────────────────────────
+    cod = mapa.get((uf_n, nome_orig))
+    if cod:
+        return str(cod)
+
+    # ── 2. Variações do nome ──────────────────────────────────────────────────
+    variacoes = set()
+
+    # Remove preposições iniciais: "DO", "DE", "DA", "DOS", "DAS"
     nome_sem_prep = re.sub(r"^(DO|DE|DA|DOS|DAS)\s+", "", nome_orig).strip()
-    if nome_sem_prep != nome_orig:
-        variacoes.append(nome_sem_prep)
+    variacoes.add(nome_sem_prep)
 
-    # Expande abreviações
-    variacoes.append(nome_orig.replace("STO ", "SANTO ").replace("STA ", "SANTA "))
-    variacoes.append(nome_orig.replace("SANTO ", "STO ").replace("SANTA ", "STA "))
+    # Expande abreviações comuns
+    variacoes.add(nome_orig.replace("STO ", "SANTO ").replace("STA ", "SANTA "))
+    variacoes.add(nome_orig.replace("SANTO ", "STO ").replace("SANTA ", "STA "))
 
-    # Busca exata por variações
+    # Remove apóstrofos e hifens residuais
+    variacoes.add(re.sub(r"['\-]", " ", nome_orig).strip())
+    variacoes.add(re.sub(r"\s+", "", nome_orig))  # sem espaços (para nomes colados)
+
+    # Substitui "D'" por "DE "
+    variacoes.add(nome_orig.replace("D ", "DE ").replace("D'", "DE "))
+
+    # Remove artigos do meio: "DO", "DE", "DA", "DOS", "DAS"
+    nome_sem_artigos = re.sub(r"\s+(DO|DE|DA|DOS|DAS)\s+", " ", nome_orig).strip()
+    variacoes.add(nome_sem_artigos)
+
+    variacoes.discard(nome_orig)  # já testado acima
+
     for v in variacoes:
-        cod = mapa.get((uf_n, v), "")
+        if not v:
+            continue
+        cod = mapa.get((uf_n, v))
         if cod:
             return str(cod)
 
-    # Busca parcial
+    # ── 3. Busca parcial (containment) ───────────────────────────────────────
     for (u, n), c in mapa.items():
-        if u == uf_n and (nome_orig in n or n in nome_orig):
+        if u != uf_n:
+            continue
+        # O nome da tabela contém o nome buscado OU vice-versa
+        if nome_orig in n or n in nome_orig:
             return str(c)
+
+    # ── 4. Busca por prefixo (primeiros 6 caracteres) ─────────────────────────
+    prefixo = nome_orig[:6]
+    if len(prefixo) >= 4:
+        for (u, n), c in mapa.items():
+            if u == uf_n and n.startswith(prefixo):
+                return str(c)
 
     return ""
 
@@ -715,27 +825,50 @@ with st.sidebar:
         options=["SENAI","SESI","SENAC","SESC","SEBRAE","SENAR","SEST","SENAT","SESCOOP"])
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # Status da tabela de municípios
+       # Status da tabela de municípios
     mapa = st.session_state.get("MUNICIPIOS_MAP", {})
+    debug = st.session_state.get("_mun_debug", {})
+    
     if mapa:
-        st.markdown(f'<div style="font-size:10px;color:{TR_SUCCESS};margin-top:8px;">✅ {len(mapa):,} municípios carregados</div>', unsafe_allow_html=True)
-        # Mostra colunas detectadas para debug
-        cols_det = st.session_state.get("_mun_cols", [])
-        with st.expander("🔍 Debug municípios"):
-            st.write("**Colunas detectadas:**", cols_det)
-            st.write("**Col Código:**", st.session_state.get("_mun_col_codigo",""))
-            st.write("**Col Nome:**",   st.session_state.get("_mun_col_nome",""))
-            st.write("**Col UF:**",     st.session_state.get("_mun_col_uf",""))
-            # Teste direto
-            teste_mun = st.text_input("Testar município", placeholder="SAO PAULO")
-            teste_uf  = st.text_input("UF", placeholder="SP")
-            if teste_mun and teste_uf:
-                cod_teste = buscar_codigo_municipio(teste_mun, teste_uf)
-                st.write(f"Código encontrado: **{cod_teste or 'NÃO ENCONTRADO'}**")
+        st.markdown(
+            f'<div style="font-size:10px;color:{TR_SUCCESS};margin-top:8px;">'
+            f'✅ {len(mapa):,} municípios carregados</div>',
+            unsafe_allow_html=True
+        )
     else:
-        err = st.session_state.get("_mun_error", "")
-        st.markdown(f'<div style="font-size:10px;color:{TR_WARNING};margin-top:8px;">⚠️ Arquivo de municípios não carregado.<br>{err}</div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div style="font-size:10px;color:{TR_WARNING};margin-top:8px;">'
+            f'⚠️ Municípios não carregados</div>',
+            unsafe_allow_html=True
+        )
 
+    with st.expander("🔍 Debug municípios"):
+        st.json(debug)
+        teste_mun = st.text_input("Testar município", placeholder="SAO PAULO")
+        teste_uf  = st.text_input("UF", placeholder="SP")
+        if teste_mun and teste_uf:
+            cod_teste = buscar_codigo_municipio(teste_mun, teste_uf)
+            if cod_teste:
+                st.success(f"✅ Código encontrado: **{cod_teste}**")
+            else:
+                st.error(f"❌ Município não encontrado")
+                # Mostra sugestões
+                uf_n = _normalizar(teste_uf)
+                nome_n = _normalizar(teste_mun)
+                sugestoes = [
+                    f"{n} → {c}"
+                    for (u, n), c in list(mapa.items())[:500]
+                    if u == uf_n and nome_n[:4] in n
+                ][:5]
+                if sugestoes:
+                    st.write("Sugestões:", sugestoes)
+
+    # Botão para forçar recarregamento
+    if st.button("🔄 Recarregar municípios"):
+        for k in ["MUNICIPIOS_MAP", "_mun_debug", "_mun_col_codigo",
+                  "_mun_col_nome", "_mun_col_uf", "_mun_cols"]:
+            st.session_state.pop(k, None)
+        st.rerun()
 # ── TABS ──────────────────────────────────────────────────────────────────────
 tab_lote, tab_individual, tab_tabela = st.tabs([
     "📋  Consulta em Lote", "🔍  Consulta Individual", "📖  Tabela FPAS"
