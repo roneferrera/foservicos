@@ -920,13 +920,12 @@ def montar_linha_vigencia(
         "",                             # 50 CODIGO_SUSPENSAO_PROCESSO_RAT
         0,                              # 51 SOMA_CODIGOS_SUSPENSAO_TERCEIROS
         perc_terc,                      # 52 PERCENTUAL_TERCEIRO_BRUTO
-        cnae_num,                       # 53 I_CNAE_ESOCIAL
-        i_terceiros,                    # 54 I_TERCEIROS
-        0,                              # 55 EFETUAR_RETENCAO_INSS_NOTAS_FISCAIS_INSCRICAO_OUTROS_CLIENTES
-        "{00000000-0000-0000-0000-000000000000}",  # 56 COMPANY_ID
-        "",                             # 57 NUMERO_PROCESSO_APRENDIZ
-        0,                              # 58 INEXIGIBILIDADE_RAT
-        0,                              # 59 CALCULAR_APOIO_FINANCEIRO_FOLHA_COLABORADOR_RS_MTE_991_2024
+        i_terceiros,                    # 53 I_TERCEIROS
+        0,                              # 54 EFETUAR_RETENCAO_INSS_NOTAS_FISCAIS_INSCRICAO_OUTROS_CLIENTES
+        "{00000000-0000-0000-0000-000000000000}",  # 55 COMPANY_ID
+        "",                             # 56 NUMERO_PROCESSO_APRENDIZ
+        0,                              # 57 INEXIGIBILIDADE_RAT
+        0,                              # 58 CALCULAR_APOIO_FINANCEIRO_FOLHA_COLABORADOR_RS_MTE_991_2024
     ]
 
 def _linha_vigencia_vazia(
@@ -1953,7 +1952,6 @@ with tab_importacao:
             ("49", "COMPETENCIA_FIM_VIGENCIA", "date",     "DD/MM/AAAA - fim vigencia (31/12/3000)"),
             ("64", "ENVIAR_ESOCIAL_S_1005",    "smallint", "1=Sim"),
             ("70", "ENVIAR_ESOCIAL_S_1020",    "smallint", "1=Sim"),
-            ("73", "I_CNAE_ESOCIAL",           "varchar",  "= I_CNAE20"),
             ("74", "I_TERCEIROS",              "integer",  "Valor inteiro codigo_terceiro"),
             ("77", "ORIGEM_ALTERACAO",         "smallint", "1=Sistema"),
             ("81", "ENVIAR_ESOCIAL_S_1080",    "smallint", "1=Sim"),
