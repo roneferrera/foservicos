@@ -1416,6 +1416,81 @@ with tab_lote:
             st.info("Informe e confirme o numero inicial da sequencia para exibir os campos de Codigo de Servico.")
         else:
             seq_inicio = st.session_state["seq_inicio_val"]
+
+            # ══════════════════════════════════════════════════════════════
+            # PAINEL DE APLICACAO EM LOTE
+            # ══════════════════════════════════════════════════════════════
+            with st.expander("⚡ Aplicar Tipo e Tomador de Serviço em Lote", expanded=False):
+                st.markdown(
+                    f'<div style="font-size:11px;color:{TR_TEXT_MUTED};margin-bottom:12px;">'
+                    f'Selecione o Tipo e, se aplicavel, o Tipo de Servico do Tomador e clique em '
+                    f'<b style="color:{TR_ORANGE};">Aplicar em Todos</b> para sobrescrever todos os registros abaixo.</div>',
+                    unsafe_allow_html=True,
+                )
+                col_lote_tipo, col_lote_tst, col_lote_btn = st.columns([2, 3, 1])
+
+                with col_lote_tipo:
+                    tipo_lote = st.selectbox(
+                        "Tipo (lote)",
+                        options=list(TIPOS_EMPRESA.keys()),
+                        format_func=lambda k: f"{k} - {TIPOS_EMPRESA[k]}",
+                        key="tipo_lote_sel",
+                    )
+
+                TIPOS_SERVICO_TOMADOR = {
+                    1: "Cessao de Mao de Obra (inclusive cooperativa de trabalho PJ)",
+                    2: "Trabalho temporario - substituicao de pessoal",
+                    3: "Trabalho temporario - servicos extraordinarios",
+                }
+
+                with col_lote_tst:
+                    tst_lote = st.selectbox(
+                        "Tipo Servico Tomador (lote)",
+                        options=list(TIPOS_SERVICO_TOMADOR.keys()),
+                        format_func=lambda k: f"{k} - {TIPOS_SERVICO_TOMADOR[k]}",
+                        key="tst_lote_sel",
+                        disabled=(tipo_lote != 4),
+                        help="Habilitado apenas quando Tipo = 4 (Tomador de Servico)",
+                    )
+
+                with col_lote_btn:
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    if st.button(
+                        "Aplicar em Todos",
+                        type="primary",
+                        use_container_width=True,
+                        key="btn_aplicar_lote",
+                    ):
+                        for i in range(len(resultados_proc)):
+                            st.session_state[f"tipo_{i}"] = tipo_lote
+                            st.session_state[f"tipo_servico_tomador_{i}"] = (
+                                tst_lote if tipo_lote == 4 else 1
+                            )
+                        st.success(
+                            f"Tipo '{tipo_lote} - {TIPOS_EMPRESA[tipo_lote]}' aplicado em "
+                            f"{len(resultados_proc)} registro(s)!"
+                        )
+                        st.rerun()
+
+                # Preview resumido do que sera aplicado
+                st.markdown(
+                    f'<div style="background:{TR_CARD2};border:1px solid {TR_BORDER};'
+                    f'border-radius:6px;padding:8px 14px;margin-top:8px;font-size:11px;'
+                    f'color:{TR_TEXT_MUTED};">'
+                    f'Preview: <b style="color:{TR_ORANGE};">{len(resultados_proc)}</b> registro(s) '
+                    f'receberao Tipo = <b style="color:{TR_ORANGE};">{tipo_lote} - {TIPOS_EMPRESA[tipo_lote]}</b>'
+                    + (
+                        f' &nbsp;|&nbsp; Tipo Servico Tomador = '
+                        f'<b style="color:{TR_ORANGE};">{tst_lote} - {TIPOS_SERVICO_TOMADOR[tst_lote]}</b>'
+                        if tipo_lote == 4 else ""
+                    )
+                    + f'</div>',
+                    unsafe_allow_html=True,
+                )
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            # ── Cabeçalho da grade individual ─────────────────────────────
             st.markdown(f"""
             <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;
                         padding:6px 12px;background:{TR_CARD};border-radius:6px;
@@ -1424,12 +1499,15 @@ with tab_lote:
                 <div>Empresa</div><div>Cod. Servico</div><div>Tipo</div>
             </div>""", unsafe_allow_html=True)
 
-            tipos_selecionados = {}
-            codigos_servico    = {}
-
             tipos_selecionados          = {}
             codigos_servico             = {}
             tipos_servico_tomador       = {}
+
+            TIPOS_SERVICO_TOMADOR = {
+                1: "Cessao de Mao de Obra (inclusive cooperativa de trabalho PJ)",
+                2: "Trabalho temporario - substituicao de pessoal",
+                3: "Trabalho temporario - servicos extraordinarios",
+            }
 
             for idx, row in enumerate(resultados_proc):
                 status   = row.get("_status", "")
@@ -1477,11 +1555,6 @@ with tab_lote:
 
                 # Se Tomador de Servico, exibe campo adicional
                 if tipo_sel == 4:
-                    TIPOS_SERVICO_TOMADOR = {
-                        1: "Cessao de Mao de Obra (inclusive cooperativa de trabalho PJ)",
-                        2: "Trabalho temporario - substituicao de pessoal",
-                        3: "Trabalho temporario - servicos extraordinarios",
-                    }
                     col_esp, _ = st.columns([2, 2])
                     with col_esp:
                         tst = st.selectbox(
@@ -1490,8 +1563,8 @@ with tab_lote:
                             format_func=lambda k: f"{k} - {TIPOS_SERVICO_TOMADOR[k]}",
                             key=f"tipo_servico_tomador_{idx}",
                         )
-                        tipos_servico_tomador[idx] = int(tst)   # 1, 2 ou 3
-                else:                                            # ← CORRETO: mesmo nível do if
+                        tipos_servico_tomador[idx] = int(tst)
+                else:
                     tipos_servico_tomador[idx] = 1
 
             st.markdown("<br>", unsafe_allow_html=True)
