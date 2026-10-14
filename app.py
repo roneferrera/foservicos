@@ -220,8 +220,9 @@ fpas = c1.selectbox("FPAS", opcoes_fpas, placeholder="escolha o FPAS",
                     **d(f"fpas_{kp}", index=0 if sug["fpas"] else None),
                     format_func=lambda f: f"{f} — {ref.fpas.get(f, {}).get('descricao', '')[:70]}")
 if sug["fpas"]:
-    c2.caption(f"Relação CNAE × FPAS da Domínio: CNAE {prest.get('cnae')} → atividade "
-               f""{sug['atividade'] or ref.cnae.get(prest.get('cnae'), '')}" → FPAS {sug['fpas']} ({sug['ligacao']}).")
+    atividade = sug["atividade"] or ref.cnae.get(prest.get("cnae"), "")
+    c2.caption(f"Relacao CNAE x FPAS da Dominio: CNAE {prest.get('cnae')} -> atividade '{atividade}' "
+               f"-> FPAS {sug['fpas']} ({sug['ligacao']}).")
 if fpas is None:
     for a_ in sug["alertas"]:
         st.warning(a_)
