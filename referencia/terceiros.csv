@@ -1,0 +1,310 @@
+﻿i_terceiros;fpas;codigo;descricao;percentual;composicao
+307;507;0;Com convênio;0.00;
+3;507;1;Com convênio Incra + Senai + Sesi + Sebrae;2.50;Sal. Educ. 2.50%
+4;507;2;Com convênio Sal. Educ. + Senai + Sesi + Sebrae;0.20;Incra 0.20%
+5;507;3;Com convênio Senai + Sesi + Sebrae;2.70;Sal. Educ. 2.50% + Incra 0.20%
+6;507;4;Com convênio Sal. Educ. + Incra + Sesi + Sebrae;1.00;Senai 1.00%
+7;507;5;Com convênio Incra + Sesi + Sebrae;3.50;Sal. Educ. 2.50% + Senai 1.00%
+8;507;6;Com convênio Sal. Educ. + Sesi + Sebrae;1.20;Incra 0.20% + Senai 1.00%
+9;507;7;Com convênio Sesi + Sebrae;3.70;Sal. Educ. 2.50% + Incra 0.20% + Senai 1.00%
+10;507;8;Com convênio Sal. Educ. + Incra + Senai + Sebrae;1.50;Sesi 1.50%
+11;507;9;Com convênio Incra + Senai + Sebrae;4.00;Sal. Educ. 2.50% + Sesi 1.50%
+12;507;10;Com convênio Sal. Educ. + Senai + Sebrae;1.70;Incra 0.20% + Sesi 1.50%
+13;507;11;Com convênio Senai + Sebrae;4.20;Sal. Educ. 2.50% + Incra 0.20% + Sesi 1.50%
+14;507;12;Com convênio Sal. Educ. + Incra + Sebrae;2.50;Senai 1.00% + Sesi 1.50%
+15;507;13;Com convênio Incra + Sebrae;5.00;Sal. Educ. 2.50% + Senai 1.00% + Sesi 1.50%
+16;507;14;Com convênio Sal. Educ. + Sebrae;2.70;Incra 0.20% + Senai 1.00% + Sesi 1.50%
+17;507;15;Com convênio Sebrae;5.20;Sal. Educ. 2.50% + Incra 0.20% + Senai 1.00% + Sesi 1.50%
+18;507;64;Com convênio Sal. Educ. + Incra + Senai + Sesi;0.60;Sebrae 0.60%
+19;507;65;Com convênio Incra + Senai + Sesi;3.10;Sal. Educ. 2.50% + Sebrae 0.60%
+20;507;66;Com convênio Sal. Educ. + Senai + Sesi;0.80;Incra 0.20% + Sebrae 0.60%
+21;507;67;Com convênio Senai + Sesi;3.30;Sal. Educ. 2.50% + Incra 0.20% + Sebrae 0.60%
+22;507;68;Com convênio Sal. Educ. + Incra + Sesi;1.60;Senai 1.00% + Sebrae 0.60%
+23;507;69;Com convênio Incra + Sesi;4.10;Sal. Educ. 2.50% + Senai 1.00% + Sebrae 0.60%
+24;507;70;Com convênio Sal. Educ. + Sesi;1.80;Incra 0.20% + Senai 1.00% + Sebrae 0.60%
+25;507;71;Com convênio Sesi;4.30;Sal. Educ. 2.50% + Incra 0.20% + Senai 1.00% + Sebrae 0.60%
+26;507;72;Com convênio Sal. educ. + Incra + Senai;2.10;Sesi 1.50% + Sebrae 0.60%
+27;507;73;Com convênio Incra + Senai;4.60;Sal. Educ. 2.50% + Sesi 1.50% + Sebrae 0.60%
+28;507;74;Com convênio Sal. Educ. + Senai;2.30;Incra 0.20% + Sesi 1.50% + Sebrae 0.60%
+29;507;75;Com convênio Senai;4.80;Sal. Educ. 2.50% + Incra 0.20% + Sesi 1.50% + Sebrae 0.60%
+30;507;76;Com convênio Sal. Educ. + Incra;3.10;Senai 1.00% + Sesi 1.50% + Sebrae 0.60%
+31;507;77;Com convênio Incra;5.60;Sal. Educ. 2.50% + Senai 1.00% + Sesi 1.50% + Sebrae 0.60%
+32;507;78;Com convênio Sal. Educação;3.30;Incra 0.20% + Senai 1.00% + Sesi 1.50% + Sebrae 0.60%
+33;507;79;Sem convênio;5.80;Sal. Educ. 2.50% + Incra 0.20% + Senai 1.00% + Sesi 1.50% + Sebrae 0.60%
+34;507;4096;Com convênio Sal. Educ. + Incra + Sebrae;2.50;Sescoop 2.50%
+35;507;4097;Com convênio Incra + Sebrae;5.00;Sal. Educ. 2.50% + Sescoop 2.50%
+36;507;4098;Com convênio Sal. Educ.+ Sebrae;2.70;Incra 0.20% + Sescoop 2.50%
+37;507;4099;Com convênio Sebrae;5.20;Sal. Educ. 2.50% + Incra 0.20% + Sescoop 2.50%
+38;507;4160;Com convenio Sal. educ. + Incra;3.10;Sebrae 0.60% + Sescoop 2.50%
+39;507;4161;Com convênio Incra;5.60;Sal. Educ. 2.50% + Sebrae 0.60% + Sescoop 2.50%
+40;507;4162;Com convênio Sal. Educação;3.30;Incra 0.20% + Sebrae 0.60% + Sescoop 2.50%
+41;507;4163;Sem convênio;5.80;Sal. Educ. 2.50% + Incra 0.20% + Sebrae 0.60% + Sescoop 2.50%
+308;515;0;Com convênio;0.00;
+43;515;1;Com convênio Incra + Senac + Sesc + Sebrae;2.50;Sal. Educ. 2.50%
+44;515;2;Com convênio Sal. Educ. + Senac + Sesc + Sebrae;0.20;Incra 0.20%
+45;515;3;Com convênio Senac + Sesc + Sebrae;2.70;Sal. Educ. 2.50% + Incra 0.20%
+46;515;16;Com convênio Sal. Educ. + Incra + Sesc + Sebrae;1.00;Senac 1.00%
+47;515;17;Com convênio Incra + Sesc + Sebrae;3.50;Sal. Educ. 2.50% + Senac 1.00%
+48;515;18;Com convênio Sal. Educ. + Sesc + Sebrae;1.20;Incra 0.20% + Senac 1.00%
+49;515;19;Com convênio Sesc + Sebrae;3.70;Sal. Educ. 2.50% + Incra 0.20% + Senac 1.00%
+50;515;32;Com convênio Sal. Educ. + Incra + Senac + Sebrae;1.50;Sesc 1.50%
+51;515;33;Com convênio Incra + Senac + Sebrae;4.00;Sal. Educ. 2.50% + Sesc 1.50%
+52;515;34;Com convênio Sal. Educ. + Senac + Sebrae;1.70;Incra 0.20% + Sesc 1.50%
+53;515;35;Com convênio Senac + Sebrae;4.20;Sal. Educ. 2.50% + Incra 0.20% + Sesc 1.50%
+54;515;48;Com convênio Sal. Educ. + Incra + Sebrae;2.50;Senac 1.00% + Sesc 1.50%
+55;515;49;Com convênio Incra + Sebrae;5.00;Sal. Educ. 2.50% + Senac 1.00% + Sesc 1.50%
+56;515;50;Com convênio Sal. Educ. + Sebrae;2.70;Incra 0.20% + Senac 1.00% + Sesc 1.50%
+57;515;51;Com convênio Sebrae;5.20;Sal. Educ. 2.50% + Incra 0.20% + Senac 1.00% + Sesc 1.50%
+58;515;64;Com convênio Sal. Educ. + Incra + Senac + Sesc;0.60;Sebrae 0.60%
+59;515;65;Com convênio Incra + Senac + Sesc;3.10;Sal. Educ. 2.50% + Sebrae 0.60%
+60;515;66;Com convênio Sal. Educ. + Senac + Sesc;0.80;Incra 0.20% + Sebrae 0.60%
+61;515;67;Com convênio Senac + Sesc;3.30;Sal. Educ. 2.50% + Incra 0.20% + Sebrae 0.60%
+62;515;80;Com convênio Sal. Educ. + Incra + Sesc;1.60;Senac 1.00% + Sebrae 0.60%
+63;515;81;Com convênio Incra + Sesc;4.10;Sal. Educ. 2.50% + Senac 1.00% + Sebrae 0.60%
+64;515;82;Com convênio Sal. Educ. + Sesc;1.80;Incra 0.20% + Senac 1.00% + Sebrae 0.60%
+65;515;83;Com convênio Sesc;4.30;Sal. Educ. 2.50% + Incra 0.20% + Senac 1.00% + Sebrae 0.60%
+66;515;96;Com convênio Sal. educ. + Incra + Senac;2.10;Sesc 1.50% + Sebrae 0.60%
+67;515;97;Com convênio Incra + Senac;4.60;Sal. Educ. 2.50% + Sesc 1.50% + Sebrae 0.60%
+68;515;98;Com convênio Sal. Educ. + Senac;2.30;Incra 0.20% + Sesc 1.50% + Sebrae 0.60%
+69;515;99;Com convênio Senac;4.80;Sal. Educ. 2.50% + Incra 0.20% + Sesc 1.50% + Sebrae 0.60%
+70;515;112;Com convênio Sal. Educ. + Incra;3.10;Senac 1.00% + Sesc 1.50% + Sebrae 0.60%
+71;515;113;Com convênio Incra;5.60;Sal. Educ. 2.50% + Senac 1.00% + Sesc 1.50% + Sebrae 0.60%
+72;515;114;Com convênio Sal. Educação;3.30;Incra 0.20% + Senac 1.00% + Sesc 1.50% + Sebrae 0.60%
+73;515;115;Sem convênio;5.80;Sal. Educ. 2.50% + Incra 0.20% + Senac 1.00% + Sesc 1.50% + Sebrae 0.60%
+75;515;4096;Com convênio Sal. Educ. + Incra + Sebrae;2.50;Sescoop 2.50%
+76;515;4097;Com convênio Incra + Sebrae;5.00;Sal. Educ. 2.50% + Sescoop 2.50%
+77;515;4098;Com convênio Sal. Educ.+ Sebrae;2.70;Incra 0.20% + Sescoop 2.50%
+78;515;4099;Com convênio Sebrae;5.20;Sal. Educ. 2.50% + Incra 0.20% + Sescoop 2.50%
+79;515;4160;Com convenio Sal. educ. + Incra;3.10;Sebrae 0.60% + Sescoop 2.50%
+80;515;4161;Com convênio Incra;5.60;Sal. Educ. 2.50% + Sebrae 0.60% + Sescoop 2.50%
+81;515;4162;Com convênio Sal. Educação;3.30;Incra 0.20% + Sebrae 0.60% + Sescoop 2.50%
+82;515;4163;Sem convênio;5.80;Sal. Educ. 2.50% + Incra 0.20% + Sebrae 0.60% + Sescoop 2.50%
+309;523;0;Com convênio;0.00;
+84;523;1;Com convênio Incra;2.50;Sal. Educ. 2.50%
+85;523;2;Com convênio Salário Educação;0.20;Incra 0.20%
+86;523;3;Sem convênio;2.70;Sal. Educ. 2.50% + Incra 0.20%
+310;531;0;Com convênio;0.00;
+88;531;1;Com convenio Incra;2.50;Sal. Educ. 2.50%
+89;531;2;Com convênio Salário Educação;2.70;Incra 2.70%
+90;531;3;Sem convênio;5.20;Sal. Educ. 2.50% + Incra 2.70%
+311;540;0;Com convênio;0.00;
+92;540;1;Com convênio Incra + DPC;2.50;Sal. Educ. 2.50%
+93;540;2;Com convênio Sal. Educ. + DPC;0.20;Incra 0.20%
+94;540;3;Com convênio DPC;2.70;Sal. Educ. 2.50% + Incra 0.20%
+95;540;128;Com convênio Sal. Educ. + Incra;2.50;DPC 2.50%
+96;540;129;Com convênio Incra;5.00;Sal. Educ. 2.50% + DPC 2.50%
+97;540;130;Com convênio Salário Educação;2.70;Incra 0.20% + DPC 2.50%
+98;540;131;Sem convênio;5.20;Sal. Educ. 2.50% + Incra 0.20% + DPC 2.50%
+312;558;0;Com convênio;0.00;
+100;558;1;Com convênio Incra + Fundo Aeroviário;2.50;Sal. Educ. 2.50%
+101;558;2;Com convênio Sal. Educ. + Fundo Aeroviário;0.20;Incra 0.20%
+102;558;3;Com convênio Fundo Aeroviário;2.70;Sal. Educ. 2.50% + Incra 0.20%
+103;558;256;Com convênio Sal. Educ. + Incra;2.50;Fundo Aerov. 2.50%
+104;558;257;Com convênio Incra;5.00;Sal. Educ. 2.50% + Fundo Aerov. 2.50%
+105;558;258;Com convênio Salário Educação;2.70;Incra 0.20% + Fundo Aerov. 2.50%
+106;558;259;Sem convênio;5.20;Sal. Educ. 2.50% + Incra 0.20% + Fundo Aerov. 2.50%
+313;566;0;Com convênio;0.00;
+108;566;1;Com convenio Incra + Sesc + Sebrae;2.50;Sal. Educ. 2.50%
+109;566;2;Com convênio Sal. Educ. + Sesc + Sebrae;0.20;Incra 0.20%
+110;566;3;Com convênio Sesc + Sebrae;2.70;Sal. Educ. 2.50% + Incra 0.20%
+111;566;32;Com convênio Sal. Educ. + Incra + Sebrae;1.50;Sesc 1.50%
+112;566;33;Com convênio Incra + Sebrae;4.00;Sal. Educ. 2.50% + Sesc 1.50%
+113;566;34;Com convênio Sal. Educ. + Sebrae;1.70;Incra 0.20% + Sesc 1.50%
+114;566;35;Com convênio Sebrae;4.20;Sal. Educ. 2.50% + Incra 0.20% + Sesc 1.50%
+115;566;64;Com convênio Sal. Educ. + Incra + Sesc;0.30;Sebrae 0.30%
+116;566;65;Com convênio Incra + Sesc;2.80;Sal. Educ. 2.50% + Sebrae 0.30%
+117;566;66;Com convênio Sal. Educ. + Sesc;0.50;Incra 0.20% + Sebrae 0.30%
+118;566;67;Com convênio Sesc;3.00;Sal. Educ. 2.50% + Incra 0.20% + Sebrae 0.30%
+119;566;96;Com convênio Sal. Educ. + Incra;1.80;Sesc 1.50% + Sebrae 0.30%
+120;566;97;Com convênio Incra;4.30;Sal. Educ. 2.50% + Sesc 1.50% + Sebrae 0.30%
+121;566;98;Com convênio Salário Educação;2.00;Incra 0.20% + Sesc 1.50% + Sebrae 0.30%
+122;566;99;Sem convênio;4.50;Sal. Educ. 2.50% + Incra 0.20% + Sesc 1.50% + Sebrae 0.30%
+124;566;4096;Com convênio Sal. Educ. + Incra + Sebrae;2.50;Sescoop 2.50%
+125;566;4097;Com convênio Incra + Sebrae;5.00;Sal. Educ. 2.50% + Sescoop 2.50%
+126;566;4098;Com convênio Sal. Educ. + Sebrae;2.70;Incra 0.20% + Sescoop 2.50%
+127;566;4099;Com convênio Sebrae;5.20;Sal. Educ. 2.50% + Incra 0.20% + Sescoop 2.50%
+128;566;4160;Com convênio Sal. Educ. + Incra;2.80;Sebrae 0.30% + Sescoop 2.50%
+129;566;4161;Com convênio Incra;5.30;Sal. Educ. 2.50% + Sebrae 0.30% + Sescoop 2.50%
+130;566;4162;Com convênio Salário Educação;3.00;Incra 0.20% + Sebrae 0.30% + Sescoop 2.50%
+131;566;4163;Sem convênio;5.50;Sal. Educ. 2.50% + Incra 0.20% + Sebrae 0.30% + Sescoop 2.50%
+314;574;0;Com convênio;0.00;
+133;574;1;Com convenio Incra + Sesc + Sebrae;2.50;Sal. Educ. 2.50%
+134;574;2;Com convênio Sal. Educ. + Sesc + Sebrae;0.20;Incra 0.20%
+135;574;3;Com convênio Sesc + Sebrae;2.70;Sal. Educ. 2.50% + Incra 0.20%
+136;574;32;Com convênio Sal. Educ. + Incra + Sebrae;1.50;Sesc 1.50%
+137;574;33;Com convênio Incra + Sebrae;4.00;Sal. Educ. 2.50% + Sesc 1.50%
+138;574;34;Com convênio Sal. Educ. + Sebrae;1.70;Incra 0.20% + Sesc 1.50%
+139;574;35;Com convênio Sebrae;4.20;Sal. Educ. 2.50% + Incra 0.20% + Sesc 1.50%
+140;574;64;Com convênio Sal. Educ. + Incra + Sesc;0.30;Sebrae 0.30%
+141;574;65;Com convênio Incra + Sesc;2.80;Sal. Educ. 2.50% + Sebrae 0.30%
+142;574;66;Com convênio Sal. Educ. + Sesc;0.50;Incra 0.20% + Sebrae 0.30%
+143;574;67;Com convênio Sesc;3.00;Sal. Educ. 2.50% + Incra 0.20% + Sebrae 0.30%
+144;574;96;Com convênio Sal. Educ. + Incra;1.80;Sesc 1.50% + Sebrae 0.30%
+145;574;97;Com convênio Incra;4.30;Sal. Educ. 2.50% + Sesc 1.50% + Sebrae 0.30%
+146;574;98;Com convênio Salário Educação;2.00;Incra 0.20% + Sesc 1.50% + Sebrae 0.30%
+147;574;99;Sem convênio;4.50;Sal. Educ. 2.50% + Incra 0.20% + Sesc 1.50% + Sebrae 0.30%
+149;574;4096;Com convênio Sal. Educ. + Incra + Sebrae;2.50;Sescoop 2.50%
+150;574;4097;Com convênio Incra + Sebrae;5.00;Sal. Educ. 2.50% + Sescoop 2.50%
+151;574;4098;Com convênio Sal. Educ. + Sebrae;2.70;Incra 0.20% + Sescoop 2.50%
+152;574;4099;Com convênio Sebrae;5.20;Sal. Educ. 2.50% + Incra 0.20% + Sescoop 2.50%
+153;574;4160;Com convênio Sal. Educ. + Incra;2.80;Sebrae 0.30% + Sescoop 2.50%
+154;574;4161;Com convênio Incra;5.30;Sal. Educ. 2.50% + Sebrae 0.30% + Sescoop 2.50%
+155;574;4162;Com convênio Salário Educação;3.00;Incra 0.20% + Sebrae 0.30% + Sescoop 2.50%
+156;574;4163;Sem convênio;5.50;Sal. Educ. 2.50% + Incra 0.20% + Sebrae 0.30% + Sescoop 2.50%
+302;582;0;Com convênio;0.00;
+157;590;0;Com convênio;0.00;
+158;590;1;Sem convênio;2.50;Sal. Educ. 2.50%
+315;604;0;Com convênio;0.00;
+160;604;1;Com convênio Incra;2.50;Sal. Educ. 2.50%
+161;604;2;Com convênio Salário Educação;0.20;Incra 0.20%
+162;604;3;Sem convênio;2.70;Sal. Educ. 2.50% + Incra 0.20%
+163;612;0;Com convênio;0.00;
+195;612;0;Com convênio;0.00;
+164;612;1;Com convênio Incra + Sebrae + Sest + Senat;2.50;Sal. Educ. 2.50%
+165;612;2;Com convênio Sal. Educ. + Sebrae + Sest + Senat;0.20;Incra 0.20%
+166;612;3;Com convênio Sebrae + Sest + Senat;2.70;Sal. Educ. 2.50% + Incra 0.20%
+167;612;64;Com convênio Sal. Educ. + Incra + Sest + Senat;0.60;Sebrae 0.60%
+168;612;65;Com convênio Incra + sest + Senat;3.10;Sal. Educ. 2.50% + Sebrae 0.60%
+169;612;66;Com convênio Sal. Educ. + Sest + Senat;0.80;Incra 0.20% + Sebrae 0.60%
+170;612;67;Com convênio Sest + Senat;3.30;Sal. Educ. 2.50% + Incra 0.20% + Sebrae 0.60%
+171;612;1024;Com convênio Sal. Educ. + Incra + Sebrae + Senat;1.50;Sest 1.50%
+172;612;1025;Com convênio Incra + Sebrae + Senat;4.00;Sal. Educ. 2.50% + Sest 1.50%
+173;612;1026;Com convênio Sal. Educ. + Sebrae + Senat;1.70;Incra 0.20% + Sest 1.50%
+174;612;1027;Com convênio Sebrae + Senat;4.20;Sal. Educ. 2.50% + Incra 0.20% + Sest 1.50%
+175;612;1088;Com convênio Sal. Educ. + Incra + Senat;2.10;Sebrae 0.60% + Sest 1.50%
+176;612;1089;Com convênio Incra + Senat;4.60;Sal. Educ. 2.50% + Sebrae 0.60% + Sest 1.50%
+177;612;1090;Com convênio Sal. Educ. + Senat;2.30;Incra 0.20% + Sebrae 0.60% + Sest 1.50%
+178;612;1091;Com convênio Senat;4.80;Sal. Educ. 2.50% + Incra 0.20% + Sebrae 0.60% + Sest 1.50%
+179;612;2048;Com convênio Sal. Educ. + Incra + Sebrae + Sest;1.00;Senat 1.00%
+180;612;2049;Com convênio Incra + Sebrae + Sest;3.50;Sal. Educ. 2.50% + Senat 1.00%
+181;612;2050;Com convênio Sal. Educ. + Sebrae + Sest;1.20;Incra 0.20% + Senat 1.00%
+182;612;2051;Com convênio Sebrae + Sest;3.70;Sal. Educ. 2.50% + Incra 0.20% + Senat 1.00%
+183;612;2112;Com convênio Sal. Educ + Incra + Sest;1.60;Sebrae 0.60% + Senat 1.00%
+184;612;2113;Com convênio Incra + Sest;4.10;Sal. Educ. 2.50% + Sebrae 0.60% + Senat 1.00%
+185;612;2114;Com convênio Sal. Educ. + Sest;1.80;Incra 0.20% + Sebrae 0.60% + Senat 1.00%
+186;612;2115;Com convênio Sest;4.30;Sal. Educ. 2.50% + Incra 0.20% + Sebrae 0.60% + Senat 1.00%
+187;612;3072;Com convênio Sal. Educ. + Incra + Sebrae;2.50;Sest 1.50% + Senat 1.00%
+188;612;3073;Com convênio Incra + Sebrae;5.00;Sal. Educ. 2.50% + Sest 1.50% + Senat 1.00%
+189;612;3074;Com convênio Sal. Educ. + Sebrae;2.70;Incra 0.20% + Sest 1.50% + Senat 1.00%
+190;612;3075;Com convênio Sebrae;5.20;Sal. Educ. 2.50% + Incra 0.20% + Sest 1.50% + Senat 1.00%
+191;612;3136;Com convênio Sal. Educ. + Incra;3.10;Sebrae 0.60% + Sest 1.50% + Senat 1.00%
+192;612;3137;Com convênio Incra;5.60;Sal. Educ. 2.50% + Sebrae 0.60% + Sest 1.50% + Senat 1.00%
+193;612;3138;Com convênio Sal. Educ.;3.30;Incra 0.20% + Sebrae 0.60% + Sest 1.50% + Senat 1.00%
+194;612;3139;Sem convênio;5.80;Sal. Educ. 2.50% + Incra 0.20% + Sebrae 0.60% + Sest 1.50% + Senat 1.00%
+196;612;4096;Com convênio Sal. Educ. + Incra + Sebrae;2.50;Sescoop 2.50%
+197;612;4097;Com convênio Incra + Sebrae;5.00;Sal. Educ. 2.50% + Sescoop 2.50%
+198;612;4098;Com convênio Sal. Educ. + Sebrae;2.70;Incra 0.20% + Sescoop 2.50%
+199;612;4099;Com convênio Sebrae;5.20;Sal. Educ. 2.50% + Incra 0.20% + Sescoop 2.50%
+200;612;4160;Com convênio Sal. Educ. + Incra;3.10;Sebrae 0.60% + Sescoop 2.50%
+201;612;4161;Com convênio Incra;5.60;Sal. Educ. 2.50% + Sebrae 0.60% + Sescoop 2.50%
+202;612;4162;Com convênio Sal. Educ.;3.30;Incra 0.20% + Sebrae 0.60% + Sescoop 2.50%
+203;612;4163;Sem convênio;5.80;Sal. Educ. 2.50% + Incra 0.20% + Sebrae 0.60% + Sescoop 2.50%
+316;620;0;Com convênio;0.00;
+205;620;1024;Com convênio Senat;1.50;Sest 1.50%
+206;620;2048;Com convênio Sest;1.00;Senat 1.00%
+207;620;3072;Sem convênio;2.50;Sest 1.50% + Senat 1.00%
+303;639;0;Com convênio;0.00;
+317;647;0;Com convênio;0.00;
+209;647;1;Com convênio Incra + Sesc + Sebrae;2.50;Sal. Educ. 2.50%
+210;647;2;Com convênio Sal. Educ. + Sesc + Sebrae;0.20;Incra 0.20%
+211;647;3;Com convênio Sesc + Sebrae;2.70;Sal. Educ. 2.50% + Incra 0.20%
+212;647;32;Com convênio Sal. Educ. + Incra + Sebrae;1.50;Sesc 1.50%
+213;647;33;Com convênio Incra + Sebrae;4.00;Sal. Educ. 2.50% + Sesc 1.50%
+214;647;34;Com convênio Sal. Educ. + Sebrae;1.70;Incra 0.20% + Sesc 1.50%
+215;647;35;Com convênio Sebrae;4.20;Sal. Educ. 2.50% + Incra 0.20% + Sesc 1.50%
+216;647;64;Com convênio Sal. Educ. + Incra + Sesc;0.30;Sebrae 0.30%
+217;647;65;Com convenio Incra + Sesc;2.80;Sal. Educ. 2.50% + Sebrae 0.30%
+218;647;66;Com convênio Sal. Educ. + Sesc;0.50;Incra 0.20% + Sebrae 0.30%
+219;647;67;Com convênio Sesc;3.00;Sal. Educ. 2.50% + Incra 0.20% + Sebrae 0.30%
+220;647;96;Com convênio Sal. Educ. + Incra;1.80;Sesc 1.50% + Sebrae 0.30%
+221;647;97;Com convênio Incra;4.30;Sal. Educ. 2.50% + Sesc 1.50% + Sebrae 0.30%
+222;647;98;Com convênio Sal. Educ.;2.00;Incra 0.20% + Sesc 1.50% + Sebrae 0.30%
+223;647;99;Sem convênio;4.50;Sal. Educ. 2.50% + Incra 0.20% + Sesc 1.50% + Sebrae 0.30%
+318;655;0;Com convênio;0.00;
+225;655;1;Sem convênio;2.50;Sal. Educ. 2.50%
+319;663;0;Com convênio;0.00;
+320;671;0;Com convênio;0.00;
+321;680;0;Com convênio;0.00;
+227;680;1;Com convênio Incra + DPC;2.50;Sal. Educ. 2.50%
+228;680;2;Com convênio Sal. Educ. + DPC;0.20;Incra 0.20%
+229;680;3;Com convênio DPC;2.70;Sal. Educ. 2.50% + Incra 0.20%
+230;680;128;Com convênio Sal. Educ. + Incra;2.50;DPC 2.50%
+231;680;129;Com convênio Incra;5.00;Sal. Educ. 2.50% + DPC 2.50%
+232;680;130;Com convênio Sal. Educ.;2.70;Incra 0.20% + DPC 2.50%
+233;680;131;Sem convênio;5.20;Sal. Educ. 2.50% + Incra 0.20% + DPC 2.50%
+322;698;0;Com convênio;0.00;
+323;701;0;Com convênio;0.00;
+324;710;0;Com convênio;0.00;
+325;728;0;Com convênio;0.00;
+326;736;0;Com convênio;0.00;
+235;736;1;Com convênio Incra;2.50;Sal. Educ. 2.50%
+236;736;2;Com convênio Salário Educação;0.20;Incra 0.20%
+237;736;3;Sem convênio;2.70;Sal. Educ. 2.50% + Incra 0.20%
+327;744;0;Com convênio;0.00;
+238;744;512;Produtor rural PF;0.20;Senar 0.20%
+239;744;512;Produtor rural PJ;0.25;Senar 0.25%
+304;779;0;Com convênio;0.00;
+328;787;0;Com convênio;0.00;
+241;787;1;Com convênio Incra + Senar;2.50;Sal. Educ. 2.50%
+242;787;2;Com convênio Sal. Educ. + Senar;0.20;Incra 0.20%
+243;787;3;Com convênio Senar;2.70;Sal. Educ. 2.50% + Incra 0.20%
+244;787;512;Com convênio Sal. Educ. + Incra;2.50;Senar 2.50%
+245;787;513;Com convênio Incra;5.00;Sal. Educ. 2.50% + Senar 2.50%
+246;787;514;Com convênio Sal. Educ.;2.70;Incra 0.20% + Senar 2.50%
+247;787;515;Sem convênio;5.20;Sal. Educ. 2.50% + Incra 0.20% + Senar 2.50%
+249;787;4096;Com convênio Sal. Educ. + Incra;2.50;Sescoop 2.50%
+250;787;4097;Com convênio Incra;5.00;Sal. Educ. 2.50% + Sescoop 2.50%
+251;787;4098;Com convênio Sal. Educ.;2.70;Incra 0.20% + Sescoop 2.50%
+252;787;4099;Sem convênio;5.20;Sal. Educ. 2.50% + Incra 0.20% + Sescoop 2.50%
+329;795;0;Com convênio;0.00;
+254;795;1;Com convênio Incra + Senar;2.50;Sal. Educ. 2.50%
+255;795;2;Com convênio Sal. Educ. + Senar;2.70;Incra 2.70%
+256;795;3;Com convênio Senar;5.20;Sal. Educ. 2.50% + Incra 2.70%
+257;795;512;Com convênio Sal. Educ. + Incra;2.50;Senar 2.50%
+258;795;513;Com convênio Incra;5.00;Sal. Educ. 2.50% + Senar 2.50%
+259;795;514;Com convênio Sal. Educ.;5.20;Incra 2.70% + Senar 2.50%
+260;795;515;Sem convênio;7.70;Sal. Educ. 2.50% + Incra 2.70% + Senar 2.50%
+262;795;4096;Com convênio Sal. Educ. + Incra;2.50;Sescoop 2.50%
+263;795;4097;Com convênio Incra;5.00;Sal. Educ. 2.50% + Sescoop 2.50%
+264;795;4098;Com convênio Sal. Educ.;5.20;Incra 2.70% + Sescoop 2.50%
+265;795;4099;Sem convênio;7.70;Sal. Educ. 2.50% + Incra 2.70% + Sescoop 2.50%
+330;825;0;Com convênio;0.00;
+267;825;1;Com convênio Incra;2.50;Sal. Educ. 2.50%
+268;825;2;Com convênio Sal. Educ.;2.70;Incra 2.70%
+269;825;3;Sem convênio;5.20;Sal. Educ. 2.50% + Incra 2.70%
+331;833;0;Com convênio;0.00;
+271;833;1;Com convênio Incra + Senai + Sesi + Sebrae;2.50;Sal. Educ. 2.50%
+272;833;2;Com convênio Sal. Educ. + Senai + Sesi + Sebrae;0.20;Incra 0.20%
+273;833;3;Com convênio Senai + Sesi + Sebrae;2.70;Sal. Educ. 2.50% + Incra 0.20%
+274;833;4;Com convênio Sal. Educ. + Incra + Sesi + Sebrae;1.00;Senai 1.00%
+275;833;5;Com convênio Incra + Sesi + Sebrae;3.50;Sal. Educ. 2.50% + Senai 1.00%
+276;833;6;Com convênio Sal. Educ. + Sesi + Sebrae;1.20;Incra 0.20% + Senai 1.00%
+277;833;7;Com convênio Sesi + Sebrae;3.70;Sal. Educ. 2.50% + Incra 0.20% + Senai 1.00%
+278;833;8;Com convênio Sal. Educ. + Incra + Senai + Sebrae;1.50;Sesi 1.50%
+279;833;9;Com convênio Incra + Senai + Sebrae;4.00;Sal. Educ. 2.50% + Sesi 1.50%
+280;833;10;Com convênio Sal. Educ. + Senai + Sebrae;1.70;Incra 0.20% + Sesi 1.50%
+281;833;11;Com convênio Senai + Sebrae;4.20;Sal. Educ. 2.50% + Incra 0.20% + Sesi 1.50%
+282;833;12;Com convênio Sal. Educ. + Incra + Sebrae;2.50;Senai 1.00% + Sesi 1.50%
+283;833;13;Com convênio Incra + Sebrae;5.00;Sal. Educ. 2.50% + Senai 1.00% + Sesi 1.50%
+284;833;14;Com convênio Sal. Educ. + Sebrae;2.70;Incra 0.20% + Senai 1.00% + Sesi 1.50%
+285;833;15;Com convênio Sebrae;5.20;Sal. Educ. 2.50% + Incra 0.20% + Senai 1.00% + Sesi 1.50%
+286;833;64;Com convênio Sal. Educ. + Incra + Senai + Sesi;0.60;Sebrae 0.60%
+287;833;65;Com convênio Incra + Senai + Sesi;3.10;Sal. Educ. 2.50% + Sebrae 0.60%
+288;833;66;Com convênio Sal. Educ. + Senai + Sesi;0.80;Incra 0.20% + Sebrae 0.60%
+289;833;67;Com convênio Senai + Sesi;3.30;Sal. Educ. 2.50% + Incra 0.20% + Sebrae 0.60%
+290;833;68;Com convênio Sal. Educ. + Incra + Sesi;1.60;Senai 1.00% + Sebrae 0.60%
+291;833;69;Com convênio Incra + Sesi;4.10;Sal. Educ. 2.50% + Senai 1.00% + Sebrae 0.60%
+292;833;70;Com convênio Sal. Educ. + Sesi;1.80;Incra 0.20% + Senai 1.00% + Sebrae 0.60%
+293;833;71;Com convênio Sesi;4.30;Sal. Educ. 2.50% + Incra 0.20% + Senai 1.00% + Sebrae 0.60%
+294;833;72;Com convênio Sal. educ. + Incra + Senai;2.10;Sesi 1.50% + Sebrae 0.60%
+295;833;73;Com convênio Incra + Senai;4.60;Sal. Educ. 2.50% + Sesi 1.50% + Sebrae 0.60%
+296;833;74;Com convênio Sal. Educ. + Senai;2.30;Incra 0.20% + Sesi 1.50% + Sebrae 0.60%
+297;833;75;Com convênio Senai;4.80;Sal. Educ. 2.50% + Incra 0.20% + Sesi 1.50% + Sebrae 0.60%
+298;833;76;Com convênio Sal. Educ. + Incra;3.10;Senai 1.00% + Sesi 1.50% + Sebrae 0.60%
+299;833;77;Com convênio Incra;5.60;Sal. Educ. 2.50% + Senai 1.00% + Sesi 1.50% + Sebrae 0.60%
+300;833;78;Com convênio Sal. Educação;3.30;Incra 0.20% + Senai 1.00% + Sesi 1.50% + Sebrae 0.60%
+301;833;79;Sem convênio;5.80;Sal. Educ. 2.50% + Incra 0.20% + Senai 1.00% + Sesi 1.50% + Sebrae 0.60%
+332;833;4096;Com convenio Sal. Educ. + Incra + Sebrae;2.50;Sescoop 2.50%
+333;833;4163;Sem Convênio;5.80;Sal. Educ. 2.50% + Incra 0.20% + Sebrae 0.60% + Sescoop 2.50%
+305;868;0;Com convênio;0.00;
+306;876;0;Com convênio;0.00;
