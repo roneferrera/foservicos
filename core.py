@@ -1021,57 +1021,76 @@ def gerar_pacote(linhas: dict, atrib: dict, meta: dict, leiaute: dict, fks: dict
     return buf.getvalue(), checks, tirados, info
 
 
+def _faixa(cods):
+    a, b = min(cods), max(cods)
+    return f"código {a}" if a == b else f"códigos {a} a {b}"
+
+
+def _sem_negrito(s):
+    return s.replace("**", "")
+
+
 def passos_importacao(info: dict):
-    """Instruções da importação na Domínio: [(título, [itens])] — usadas na tela e no LEIA-ME."""
+    """Passo a passo da importação na Domínio, em linguagem simples (usado na tela e no LEIA-ME).
+    Cada etapa: {'icone', 'titulo', 'quando', 'passos', 'dica'}. O **negrito** vira texto simples no LEIA-ME."""
     lei, arq, n = info["destino"], info["arquivos"], info["campos"]
-    cods, emp = info["codigos"], info.get("empresa")
+    emp, cods = info.get("empresa"), info["codigos"]
+    a, b = min(cods), max(cods)
+    livre = f"o código {a} está livre" if a == b else f"os códigos {a} a {b} estão livres"
     return [
-        (f"1. Leiaute de importação via tabela — uma vez por banco (assinatura {info['assinatura']})", [
-            f"Use um leiaute só para os tomadores (aqui: leiaute {lei}). Ele precisa ter exatamente os campos da pasta "
-            f"leiaute_ajustado do .zip: FOSERVICOS com {n[T_SERV]} campos e FOVIGENCIAS_SERVICO com {n[T_VIG]} campos.",
-            f"Na importação por leiaute da Domínio, selecione o leiaute {lei} e exclua os campos que ele já tiver nas "
-            "tabelas FOSERVICOS e FOVIGENCIAS_SERVICO.",
-            "Importe os dois arquivos da pasta leiaute_ajustado (FOSERVICOS.txt e FOVIGENCIAS_SERVICO.txt). Eles estão "
-            "no formato do arquivo de leiaute exportado pela Domínio: um campo por linha, separado por TAB.",
-            f"Nas tabelas do leiaute, deixe FOSERVICOS e FOVIGENCIAS_SERVICO selecionadas, com os arquivos "
-            f"{arq[T_SERV]} e {arq[T_VIG]}.",
-            "Confira a quantidade de campos de cada tabela. Campo sem tipo de dado = a importação do leiaute parou no "
-            "meio: exclua os campos da tabela no leiaute e importe o arquivo de novo.",
-            "Já importou um leiaute com esta mesma assinatura? Pule esta etapa: os próximos lotes usam o mesmo "
-            "leiaute. A assinatura só muda se mudar o leiaute de origem, o de-para de logradouro ou se a vigência "
-            "for anterior a 12/2018.",
-        ]),
-        ("2. Importação dos dados (TXT) — a cada lote", [
-            f"Antes, confira em Arquivo > Serviços da empresa {emp} que os códigos {min(cods)} a {max(cods)} estão "
-            "livres (o app não acessa o banco).",
-            f"Na importação por leiaute da Domínio, use o leiaute {lei} e importe os arquivos .txt da pasta dados do "
-            f".zip, nesta ordem: 1º {arq[T_SERV]} (FOSERVICOS) e 2º {arq[T_VIG]} (FOVIGENCIAS_SERVICO) — a "
-            "vigência precisa do serviço já gravado.",
-            f"Os arquivos já trazem a empresa {emp}: um registro por linha, campos separados por TAB, sem "
-            "cabeçalho, cp1252, datas DD/MM/AAAA e decimais sem vírgula (20,000% = 20000).",
-        ]),
-        ("3. Conferência na Domínio", [
-            "Arquivo > Serviços: abra um tomador e confira as guias Geral (inscrição, endereço, CNAE), eSocial "
-            "(tipo de serviço e lotação) e INSS (FPAS, terceiros, RAT, SEFIP e GPS).",
-            "Vincule os colaboradores em Processos > Outros > Alocação de Serviço. O S-1020 é enviado ao eSocial "
-            "quando o serviço é vinculado a um colaborador.",
-        ]),
+        {"icone": "🧩", "titulo": "Etapa 1 · Preparar o leiaute",
+         "quando": f"Só na primeira vez. Se você já importou o leiaute com o código {info['assinatura']}, "
+                   "pule direto para a etapa 2.",
+         "passos": [
+             f"Na Domínio, abra a importação por leiaute e escolha o leiaute **{lei}**.",
+             "Apague os campos que ele já tiver nas tabelas FOSERVICOS e FOVIGENCIAS_SERVICO.",
+             "Importe os dois arquivos da pasta **leiaute_ajustado** do .zip.",
+             f"Deixe as duas tabelas marcadas, ligadas aos arquivos **{arq[T_SERV]}** e **{arq[T_VIG]}**.",
+             f"Confira se ficaram **{n[T_SERV]} campos** em FOSERVICOS e **{n[T_VIG]} campos** em "
+             "FOVIGENCIAS_SERVICO.",
+         ],
+         "dica": "Algum campo ficou sem tipo de dado? A importação parou no meio: apague os campos da tabela e "
+                 "importe o arquivo de novo."},
+        {"icone": "📥", "titulo": "Etapa 2 · Importar os tomadores",
+         "quando": "Sempre que gerar um arquivo novo.",
+         "passos": [
+             f"Em **Arquivo > Serviços** da empresa **{emp}**, confira se {livre}.",
+             f"Abra a importação por leiaute e escolha o leiaute **{lei}**.",
+             f"Importe os arquivos da pasta **dados** do .zip, nesta ordem: **1º {arq[T_SERV]}** e "
+             f"**2º {arq[T_VIG]}**.",
+         ],
+         "dica": "A ordem importa: a vigência só entra depois que o serviço já existe."},
+        {"icone": "✅", "titulo": "Etapa 3 · Conferir na Domínio",
+         "quando": "Logo depois da importação.",
+         "passos": [
+             "Em **Arquivo > Serviços**, abra um dos tomadores importados.",
+             "Confira as guias **Geral** (CNPJ, endereço e CNAE), **eSocial** (tipo de serviço e lotação) e "
+             "**INSS** (FPAS, terceiros, RAT, SEFIP e GPS).",
+             "Vincule os colaboradores em **Processos > Outros > Alocação de Serviço**.",
+         ],
+         "dica": "O evento S-1020 vai para o eSocial quando o primeiro colaborador é vinculado ao serviço."},
     ]
 
 
 def leia_me(info, perfil_txt):
     cods = info["codigos"]
     partes = [
-        "IMPORTAÇÃO DE TOMADORES DE SERVIÇO — DOMÍNIO FOLHA (Arquivo > Serviços)",
+        "IMPORTAÇÃO DE TOMADORES DE SERVIÇO — DOMÍNIO FOLHA",
         f"Gerado em {dt.datetime.now():%d/%m/%Y %H:%M} | Empresa {info.get('empresa')} | Leiaute {info['destino']}",
-        f"{len(cods)} tomador(es), códigos de serviço {min(cods)} a {max(cods)}.",
+        f"{len(cods)} tomador(es), {_faixa(cods)}.",
         "",
-        "HERANÇA DA PRESTADORA (igual em todos os tomadores):",
+        "DADOS HERDADOS DA PRESTADORA (iguais em todos os tomadores):",
         f"   {perfil_txt}",
     ]
-    for titulo, itens in passos_importacao(info):
-        partes += ["", titulo.upper()] + [f"   - {i}" for i in itens]
-    partes += ["", "estrutura_arquivos.csv mostra a posição de cada coluna nos TXT."]
+    for e in passos_importacao(info):
+        partes += ["", e["titulo"].upper(), f"   ({e['quando']})"]
+        partes += [f"   {i}. {_sem_negrito(p)}" for i, p in enumerate(e["passos"], 1)]
+        if e.get("dica"):
+            partes.append(f"   Dica: {_sem_negrito(e['dica'])}")
+    partes += ["", "DETALHES TÉCNICOS",
+               "   Arquivos de dados: um tomador por linha, campos separados por TAB, sem cabeçalho, codificação "
+               "cp1252, datas DD/MM/AAAA e decimais sem vírgula (20,000% = 20000).",
+               "   A posição de cada campo nos arquivos está em estrutura_arquivos.csv."]
     return "\r\n".join(partes) + "\r\n"
 
 
