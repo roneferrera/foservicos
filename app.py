@@ -1,1106 +1,548 @@
 """
-Núcleo do Importador de Tomadores de Serviço — Domínio Folha (FOSERVICOS / FOVIGENCIAS_SERVICO).
+Importador de Tomadores de Serviço — Domínio Folha (Arquivo > Serviços)
+App web, sem acesso ao banco: gera os arquivos da importação de tabelas (FOSERVICOS + FOVIGENCIAS_SERVICO).
 
-Funciona sem acesso ao banco:
-- referencia/ (gerada por gerar_referencia.py): CNAE 2.3, relação CNAE x FPAS, terceiros, RAT por CNAE,
-  municípios, colunas e chaves das tabelas; leiaute/: leiaute da importação.
-- Consultas públicas de CNPJ (BrasilAPI -> CNPJá -> ReceitaWS, com limite de vazão global e cache) e CEP (ViaCEP).
-- A empresa prestadora define o perfil tributário (FPAS, terceiros, RAT, INSS, SEFIP, GPS); todo tomador herda
-  esse perfil, venha da digitação ou da planilha (Soluções 136 e 3665 da Central Domínio).
-- Saída: TXT da importação de tabelas (tab, cp1252, sem cabeçalho) + leiaute ajustado sem os campos que ficam nulos.
+1. CNPJ da empresa prestadora -> Receita (CNAE principal, regime) -> relação CNAE x FPAS da Domínio ->
+   FPAS, terceiros, RAT, INSS, SEFIP e GPS (Soluções 136 e 3665).
+2. Tomadores por digitação ou planilha: mesma lista, mesma limpeza, mesma consulta e a MESMA herança tributária.
+3. Conferência linha a linha e arquivos para importar.
+
+Executar:
+    streamlit run app.py
 """
-import csv
 import datetime as dt
 import hashlib
-import io
 import json
 import os
-import re
-import threading
 import time
-import unicodedata
-import urllib.error
-import urllib.request
-import zipfile
-from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 
 import pandas as pd
-from openpyxl import Workbook
-from openpyxl.styles import Alignment, Font, PatternFill
+import streamlit as st
 
-T_SERV, T_VIG = "FOSERVICOS", "FOVIGENCIAS_SERVICO"
-TABELAS = (T_SERV, T_VIG)
-TIPO_TOMADOR = 4
-SEFIP_TOMADOR = 150                           # Solução 136
-FIM_ABERTO = dt.date(3000, 12, 31)
-CORTE_CNAE_ESOCIAL = dt.date(2018, 12, 1)     # CNAE eSocial só para vigências anteriores a 12/2018 (Solução 3665)
-ORIGEM_IMP_TABELAS = 1                        # origem_reg: 1 = Imp. Tabelas
-RAT_INFORMADO = 1                             # TIPO_INFORMACAO_ALIQUOTA_ACIDENTE_TRABALHO: 1 = Informado
+import core
 
-INTEIROS = {"integer", "smallint", "tinyint", "bigint", "unsigned int", "unsigned smallint", "unsigned bigint", "bit"}
-LIMITES_INT = {"tinyint": (0, 255), "smallint": (-32768, 32767), "integer": (-2**31, 2**31 - 1), "bit": (0, 1)}
-DECIMAIS = {"numeric", "decimal"}
-TEXTOS = {"char", "varchar", "long varchar", "nchar", "nvarchar"}
-DATAS = {"date", "timestamp", "datetime", "smalldatetime"}
+PASTA = os.path.dirname(os.path.abspath(__file__))
+REF_DIR, LEI_DIR = os.path.join(PASTA, "referencia"), os.path.join(PASTA, "leiaute")
+ST_OK, ST_REV, ST_ERR, ST_FILA = "✅ Pronto", "⚠️ Revisar", "❌ Erro", "⏳ Aguardando consulta"
+ORCAMENTO_SEG = 8          # tempo de consulta por execução da tela (o restante continua na próxima)
+ss = st.session_state
 
-# Regime da prestadora -> encargos do serviço (Solução 3665) e GPS; SEFIP do tomador = 150 (Solução 136)
-REGIMES = {
-    "LRLP": {"rotulo": "Lucro Real / Lucro Presumido", "terceiros": "sem_convenio", "inss": 20, "prolab": 20,
-             "gps": 2100},
-    "SN": {"rotulo": "Simples Nacional — Anexos I a III e V", "terceiros": "zero", "inss": 0, "prolab": 0,
-           "gps": 2003},
-    "SN4": {"rotulo": "Simples Nacional — Anexo IV", "terceiros": "zero", "inss": 20, "prolab": 20, "gps": 2100},
-    "SNC": {"rotulo": "Simples Nacional — Concomitante", "terceiros": "zero", "inss": 20, "prolab": 20,
-            "gps": 2100},
-    "MEI": {"rotulo": "MEI", "terceiros": "zero", "inss": 3, "prolab": 0, "gps": 2100},
-}
-# Atividades do Anexo IV (LC 123, art. 18, § 5º-C): construção, vigilância, limpeza/conservação, advocacia
-ANEXO_IV_PREFIXOS = ("41", "42", "43", "8011", "8111", "8121", "8129", "6911")
-
-TIPOS_SERVICO_TOMADOR = {
-    1: "1 - Cessão de mão de obra (inclusive contratante de cooperativa PJ)",
-    2: "2 - Trabalho temporário - substituição de pessoal",
-    3: "3 - Trabalho temporário - serviços extraordinários",
-}
-LOTACOES = {  # Tabela 10 do eSocial (S-1.1); confirme o código gravado pela Domínio num tomador cadastrado pela tela
-    3: "03 - PF tomadora de cessão de mão de obra",
-    4: "04 - PJ tomadora de cessão de mão de obra",
-    5: "05 - PJ tomadora de cooperados (cooperativa de trabalho)",
-    6: "06 - Entidade beneficente/isenta tomadora de cooperados",
-    7: "07 - PF tomadora de cooperados",
-    8: "08 - Operador portuário (avulsos)",
-    9: "09 - Contratante de avulsos não portuários (sindicato)",
-}
-TIPOS_LOGRADOURO = {"RUA", "AVENIDA", "TRAVESSA", "ALAMEDA", "PRACA", "RODOVIA", "ESTRADA", "LARGO", "VIA", "QUADRA",
-                    "VIELA", "BECO", "PARQUE", "SETOR", "VILA", "LADEIRA", "PASSAGEM", "CAMINHO", "AV", "R"}
+st.set_page_config(page_title="Importador de Tomadores — Domínio", page_icon="🏗️", layout="wide")
+st.title("🏗️ Importador de Tomadores de Serviço — Domínio Folha")
+st.caption("Informe o CNPJ da prestadora, inclua os tomadores (digitando ou por planilha) e baixe os arquivos da "
+           "importação de tabelas. Todo tomador herda FPAS, terceiros, RAT, INSS, SEFIP e GPS da prestadora.")
 
 
-# =====================================================================
-# Texto, números e documentos
-# =====================================================================
-def norm(txt_) -> str:
-    if txt_ is None or (isinstance(txt_, float) and pd.isna(txt_)):
-        return ""
-    s = unicodedata.normalize("NFKD", str(txt_))
-    s = "".join(c for c in s if not unicodedata.combining(c)).upper()
-    s = re.sub(r"[^A-Z0-9%]+", " ", s)
-    return re.sub(r"\s+", " ", s).strip()
+def desenhar_passos(ph, atual: int):
+    nomes = ["Prestadora", "Herança tributária", "Tomadores", "Conferência", "Arquivos"]
+    with ph.container():
+        cols = st.columns(len(nomes))
+        for i, nome in enumerate(nomes, 1):
+            if i < atual:
+                cols[i - 1].markdown(f":green[✅ **{i}. {nome}**]")
+            elif i == atual:
+                cols[i - 1].markdown(f":blue[▶ **{i}. {nome}**]")
+            else:
+                cols[i - 1].markdown(f":gray[○ {i}. {nome}]")
+        st.progress((atual - 1) / (len(nomes) - 1))
 
 
-def txt(v) -> str:
-    if v is None or (isinstance(v, float) and pd.isna(v)):
-        return ""
-    s = str(v).replace("\u00a0", " ").replace("\u200b", "").strip()
-    return "" if s.lower() in ("nan", "none", "nat") else s
+ph_passos = st.empty()
+desenhar_passos(ph_passos, 1)
 
 
-def digitos(v) -> str:
-    return re.sub(r"\D", "", txt(v))
+@st.cache_resource(show_spinner="Carregando as tabelas de referência…")
+def referencia():
+    return core.Referencia(REF_DIR)
 
 
-def _numero_excel(s: str) -> str:
-    """'191.0' -> '191'; '3.3000167000101e+13' -> '33000167000101' (repr do Python, sem perda)."""
-    if re.fullmatch(r"\d+\.0+", s):
-        return s.split(".")[0]
-    if re.fullmatch(r"\d+(\.\d+)?[eE]\+?\d+", s):
-        try:
-            d = Decimal(s)
-            if d == d.to_integral_value():
-                return str(int(d))
-        except InvalidOperation:
-            pass
-    return s
+try:
+    ref = referencia()
+except Exception as e:
+    st.error(f"Não consegui ler a pasta 'referencia' ({e}). Gere com: python gerar_referencia.py")
+    st.stop()
+
+for k, v in (("prestadora", None), ("tomadores", {}), ("fila", []), ("processando", False), ("planilha", None),
+             ("tentativas", {})):
+    ss.setdefault(k, v)
 
 
-def _dv_mod11(base: str, pesos) -> str:
-    s = sum((ord(c) - 48) * p for c, p in zip(base, pesos))
-    r = s % 11
-    return "0" if r < 2 else str(11 - r)
+def d(chave, **padrao):
+    """Padrão do widget só quando ainda não há valor na sessão (evita conflito com o perfil carregado)."""
+    return {"key": chave} if chave in ss else {"key": chave, **padrao}
 
 
-def cnpj_valido(c: str) -> bool:
-    """CNPJ numérico ou alfanumérico (IN RFB 2.229/2024): valor do caractere = código ASCII - 48."""
-    if not re.fullmatch(r"[0-9A-Z]{12}\d{2}", c or "") or len(set(c)) == 1:
-        return False
-    p1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
-    return c[12] == _dv_mod11(c[:12], p1) and c[13] == _dv_mod11(c[:13], [6] + p1)
+def _pausar():
+    ss["processando"] = False
 
 
-def cpf_valido(c: str) -> bool:
-    if not re.fullmatch(r"\d{11}", c or "") or len(set(c)) == 1:
-        return False
-    return c[9] == _dv_mod11(c[:9], range(10, 1, -1)) and c[10] == _dv_mod11(c[:10], range(11, 1, -1))
+def _retomar():
+    ss["processando"] = True
 
 
-def normalizar_inscricao(v):
-    """Valor digitado ou da planilha -> (inscrição limpa, aviso, erro)."""
-    s = txt(v)
-    if not s:
-        return "", "", ""
-    if re.fullmatch(r"\d+,\d+[eE]\+?\d+", s) or re.fullmatch(r"\d\.\d{1,9}[eE]\+?\d+", s):
-        return "", "", "CNPJ em notação científica (dígitos perdidos) — redigite a célula como texto"
-    s = _numero_excel(s)
-    c = re.sub(r"[^0-9A-Z]", "", s.upper())
-    if c.isdigit() and len(c) < 14:
-        ok14 = cnpj_valido(c.zfill(14))
-        ok11 = len(c) <= 11 and cpf_valido(c.zfill(11))
-        if ok14 and ok11 and len(c) < 11:
-            return c.zfill(14), "", "ambíguo: vale como CNPJ e como CPF com zeros à esquerda — informe com 14 ou 11 dígitos"
-        if ok14 and not (len(c) == 11 and cpf_valido(c)):
-            return c.zfill(14), "zeros à esquerda restaurados", ""
-        if ok11 and len(c) != 11:
-            return c.zfill(11), "zeros à esquerda restaurados", ""
-    return c, "", ""
-
-
-def tipo_inscricao(c: str):
-    if len(c) == 14:
-        return 1
-    if len(c) == 11 and c.isdigit():
-        return 2
-    return None
-
-
-def formatar_inscricao(c: str) -> str:
-    if len(c) == 14:
-        return f"{c[:2]}.{c[2:5]}.{c[5:8]}/{c[8:12]}-{c[12:]}"
-    if len(c) == 11:
-        return f"{c[:3]}.{c[3:6]}.{c[6:9]}-{c[9:]}"
-    return c
-
-
-def para_data(v):
-    if v is None or v == "":
-        return None
-    if isinstance(v, dt.datetime):
-        return v.date()
-    if isinstance(v, dt.date):
-        return v
-    s = txt(v)
-    for fmt in ("%d/%m/%Y", "%Y-%m-%d", "%d-%m-%Y", "%d/%m/%y", "%Y-%m-%d %H:%M:%S"):
-        try:
-            return dt.datetime.strptime(s, fmt).date()
-        except ValueError:
-            continue
-    if re.fullmatch(r"\d+(\.0)?", s) and 20000 < float(s) < 80000:      # número de série do Excel
-        return (dt.datetime(1899, 12, 30) + dt.timedelta(days=int(float(s)))).date()
-    return None
-
-
-def para_int(v):
-    s = digitos(_numero_excel(txt(v)))
-    return int(s) if s else None
-
-
-def zfill_se(v, n):
-    d = digitos(_numero_excel(txt(v)))
-    return d.zfill(n) if d and len(d) < n else d
-
-
-# =====================================================================
-# Referência (sem banco)
-# =====================================================================
-def _ler_csv(pasta, nome):
-    with open(os.path.join(pasta, nome), encoding="utf-8-sig", newline="") as f:
-        return list(csv.DictReader(f, delimiter=";"))
-
-
-class Referencia:
-    """Tabelas da Domínio exportadas por gerar_referencia.py."""
-
-    def __init__(self, pasta):
-        self.pasta = pasta
-        linhas_cnae = _ler_csv(pasta, "cnae.csv")
-        self.cnae = {r["cnae"]: r["descricao"] for r in linhas_cnae}
-        self.cnae_prev = {r["cnae"] for r in linhas_cnae if r["cnae_esocial_antigo"] == "S"}
-        self.cnae_fpas = {r["cnae"]: r for r in _ler_csv(pasta, "cnae_fpas.csv")}
-        self.fpas = {int(r["fpas"]): r for r in _ler_csv(pasta, "fpas.csv")}
-        self.terceiros = [{**r, "i_terceiros": int(r["i_terceiros"]), "fpas": int(r["fpas"]),
-                           "codigo": int(r["codigo"]), "percentual": Decimal(r["percentual"])}
-                          for r in _ler_csv(pasta, "terceiros.csv")]
-        self.rat = {}
-        for r in _ler_csv(pasta, "rat_cnae.csv"):
-            self.rat.setdefault(r["cnae"], []).append((dt.date.fromisoformat(r["vigencia"]), Decimal(r["aliquota"])))
-        self.municipios, self.por_srf, self.por_nome = {}, {}, {}
-        for r in _ler_csv(pasta, "municipios.csv"):
-            ibge = digitos(r["codigo_ibge"])
-            if not ibge:
-                continue
-            self.municipios.setdefault(ibge, (int(r["codigo_municipio"]), r["nome"].strip(), r["uf"]))
-            if digitos(r["codigo_srf"]):
-                self.por_srf.setdefault(digitos(r["codigo_srf"]).lstrip("0"), ibge)
-            self.por_nome.setdefault((norm(r["nome"]), r["uf"]), ibge)
-        self.meta = {}
-        for r in _ler_csv(pasta, "colunas.csv"):
-            self.meta.setdefault(r["tabela"].upper(), []).append({
-                "nome": r["coluna"], "up": r["coluna"].upper(), "tipo": r["tipo"], "largura": int(r["largura"] or 0),
-                "escala": int(r["escala"] or 0), "nulo": r["nulo"] == "Y", "pk": r["pk"] == "Y",
-                "padrao": r["padrao"] if r["padrao"] != "" else None})
-        self.fks = {}
-        for r in _ler_csv(pasta, "fks.csv"):
-            self.fks.setdefault(r["tabela"].upper(), {})[r["coluna"].upper()] = r["tabela_mae"]
-        try:
-            with open(os.path.join(pasta, "versao.json"), encoding="utf-8") as f:
-                self.versao = json.load(f)
-        except (OSError, ValueError):
-            self.versao = {}
-
-    def municipio(self, ibge="", srf="", nome="", uf=""):
-        """-> (código IBGE, (codigo_municipio, nome, uf)) pelo IBGE, código da Receita ou nome + UF."""
-        for chave in (digitos(ibge), self.por_srf.get(digitos(srf).lstrip("0")),
-                      self.por_nome.get((norm(nome), txt(uf).upper()))):
-            if chave and chave in self.municipios:
-                return chave, self.municipios[chave]
-        return "", None
-
-    def fpas_do_cnae(self, cnae):
-        return self.cnae_fpas.get(zfill_se(cnae, 7), {})
-
-    def terceiros_do_fpas(self, fpas):
-        return sorted((t for t in self.terceiros if t["fpas"] == fpas), key=lambda t: t["codigo"])
-
-    def terceiro_padrao(self, fpas, regra):
-        opcoes = self.terceiros_do_fpas(fpas)
-        if not opcoes:
-            return None
-        if regra == "zero":
-            return next((t for t in opcoes if t["codigo"] == 0), opcoes[0])
-        sem = [t for t in opcoes if norm(t["descricao"]) == "SEM CONVENIO"]
-        return min(sem, key=lambda t: t["codigo"]) if sem else max(opcoes, key=lambda t: t["percentual"])
-
-    def rat_do_cnae(self, cnae, data):
-        vig = [a for v, a in self.rat.get(zfill_se(cnae, 7), []) if v <= data]
-        return vig[-1] if vig else None
-
-
-def ler_leiaute_txt(arquivos: dict):
-    """Arquivos de leiaute exportados da Domínio ({nome: bytes}); uma linha por campo, separado por tab."""
-    out = {}
-    for _, dados in arquivos.items():
-        conteudo = None
-        for enc in ("utf-8-sig", "cp1252", "latin-1"):
-            try:
-                conteudo = dados.decode(enc)
-                break
-            except UnicodeDecodeError:
-                continue
-        for linha in (conteudo or "").splitlines():
-            p = linha.split("\t")
-            if len(p) < 12 or not p[2].strip().isdigit():
-                continue
-            tab = p[1].strip().upper()
-            if tab in TABELAS:
-                out.setdefault(tab, {"linhas": [], "arquivo": ""})["linhas"].append(p[:12])
-    for v in out.values():
-        v["linhas"].sort(key=lambda r: int(str(r[2]).strip()))
-    return out
-
-
-def ler_leiaute_pasta(pasta):
-    if not os.path.isdir(pasta):
-        return {}
-    arquivos = {}
-    for n in os.listdir(pasta):
-        if n.lower().endswith(".txt"):
-            with open(os.path.join(pasta, n), "rb") as f:
-                arquivos[n] = f.read()
-    return ler_leiaute_txt(arquivos)
-
-
-# =====================================================================
-# Consultas externas: limite de vazão global, disjuntor e cache
-# =====================================================================
-class Provedor:
-    """Limite de vazão compartilhado por todas as sessões do servidor (mesmo IP de saída)."""
-
-    def __init__(self, nome, intervalo):
-        self.nome, self.intervalo = nome, intervalo
-        self.trava = threading.Lock()
-        self.proximo, self.falhas, self.bloqueado_ate = 0.0, 0, 0.0
-
-    def disponivel(self):
-        return time.time() >= self.bloqueado_ate
-
-    def aguardar(self):
-        with self.trava:
-            espera = self.proximo - time.time()
-            if espera > 0:
-                time.sleep(espera)
-            self.proximo = time.time() + self.intervalo
-
-    def sucesso(self):
-        self.falhas = 0
-
-    def falha(self, pausa=0):
-        self.falhas += 1
-        if pausa:
-            self.proximo = max(self.proximo, time.time() + min(pausa, 120))
-        if self.falhas >= 3:
-            self.bloqueado_ate, self.falhas = time.time() + 300, 0
-
-
-PROVEDORES = {"BrasilAPI": Provedor("BrasilAPI", 0.5), "CNPJá": Provedor("CNPJá", 12.5),
-              "ReceitaWS": Provedor("ReceitaWS", 20.5), "ViaCEP": Provedor("ViaCEP", 0.2)}
-_CACHE, _TRAVA_CACHE, TTL_CACHE = {}, threading.Lock(), 30 * 86400
-
-
-class NaoEncontrado(Exception):
-    pass
-
-
-def _get_json(prov: Provedor, url, timeout=15):
-    prov.aguardar()
-    req = urllib.request.Request(url, headers={"User-Agent": "importador-tomadores-dominio/2.0",
-                                               "Accept": "application/json"})
+def aplicar_perfil(dados: bytes):
+    fid = hashlib.md5(dados).hexdigest()
+    if ss.get("perfil_id") == fid:
+        return
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as r:
-            dados = json.loads(r.read().decode("utf-8"))
-        prov.sucesso()
-        return dados
-    except urllib.error.HTTPError as e:
-        if e.code in (400, 404):
-            prov.sucesso()
-            raise NaoEncontrado() from e
-        espera = e.headers.get("Retry-After") if e.code == 429 else None
-        prov.falha(int(espera) if espera and espera.isdigit() else (60 if e.code == 429 else 0))
-        raise
-    except (urllib.error.URLError, TimeoutError, ValueError):
-        prov.falha()
-        raise
-
-
-def _cache(chave, funcao):
-    with _TRAVA_CACHE:
-        hit = _CACHE.get(chave)
-        if hit and time.time() - hit[0] < TTL_CACHE:
-            return hit[1]
-    r = funcao()
-    if not r.get("transitorio"):
-        with _TRAVA_CACHE:
-            _CACHE[chave] = (time.time(), r)
-    return r
-
-
-def _separar_tipo(logradouro):
-    tipo, _, resto = txt(logradouro).partition(" ")
-    return (norm(tipo), resto.strip()) if resto and norm(tipo) in TIPOS_LOGRADOURO else ("", txt(logradouro))
-
-
-def _telefone(v):
-    d = digitos(v)
-    return (d[:2], d[2:]) if len(d) >= 10 else ("", d)
-
-
-def _de_brasilapi(j):
-    ddd, fone = _telefone(j.get("ddd_telefone_1"))
-    regimes = sorted(j.get("regime_tributario") or [], key=lambda r: r.get("ano") or 0)
-    return {"razao": txt(j.get("razao_social")), "fantasia": txt(j.get("nome_fantasia")),
-            "cep": digitos(j.get("cep")), "tipo_logradouro": norm(j.get("descricao_tipo_de_logradouro")),
-            "endereco": txt(j.get("logradouro")), "numero": txt(j.get("numero")),
-            "complemento": txt(j.get("complemento")), "bairro": txt(j.get("bairro")),
-            "cidade": txt(j.get("municipio")), "uf": txt(j.get("uf")), "ibge": digitos(j.get("codigo_municipio_ibge")),
-            "srf": digitos(j.get("codigo_municipio")),
-            "cnae": zfill_se(j.get("cnae_fiscal"), 7), "cnae_desc": txt(j.get("cnae_fiscal_descricao")),
-            "ddd": ddd, "telefone": fone, "situacao": norm(j.get("descricao_situacao_cadastral")),
-            "simples": j.get("opcao_pelo_simples"), "mei": j.get("opcao_pelo_mei"),
-            "regime_receita": (f"{regimes[-1].get('forma_de_tributacao')} ({regimes[-1].get('ano')})"
-                               if regimes else ""),
-            "natureza": digitos(j.get("codigo_natureza_juridica")), "natureza_desc": txt(j.get("natureza_juridica")),
-            "fonte": "BrasilAPI"}
-
-
-def _de_cnpja(j):
-    emp, end = j.get("company") or {}, j.get("address") or {}
-    tipo, rua = _separar_tipo(end.get("street"))
-    fone = (j.get("phones") or [{}])[0]
-    ativ = j.get("mainActivity") or {}
-    return {"razao": txt(emp.get("name")), "fantasia": txt(j.get("alias")), "cep": digitos(end.get("zip")),
-            "tipo_logradouro": tipo, "endereco": rua, "numero": txt(end.get("number")),
-            "complemento": txt(end.get("details")), "bairro": txt(end.get("district")), "cidade": txt(end.get("city")),
-            "uf": txt(end.get("state")), "ibge": digitos(end.get("municipality")), "srf": "",
-            "cnae": zfill_se(ativ.get("id"), 7), "cnae_desc": txt(ativ.get("text")),
-            "ddd": digitos(fone.get("area")), "telefone": digitos(fone.get("number")),
-            "situacao": norm((j.get("status") or {}).get("text")),
-            "simples": (emp.get("simples") or {}).get("optant"), "mei": (emp.get("simei") or {}).get("optant"),
-            "regime_receita": "", "natureza": digitos((emp.get("nature") or {}).get("id")),
-            "natureza_desc": txt((emp.get("nature") or {}).get("text")), "fonte": "CNPJá"}
-
-
-def _de_receitaws(j):
-    tipo, rua = _separar_tipo(j.get("logradouro"))
-    ddd, fone = _telefone(txt(j.get("telefone")).split("/")[0])
-    ativ = (j.get("atividade_principal") or [{}])[0]
-    nat = txt(j.get("natureza_juridica"))
-    return {"razao": txt(j.get("nome")), "fantasia": txt(j.get("fantasia")), "cep": digitos(j.get("cep")),
-            "tipo_logradouro": tipo, "endereco": rua, "numero": txt(j.get("numero")),
-            "complemento": txt(j.get("complemento")), "bairro": txt(j.get("bairro")),
-            "cidade": txt(j.get("municipio")), "uf": txt(j.get("uf")), "ibge": "", "srf": "",
-            "cnae": digitos(ativ.get("code")), "cnae_desc": txt(ativ.get("text")), "ddd": ddd, "telefone": fone,
-            "situacao": norm(j.get("situacao")), "simples": (j.get("simples") or {}).get("optante"),
-            "mei": (j.get("simei") or {}).get("optante"), "regime_receita": "",
-            "natureza": digitos(nat.split(" - ")[0]), "natureza_desc": nat.partition(" - ")[2], "fonte": "ReceitaWS"}
-
-
-def consultar_cnpj(cnpj: str) -> dict:
-    """BrasilAPI -> CNPJá -> ReceitaWS. Erro transitório (limite, fora do ar) não vai para o cache."""
-    cnpj = re.sub(r"[^0-9A-Z]", "", txt(cnpj).upper())
-
-    def buscar():
-        tentativas = [("BrasilAPI", f"https://brasilapi.com.br/api/cnpj/v1/{cnpj}", _de_brasilapi),
-                      ("CNPJá", f"https://open.cnpja.com/office/{cnpj}", _de_cnpja),
-                      ("ReceitaWS", f"https://receitaws.com.br/v1/cnpj/{cnpj}", _de_receitaws)]
-        falhas = []
-        for nome, url, conv in tentativas:
-            prov = PROVEDORES[nome]
-            if not prov.disponivel():
-                falhas.append(f"{nome} em pausa")
-                continue
-            try:
-                j = _get_json(prov, url)
-            except NaoEncontrado:
-                return {"erro": "CNPJ não encontrado na Receita"}
-            except (urllib.error.URLError, TimeoutError, ValueError) as e:
-                falhas.append(f"{nome}: {getattr(e, 'code', '') or e.__class__.__name__}")
-                continue
-            if nome == "ReceitaWS" and txt(j.get("status")).upper() == "ERROR":
-                return {"erro": txt(j.get("message")) or "CNPJ não encontrado"}
-            r = conv(j)
-            if not r["ibge"] and not r["srf"] and r["cep"]:
-                r["ibge"] = consultar_cep(r["cep"]).get("ibge", "")
-            return r
-        return {"erro": "consulta indisponível agora (" + "; ".join(falhas) + ") — tente de novo",
-                "transitorio": True}
-
-    return _cache(("cnpj", cnpj), buscar)
-
-
-def consultar_cep(cep: str) -> dict:
-    cep = zfill_se(cep, 8)
-    if len(cep) != 8:
-        return {"erro": "CEP inválido"}
-
-    def buscar():
-        try:
-            j = _get_json(PROVEDORES["ViaCEP"], f"https://viacep.com.br/ws/{cep}/json/")
-        except NaoEncontrado:
-            return {"erro": "CEP não encontrado"}
-        except (urllib.error.URLError, TimeoutError, ValueError) as e:
-            return {"erro": f"falha na consulta do CEP ({e.__class__.__name__})", "transitorio": True}
-        if j.get("erro"):
-            return {"erro": "CEP não encontrado"}
-        tipo, rua = _separar_tipo(j.get("logradouro"))
-        return {"cep": cep, "tipo_logradouro": tipo, "endereco": rua, "bairro": txt(j.get("bairro")),
-                "cidade": txt(j.get("localidade")), "uf": txt(j.get("uf")), "ibge": digitos(j.get("ibge"))}
-
-    return _cache(("cep", cep), buscar)
+        p = json.loads(dados.decode("utf-8-sig"))
+    except ValueError as e:
+        st.sidebar.error(f"Perfil inválido: {e}")
+        return
+    ss["perfil_id"], ss["prestadora"] = fid, p["receita"]
+    c = p["receita"]["cnpj"]
+    for chave, wk in (("empresa", f"emp_{c}"), ("ultimo", f"ult_{c}"), ("filial", f"fil_{c}"),
+                      ("descricao", f"desc_{c}"), ("regime", f"reg_{c}"), ("fpas", f"fpas_{c}"),
+                      ("rat", f"rat_{c}"), ("sefip", f"sefip_{c}"), ("tipo_servico", "w_tserv"),
+                      ("lotacao_cnpj", "w_lotj"), ("lotacao_cpf", "w_lotf"), ("cnae_cadastro", "w_cnae_cad"),
+                      ("de_para", "w_depara"), ("destino", "w_destino")):
+        if chave in p:
+            ss[wk] = p[chave]
+    reg, fp = p.get("regime"), p.get("fpas")
+    for chave, wk in (("i_terceiros", f"terc_{c}_{fp}_{reg}"), ("inss", f"inss_{c}_{reg}"),
+                      ("prolab", f"prolab_{c}_{reg}"), ("gps", f"gps_{c}_{reg}")):
+        if chave in p:
+            ss[wk] = p[chave]
 
 
 # =====================================================================
-# Perfil tributário da prestadora (herdado por todos os tomadores)
+# Barra lateral: perfil salvo, leiaute e opções
 # =====================================================================
-def sugerir_regime(rec: dict):
-    """-> (chave do regime, motivo)."""
-    if rec.get("mei"):
-        return "MEI", "optante pelo SIMEI na Receita"
-    if rec.get("simples"):
-        if txt(rec.get("cnae")).startswith(ANEXO_IV_PREFIXOS):
-            return "SN4", "optante pelo Simples; CNAE principal de atividade do Anexo IV"
-        return "SN", "optante pelo Simples — confirme o anexo (cessão de mão de obra costuma ser Anexo IV)"
-    if rec.get("simples") is False:
-        return "LRLP", "não optante pelo Simples" + (f" — {rec['regime_receita']}" if rec.get("regime_receita") else "")
-    return "LRLP", "regime não informado pela consulta — confirme"
+with st.sidebar:
+    st.header("Configuração")
+    with st.expander("💾 Carregar perfil salvo da prestadora"):
+        f_perfil = st.file_uploader("Arquivo .json salvo antes", type=["json"])
+        if f_perfil is not None:
+            aplicar_perfil(f_perfil.getvalue())
 
+    st.subheader("Leiaute da importação")
+    lei_pasta = core.ler_leiaute_pasta(LEI_DIR)
+    opcoes_lei = (["Leiaute da ferramenta"] if all(t in lei_pasta for t in core.TABELAS) else []) + \
+                 ["Enviar arquivos de leiaute (.txt)"]
+    esc_lei = st.radio("Origem do leiaute", opcoes_lei, label_visibility="collapsed",
+                       help="O mesmo leiaute que será usado na importação de tabelas da Domínio.")
+    if esc_lei == "Leiaute da ferramenta":
+        leiaute = lei_pasta
+    else:
+        envios = st.file_uploader("Leiaute de FOSERVICOS e FOVIGENCIAS_SERVICO exportado da Domínio", type=["txt"],
+                                  accept_multiple_files=True)
+        leiaute = core.ler_leiaute_txt({f.name: f.getvalue() for f in envios or []})
+    if not all(t in leiaute for t in core.TABELAS):
+        st.info("Envie o leiaute das duas tabelas.")
+        st.stop()
+    numero_lei = str(leiaute[core.T_SERV]["linhas"][0][0]).strip()
+    # Sem o campo na tela: usa o destino do perfil salvo ou, se não houver, o número do leiaute de origem
+    destino_lei = int(ss.get("w_destino") or (int(numero_lei) if numero_lei.isdigit() else 1))
 
-def sugerir_perfil(rec: dict, ref: Referencia, data: dt.date) -> dict:
-    """Sugestões a partir do CNAE principal e do regime da prestadora; tudo pode ser ajustado na tela."""
-    regime, motivo_regime = sugerir_regime(rec)
-    lig = ref.fpas_do_cnae(rec.get("cnae"))
-    fpas = int(lig["fpas"]) if txt(lig.get("fpas")) else None
-    alternativas = [int(x) for x in txt(lig.get("alternativas")).split("|") if x.strip().isdigit()]
-    alertas = []
-    if rec.get("situacao") and rec["situacao"] != "ATIVA":
-        alertas.append(f"Situação cadastral da prestadora na Receita: {rec['situacao']}.")
-    if not lig:
-        alertas.append("CNAE principal não está na tabela de CNAE da Domínio — escolha o FPAS.")
-    elif lig["ligacao"] == "ambígua":
-        alertas.append(f"O CNAE {lig['cnae']} aparece com mais de um FPAS ({', '.join(map(str, alternativas))}) — "
-                       "escolha pela atividade preponderante.")
-    elif lig["ligacao"] == "sem FPAS":
-        alertas.append(f"O CNAE {lig['cnae']} não tem FPAS na relação da Domínio — escolha o FPAS.")
-    elif lig["ligacao"] != "exata":
-        alertas.append(f"FPAS {fpas} ligado ao CNAE {lig['ligacao']} — confira.")
-    nat = txt(rec.get("natureza"))
-    if nat.startswith("1"):
-        alertas.append("Natureza jurídica de administração pública: normalmente FPAS 582.")
-    elif nat.startswith("3"):
-        alertas.append("Entidade sem fins lucrativos: se for beneficente com CEBAS, o FPAS é 639 (isenção).")
-    rat = ref.rat_do_cnae(rec.get("cnae"), data)
-    if rat is None:
-        alertas.append("Sem alíquota RAT para o CNAE principal na tabela da Domínio — informe o RAT.")
-    return {"regime": regime, "motivo_regime": motivo_regime, "fpas": fpas, "alternativas": alternativas,
-            "ligacao": lig.get("ligacao", ""), "i_fpas": int(lig["i_fpas"]) if txt(lig.get("i_fpas")) else None,
-            "atividade": lig.get("atividade_fofpas", ""), "rat": rat, "alertas": alertas}
+    with st.expander("Opções avançadas"):
+        cnae_cad = st.radio("CNAE gravado no tomador", ["tomador", "prestadora"], **d("w_cnae_cad"),
+                            format_func={"tomador": "CNAE principal do tomador (Receita)",
+                                         "prestadora": "CNAE da prestadora"}.get)
+        de_para_txt = st.text_input("Tipo de logradouro → código Domínio", **d("w_depara"),
+                                    placeholder="RUA=?; AVENIDA=?",
+                                    help="Código que a Domínio grava em TIPO_ENDERECO. Sem de-para, o tipo vai no "
+                                         "início do endereço (ex.: 'AVENIDA PAULISTA').")
+        cadastrados_txt = st.text_area("CNPJs/CPFs já cadastrados como serviço na empresa (opcional)",
+                                       help="Um por linha. Eles ficam fora do arquivo, para não duplicar.")
 
-
-def encargos_do_perfil(p: dict) -> dict:
-    """Perfil escolhido na tela -> colunas da vigência do tomador (iguais para todos)."""
-    t = p["terceiro"]
-    return {"CODIGO_FPAS": p["fpas"], "I_FPAS": p.get("i_fpas"),
-            "CODIGO_TERCEIRO": t["codigo"], "I_TERCEIROS": t["i_terceiros"],
-            "PERC_TERCEIRO": t["percentual"], "PERCENTUAL_TERCEIRO_BRUTO": t["percentual"],
-            "PERC_INSS_EMPRESA": Decimal(str(p["inss"])), "PERC_AUTONOMOS": Decimal(str(p["prolab"])),
-            "PERC_ACID_TRABALHO": Decimal(str(p["rat"])), "TIPO_INFORMACAO_ALIQUOTA_ACIDENTE_TRABALHO": RAT_INFORMADO,
-            "CODIGO_SAT": 0, "FILANTROPIA": Decimal(0), "CALCULA_INSS_EMPRESA_LEI_12546": 0, "SEQUENCIA_GPS": 1,
-            "NUMERO_FGTS": 0, "INEXIGIBILIDADE_RAT": 0, "CODIGO_GFIP": p["sefip"], "CODIGO_GPS": p["gps"]}
-
+de_para = {}
+for parte in (de_para_txt or "").replace("\n", ";").split(";"):
+    nome_tipo, _, cod = parte.partition("=")
+    if core.norm(nome_tipo) and cod.strip().isdigit():
+        de_para[core.norm(nome_tipo)] = int(cod)
+cadastrados = {core.normalizar_inscricao(l)[0] for l in (cadastrados_txt or "").splitlines()} - {""}
 
 # =====================================================================
-# Tomadores (estrutura única para digitação e planilha)
+# Passo 1 · Empresa prestadora
 # =====================================================================
-CAMPOS = [  # chave, rótulo da planilha, ajuda
-    ("inscricao", "CNPJ/CPF do tomador", "Obrigatório. Com ou sem pontuação (CNPJ alfanumérico aceito)."),
-    ("nome", "Nome do serviço", "Até 40 caracteres. Vazio: razão social da Receita."),
-    ("data_inicio", "Data de início", "DD/MM/AAAA. Vazio: data informada na tela."),
-    ("cep", "CEP", "8 dígitos. Com CEP, o app completa endereço e município."),
-    ("tipo_logradouro", "Tipo de logradouro", "Ex.: RUA, AVENIDA."),
-    ("endereco", "Endereço", "Até 31 caracteres."),
-    ("numero", "Número", "Somente números (S/N: deixe vazio)."),
-    ("complemento", "Complemento", "Até 30 caracteres."),
-    ("bairro", "Bairro", "Até 20 caracteres."),
-    ("cidade", "Cidade", "Até 20 caracteres."),
-    ("uf", "UF", "Sigla do estado."),
-    ("ibge", "Código IBGE do município", "7 dígitos. Vazio: buscado pelo CEP ou pela cidade + UF."),
-    ("cnae", "CNAE 2.3", "7 dígitos (ex.: 8112500). Vazio: CNAE principal na Receita."),
-    ("ddd", "DDD", ""),
-    ("telefone", "Telefone", ""),
-    ("tipo_servico", "Tipo de serviço do tomador", "1, 2 ou 3. Vazio: padrão da tela."),
-    ("lotacao", "Tipo de lotação eSocial", "Código gravado na Domínio. Vazio: padrão da tela."),
-]
-ROTULO = {k: r for k, r, _ in CAMPOS}
-SINONIMOS = {
-    "inscricao": {"CNPJ CPF DO TOMADOR", "CNPJ CPF", "CNPJ", "CPF", "INSCRICAO", "CNPJ DO TOMADOR", "CPF CNPJ"},
-    "nome": {"NOME DO SERVICO", "NOME", "RAZAO SOCIAL", "TOMADOR", "CLIENTE"},
-    "data_inicio": {"DATA DE INICIO", "DATA INICIO", "INICIO", "VIGENCIA"},
-    "tipo_logradouro": {"TIPO DE LOGRADOURO", "TIPO LOGRADOURO", "TIPO ENDERECO"},
-    "endereco": {"ENDERECO", "LOGRADOURO", "RUA"},
-    "numero": {"NUMERO", "NO", "NRO", "N"},
-    "ibge": {"CODIGO IBGE DO MUNICIPIO", "CODIGO IBGE", "IBGE", "COD IBGE"},
-    "cnae": {"CNAE 2 3", "CNAE", "CNAE PRINCIPAL"},
-    "tipo_servico": {"TIPO DE SERVICO DO TOMADOR", "TIPO SERVICO TOMADOR", "TIPO DE SERVICO"},
-    "lotacao": {"TIPO DE LOTACAO ESOCIAL", "LOTACAO", "TIPO LOTACAO"},
-    "cidade": {"CIDADE", "MUNICIPIO"},
-}
-EXTRAS = ("razao", "situacao", "fonte", "erro", "aviso_insc", "erro_insc", "srf")
-
-
-def tomador_vazio(valor="", linha=None) -> dict:
-    ins, aviso, erro = normalizar_inscricao(valor)
-    t = {k: "" for k, _, _ in CAMPOS}
-    t.update({e: "" for e in EXTRAS})
-    t.update({"inscricao": ins, "aviso_insc": aviso, "erro_insc": erro, "linha": linha, "original": txt(valor),
-              "consultado": False})
-    return t
-
-
-def completar(t: dict, consultar=True) -> dict:
-    """Preenche só os campos vazios: Receita (CNPJ) e, se ainda faltar endereço ou município, ViaCEP."""
-    t = dict(t)
-    ins = t["inscricao"]
-    t["consultado"] = True
-    if consultar and not t["erro_insc"] and tipo_inscricao(ins) == 1 and cnpj_valido(ins):
-        r = consultar_cnpj(ins)
-        if r.get("erro"):
-            t["erro"] = r["erro"]
-            t["consultado"] = not r.get("transitorio")
+st.subheader("Passo 1 · Empresa prestadora")
+with st.form("f_prestadora"):
+    c1, c2 = st.columns([3, 1])
+    cnpj_digitado = c1.text_input("CNPJ da empresa prestadora", placeholder="00.000.000/0001-00",
+                                  value=core.formatar_inscricao(ss["prestadora"]["cnpj"]) if ss["prestadora"] else "")
+    buscar = c2.form_submit_button("🔎 Consultar na Receita", type="primary", width="stretch")
+if buscar:
+    cnpj, _, erro_insc = core.normalizar_inscricao(cnpj_digitado)
+    if erro_insc or not core.cnpj_valido(cnpj):
+        st.error(erro_insc or "CNPJ inválido (dígito verificador não confere).")
+    else:
+        with st.spinner("Consultando a Receita…"):
+            rec = core.consultar_cnpj(cnpj)
+        if rec.get("erro"):
+            st.error(rec["erro"])
         else:
-            t.update({"razao": r["razao"], "situacao": r["situacao"], "fonte": r["fonte"], "srf": r["srf"],
-                      "erro": ""})
-            if not t["nome"]:
-                t["nome"] = r["razao"]
-            for k in ("cep", "tipo_logradouro", "endereco", "numero", "complemento", "bairro", "cidade", "uf",
-                      "ibge", "cnae", "ddd", "telefone"):
-                if not txt(t.get(k)) and r.get(k):
-                    t[k] = r[k]
-    if consultar and zfill_se(t["cep"], 8) and (not digitos(t["ibge"]) or not txt(t["endereco"])):
-        r = consultar_cep(t["cep"])
-        if not r.get("erro"):
-            for k in ("tipo_logradouro", "endereco", "bairro", "cidade", "uf", "ibge"):
-                if not txt(t.get(k)) and r.get(k):
-                    t[k] = r[k]
-            t["fonte"] = (t["fonte"] + " + ViaCEP").strip(" +")
-    return t
+            ss["prestadora"] = {**rec, "cnpj": cnpj}
+prest = ss["prestadora"]
+if not prest:
+    st.info("Informe o CNPJ da prestadora para começar.")
+    st.stop()
+
+kp = prest["cnpj"]
+ibge_p, mun_p = ref.municipio(prest.get("ibge"), prest.get("srf"), prest.get("cidade"), prest.get("uf"))
+with st.container(border=True):
+    a, b, c = st.columns([3, 3, 2])
+    a.markdown(f"**{prest['razao']}**  \n{core.formatar_inscricao(kp)} · {prest.get('situacao') or '?'}")
+    b.markdown(f"**CNAE principal:** {prest.get('cnae')} — {prest.get('cnae_desc') or ref.cnae.get(prest.get('cnae'), '')}"
+               f"  \n**Natureza:** {prest.get('natureza_desc') or prest.get('natureza') or '—'}")
+    c.markdown(f"**Município:** {mun_p[1] + '/' + mun_p[2] if mun_p else prest.get('cidade', '—')}"
+               f"  \n**Fonte:** {prest.get('fonte', '')}")
+
+c1, c2, c3, c4, c5 = st.columns([1.2, 1.2, 0.8, 1.2, 2])
+empresa = c1.number_input("Código da empresa na Domínio", min_value=1, step=1, placeholder="obrigatório",
+                          **d(f"emp_{kp}", value=None))
+ultimo = c2.number_input("Último código de serviço já usado", min_value=0, step=1, placeholder="obrigatório",
+                         help="Veja em Arquivo > Serviços. Os tomadores recebem os códigos seguintes.",
+                         **d(f"ult_{kp}", value=None))
+filial = c3.number_input("Filial", min_value=1, step=1, **d(f"fil_{kp}", value=1))
+data_padrao = c4.date_input("Data de início (padrão)", format="DD/MM/YYYY",
+                            **d(f"dt_{kp}", value=dt.date.today().replace(day=1)))
+descricao = c5.text_input("Descrição da vigência", max_chars=80, **d(f"desc_{kp}", value="Cadastro inicial"))
+if empresa is None or ultimo is None:
+    st.info("Informe o código da empresa na Domínio e o último código de serviço já usado.")
+    st.stop()
+desenhar_passos(ph_passos, 2)
+
+# =====================================================================
+# Passo 2 · Herança tributária
+# =====================================================================
+st.subheader("Passo 2 · Herança tributária (igual para todos os tomadores)")
+sug = core.sugerir_perfil(prest, ref, data_padrao)
+regs = list(core.REGIMES)
+c1, c2 = st.columns([1, 2])
+regime = c1.selectbox("Regime da prestadora", regs, format_func=lambda r: core.REGIMES[r]["rotulo"],
+                      **d(f"reg_{kp}", index=regs.index(sug["regime"])))
+c2.caption(f"Sugestão pela Receita: {sug['motivo_regime']}.")
+cfg_reg = core.REGIMES[regime]
+
+opcoes_fpas = list(dict.fromkeys(([sug["fpas"]] if sug["fpas"] else []) + sug["alternativas"] + sorted(ref.fpas)))
+c1, c2 = st.columns([1, 2])
+fpas = c1.selectbox("FPAS", opcoes_fpas, placeholder="escolha o FPAS",
+                    **d(f"fpas_{kp}", index=0 if sug["fpas"] else None),
+                    format_func=lambda f: f"{f} — {ref.fpas.get(f, {}).get('descricao', '')[:70]}")
+if sug["fpas"]:
+    atividade = sug["atividade"] or ref.cnae.get(prest.get("cnae"), "")
+    c2.caption(f"Relacao CNAE x FPAS da Dominio: CNAE {prest.get('cnae')} -> atividade '{atividade}' "
+               f"-> FPAS {sug['fpas']} ({sug['ligacao']}).")
+if fpas is None:
+    for a_ in sug["alertas"]:
+        st.warning(a_)
+    st.stop()
+
+terceiros = ref.terceiros_do_fpas(fpas)
+if not terceiros:
+    st.error(f"Nenhum código de terceiros para o FPAS {fpas} na tabela da Domínio.")
+    st.stop()
+ids_terc = [t["i_terceiros"] for t in terceiros]
+por_id = {t["i_terceiros"]: t for t in terceiros}
+padrao_terc = ref.terceiro_padrao(fpas, cfg_reg["terceiros"])
+rat_sug = sug["rat"] if fpas == sug["fpas"] else ref.rat_do_cnae(prest.get("cnae"), data_padrao)
+c1, c2, c3, c4, c5, c6 = st.columns([3, 0.8, 0.9, 0.9, 0.8, 0.8])
+i_terc = c1.selectbox("Código de terceiros", ids_terc,
+                      **d(f"terc_{kp}_{fpas}_{regime}", index=ids_terc.index(padrao_terc["i_terceiros"])),
+                      format_func=lambda i: f"{por_id[i]['codigo']:04d} — {por_id[i]['descricao']} — "
+                                            f"{por_id[i]['percentual']:.2f}%".replace(".", ","))
+rats = [1, 2, 3]
+rat = c2.selectbox("RAT (%)", rats,
+                   **d(f"rat_{kp}", index=rats.index(int(rat_sug)) if rat_sug is not None and int(rat_sug) in rats
+                       else None),
+                   help="Alíquota do CNAE principal da prestadora (tabela da Domínio). Vai como RAT informado.")
+inss = c3.number_input("INSS Empresa (%)", min_value=0.0, max_value=30.0, step=0.5,
+                       **d(f"inss_{kp}_{regime}", value=float(cfg_reg["inss"])))
+prolab = c4.number_input("Pró-lab./Aut. (%)", min_value=0.0, max_value=30.0, step=0.5,
+                         **d(f"prolab_{kp}_{regime}", value=float(cfg_reg["prolab"])))
+sefip = c5.number_input("SEFIP", min_value=0, step=1, help="Solução 136: tomador de serviço = 150.",
+                        **d(f"sefip_{kp}", value=core.SEFIP_TOMADOR))
+gps = c6.number_input("GPS", min_value=0, step=1, help="Conforme o regime da prestadora (Solução 3665).",
+                      **d(f"gps_{kp}_{regime}", value=cfg_reg["gps"]))
+terc = por_id[i_terc]
+if terc.get("composicao"):
+    st.caption(f"Terceiros {terc['codigo']:04d}: {terc['composicao']}")
+alertas = list(sug["alertas"])
+if fpas != sug["fpas"] and sug["fpas"]:
+    alertas.append(f"FPAS {fpas} diferente do sugerido pelo CNAE ({sug['fpas']}).")
+if cfg_reg["terceiros"] == "zero" and terc["codigo"] != 0:
+    alertas.append("No Simples/MEI o código de terceiros costuma ser 0000 (Solução 3665).")
+for a_ in alertas:
+    st.warning(a_)
+if rat is None:
+    st.info("Escolha a alíquota RAT.")
+    st.stop()
+
+perfil = {"fpas": fpas, "terceiro": terc, "rat": rat, "inss": inss, "prolab": prolab, "sefip": int(sefip),
+          "gps": int(gps), "i_fpas": sug["i_fpas"] if fpas == sug["fpas"] and sug["i_fpas"]
+          else int(ref.fpas[fpas]["i_fpas"])}
+encargos = core.encargos_do_perfil(perfil)
+perfil_txt = (f"Regime: {cfg_reg['rotulo']} · FPAS {fpas} · Terceiros {terc['codigo']:04d} ({terc['descricao']}, "
+              f"{str(terc['percentual']).replace('.', ',')}%) · RAT {rat}% informado · INSS Empresa {inss:g}% · "
+              f"Pró-lab./Aut. {prolab:g}% · SEFIP {int(sefip)} · GPS {int(gps)}")
+st.success("🔒 Herança aplicada a todos os tomadores — " + perfil_txt)
+st.download_button("💾 Salvar perfil da prestadora (.json)",
+                   json.dumps({"receita": prest, "empresa": int(empresa), "ultimo": int(ultimo),
+                               "filial": int(filial), "descricao": descricao, "regime": regime, "fpas": fpas,
+                               "i_terceiros": i_terc, "rat": rat, "inss": inss, "prolab": prolab,
+                               "sefip": int(sefip), "gps": int(gps), "tipo_servico": ss.get("w_tserv", 1),
+                               "lotacao_cnpj": ss.get("w_lotj", 4), "lotacao_cpf": ss.get("w_lotf", 3),
+                               "cnae_cadastro": cnae_cad, "de_para": de_para_txt, "destino": int(destino_lei)},
+                              ensure_ascii=False, indent=2).encode("utf-8"),
+                   file_name=f"perfil_prestadora_{kp}.json", mime="application/json")
+desenhar_passos(ph_passos, 3)
+
+# =====================================================================
+# Passo 3 · Tomadores (digitação e planilha alimentam a mesma lista)
+# =====================================================================
+st.subheader("Passo 3 · Tomadores")
+with st.expander("Padrões do cadastro do tomador"):
+    c1, c2, c3 = st.columns(3)
+    tipo_serv = c1.selectbox("Tipo de serviço do tomador", list(core.TIPOS_SERVICO_TOMADOR), **d("w_tserv"),
+                             format_func=core.TIPOS_SERVICO_TOMADOR.get)
+    ajuda_lot = "Código gravado em TIPO_LOTACAO_ESOCIAL. Tabela 10 do eSocial: " + "; ".join(core.LOTACOES.values())
+    lot_cnpj = c2.number_input("Lotação eSocial — tomador CNPJ", min_value=1, step=1, help=ajuda_lot,
+                               **d("w_lotj", value=4))
+    lot_cpf = c3.number_input("Lotação eSocial — tomador CPF", min_value=1, step=1, help=ajuda_lot,
+                              **d("w_lotf", value=3))
+    st.caption("⚠️ Confirme o código de lotação num tomador cadastrado pela tela: a Domínio pode gravar um código "
+               "próprio.")
 
 
-def _grade(dados: bytes, nome: str) -> pd.DataFrame:
-    if nome.lower().endswith((".csv", ".txt")):
-        conteudo = None
-        for enc in ("utf-8-sig", "cp1252", "latin-1"):
-            try:
-                conteudo = dados.decode(enc)
-                break
-            except UnicodeDecodeError:
-                continue
+def adicionar(lista, consultar, substituir=False):
+    if substituir:
+        ss["tomadores"], ss["fila"], ss["tentativas"] = {}, [], {}
+    do_lote = {}
+    for t in lista:
+        chave = t["inscricao"] or f"linha {t.get('linha')}"
+        if chave in do_lote:
+            t = {**t, "erro_insc": f"repetido no lote (linha {do_lote[chave]})" if do_lote[chave] else "repetido"}
+            chave = f"{chave} #{t.get('linha') or len(ss['tomadores'])}"
+        do_lote[chave] = t.get("linha")
+        t.setdefault("exportar", True)
+        ss["tomadores"][chave] = t
+        if consultar and not t["erro_insc"]:
+            if chave not in ss["fila"]:
+                ss["fila"].append(chave)
+        else:
+            ss["tomadores"][chave]["consultado"] = True
+    ss["processando"] = bool(ss["fila"])
+    ss["fila_total"] = len(ss["fila"])
+
+
+aba_dig, aba_plan = st.tabs(["⌨️ Digitar CNPJ", "📄 Planilha do cliente"])
+with aba_dig:
+    with st.form("f_tomador", clear_on_submit=True):
+        dig = st.text_area("CNPJ do tomador (um por linha)", height=90, placeholder="00.000.000/0001-91")
+        if st.form_submit_button("Consultar e adicionar à lista", type="primary"):
+            novos = [core.tomador_vazio(l) for l in dig.splitlines() if core.txt(l)]
+            if novos:
+                adicionar(novos, True)
+with aba_plan:
+    c1, c2 = st.columns([1, 3])
+    c1.download_button("⬇️ Planilha modelo", core.modelo_planilha(), file_name="modelo_tomadores.xlsx")
+    f_plan = c2.file_uploader("Planilha preenchida (.xlsx ou .csv)", type=["xlsx", "xls", "csv"])
+    c1, c2 = st.columns(2)
+    usar_api = c1.checkbox("Completar campos vazios pela Receita e pelo CEP", value=True)
+    modo = c2.radio("Na lista atual", ["Substituir", "Acrescentar"], horizontal=True)
+    if f_plan is not None and st.button("Ler planilha", type="primary"):
         try:
-            delim = csv.Sniffer().sniff(conteudo[:5000], delimiters=";,\t|").delimiter
-        except csv.Error:
-            delim = ";"
-        return pd.read_csv(io.StringIO(conteudo), sep=delim, dtype=str, header=None, keep_default_na=False)
-    return pd.read_excel(io.BytesIO(dados), dtype=str, header=None, keep_default_na=False)
+            lote, info = core.ler_planilha(f_plan.getvalue(), f_plan.name)
+        except Exception as e:
+            st.error(f"Erro na leitura da planilha: {e}")
+        else:
+            ss["planilha"] = {"dados": f_plan.getvalue(), "nome": f_plan.name, "cab": info["cabecalho"]}
+            adicionar(lote, usar_api, substituir=(modo == "Substituir"))
+            st.toast(f"{len(lote)} linha(s) lida(s); {info['em_branco']} em branco ignorada(s).")
+            if info["nao_lidas"]:
+                st.info("Colunas ignoradas (nome não reconhecido): " + ", ".join(info["nao_lidas"]))
 
-
-def ler_planilha(dados: bytes, nome: str):
-    """Planilha do cliente -> (tomadores, info). Lê tudo como texto, acha o cabeçalho, ignora linhas em branco
-    e guarda a linha real do Excel de cada registro."""
-    bruto = _grade(dados, nome)
-    cab, mapa = None, {}
-    for i in range(min(25, len(bruto))):
-        tentativa = {}
-        for j, v in enumerate(bruto.iloc[i].tolist()):
-            n = norm(v)
-            for k, r, _ in CAMPOS:
-                if k not in tentativa.values() and n and (n == norm(r) or n in SINONIMOS.get(k, set())):
-                    tentativa[j] = k
-                    break
-        if "inscricao" in tentativa.values():
-            cab, mapa = i, tentativa
-            break
-    if cab is None:
-        raise ValueError("Não encontrei a coluna 'CNPJ/CPF do tomador' nas primeiras 25 linhas.")
-    nao_lidas = [txt(v) for j, v in enumerate(bruto.iloc[cab].tolist()) if j not in mapa and txt(v)]
-    tomadores, em_branco = [], 0
-    j_ins = next(j for j, k in mapa.items() if k == "inscricao")
-    for i in range(cab + 1, len(bruto)):
-        linha = bruto.iloc[i].tolist()
-        if not any(txt(v) for v in linha):
-            em_branco += 1
-            continue
-        if norm(next(txt(v) for v in linha if txt(v))).startswith("TOTAL"):
-            continue
-        if not txt(linha[j_ins]):
-            em_branco += 1
-            continue
-        t = tomador_vazio(linha[j_ins], linha=i + 1)
-        for j, k in mapa.items():
-            if k != "inscricao":
-                t[k] = txt(linha[j])
-        t["cep"] = zfill_se(t["cep"], 8)
-        t["cnae"] = zfill_se(t["cnae"], 7)
-        t["ibge"] = digitos(_numero_excel(t["ibge"]))
-        t["fonte"] = "Planilha"
-        tomadores.append(t)
-    return tomadores, {"cabecalho": cab + 1, "em_branco": em_branco, "nao_lidas": nao_lidas,
-                       "colunas": sorted(set(mapa.values()))}
-
-
-def planilha_resultado(dados: bytes, nome: str, linha_cab: int, resultado: dict) -> bytes:
-    """Devolve a planilha do cliente com as colunas Status e Motivo nas mesmas linhas."""
-    bruto = _grade(dados, nome)
-    status = [("Status" if i + 1 == linha_cab else resultado.get(i + 1, ("", ""))[0]) for i in range(len(bruto))]
-    motivo = [("Motivo" if i + 1 == linha_cab else resultado.get(i + 1, ("", ""))[1]) for i in range(len(bruto))]
-    bruto["Status"], bruto["Motivo"] = status, motivo
-    buf = io.BytesIO()
-    with pd.ExcelWriter(buf, engine="openpyxl") as w:
-        bruto.to_excel(w, sheet_name="resultado", index=False, header=False)
-        for c in w.sheets["resultado"][linha_cab]:
-            c.font = Font(bold=True)
-    return buf.getvalue()
-
-
-def modelo_planilha() -> bytes:
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "tomadores"
-    ws.append([r for _, r, _ in CAMPOS])
-    for i, (k, _, _) in enumerate(CAMPOS, 1):
-        c = ws.cell(row=1, column=i)
-        c.font = Font(bold=True, color="FFFFFF")
-        c.fill = PatternFill("solid", fgColor="1F4E78" if k == "inscricao" else "4472C4")
-        ws.column_dimensions[c.column_letter].width = max(14, len(c.value) + 4)
-        for r in range(2, 1002):
-            ws.cell(row=r, column=i).number_format = "@"
-    ws.freeze_panes = "A2"
-    ins = wb.create_sheet("instrucoes")
-    ins.append(["Coluna", "Como preencher"])
-    for _, r, h in CAMPOS:
-        ins.append([r, h])
-    ins.append([])
-    ins.append(["Obs.", "Só o CNPJ/CPF é obrigatório. Com CNPJ, o app completa pela Receita os campos vazios. "
-                        "FPAS, terceiros, RAT, SEFIP e GPS NÃO vão na planilha: vêm da empresa prestadora."])
-    ins.append(["Versão do modelo", "2"])
-    for c in ins[1]:
-        c.font = Font(bold=True)
-    ins.column_dimensions["A"].width, ins.column_dimensions["B"].width = 32, 100
-    buf = io.BytesIO()
-    wb.save(buf)
-    return buf.getvalue()
-
-
-# =====================================================================
-# Validação de cada tomador
-# =====================================================================
-def validar(t: dict, ctx: dict) -> dict:
-    """-> {'status', 'obs', 'dados'}; ctx traz a referência, os padrões da tela e os CNPJs já cadastrados."""
-    ref = ctx["ref"]
-    erros, avisos = [], []
-    ins = t.get("inscricao", "")
-    tipo = tipo_inscricao(ins)
-    if t.get("erro_insc"):
-        erros.append(t["erro_insc"])
-    elif tipo == 1 and not cnpj_valido(ins):
-        erros.append("CNPJ inválido (dígito verificador não confere)")
-    elif tipo == 2 and not cpf_valido(ins):
-        erros.append("CPF inválido (dígito verificador não confere)")
-    elif tipo is None:
-        erros.append("inscrição deve ter 14 (CNPJ) ou 11 (CPF) caracteres")
-    if t.get("aviso_insc"):
-        avisos.append(t["aviso_insc"])
-    if txt(t.get("erro")):
-        (erros if "não encontrado" in t["erro"].lower() else avisos).append(f"Receita: {t['erro']}")
-    sit = txt(t.get("situacao"))
-    if sit and sit != "ATIVA":
-        avisos.append(f"situação na Receita: {sit}")
-    if ins and ins == ctx.get("cnpj_prestadora"):
-        erros.append("é o CNPJ da própria prestadora")
-    if ins in ctx["cadastrados"]:
-        erros.append("já cadastrado como serviço na empresa")
-
-    nome = txt(t.get("nome"))
-    if not nome:
-        erros.append("nome do serviço vazio")
-    data = para_data(t.get("data_inicio")) or ctx["data_padrao"]
-    if txt(t.get("data_inicio")) and not para_data(t.get("data_inicio")):
-        erros.append(f"data de início inválida: {t['data_inicio']}")
-
-    cnae = zfill_se(t.get("cnae"), 7) if ctx["cnae_cadastro"] == "tomador" else ctx["cnae_prestadora"]
-    if not cnae:
-        erros.append("CNAE vazio")
-    elif cnae not in ref.cnae:
-        erros.append(f"CNAE {cnae} não existe na tabela de CNAE 2.3 da Domínio")
-
-    ibge, mun = ref.municipio(t.get("ibge"), t.get("srf"), t.get("cidade"), t.get("uf"))
-    if not mun:
-        erros.append("município não encontrado — informe o CEP, o código IBGE ou cidade + UF")
-
-    cep = zfill_se(t.get("cep"), 8)
-    if cep and len(cep) != 8:
-        avisos.append(f"CEP com {len(cep)} dígitos")
-    tipo_lg = norm(t.get("tipo_logradouro"))
-    endereco = txt(t.get("endereco"))
-    tipo_end = ctx["de_para_logradouro"].get(tipo_lg)
-    if tipo_lg and tipo_end is None and not norm(endereco).startswith(tipo_lg):
-        endereco = f"{tipo_lg} {endereco}".strip()
-    if not endereco:
-        avisos.append("endereço vazio")
-    numero_txt = _numero_excel(txt(t.get("numero")))
-    numero = int(numero_txt) if re.fullmatch(r"\d+", numero_txt or "") else None
-    complemento = txt(t.get("complemento"))
-    if numero_txt and numero is None:
-        complemento = f"{numero_txt} {complemento}".strip()
-
-    tipo_serv = para_int(t.get("tipo_servico")) or ctx["tipo_servico"]
-    if tipo_serv not in TIPOS_SERVICO_TOMADOR:
-        erros.append(f"tipo de serviço do tomador {tipo_serv} inválido (1, 2 ou 3)")
-    lot = para_int(t.get("lotacao")) or (ctx["lotacao_cpf"] if tipo == 2 else ctx["lotacao_cnpj"])
-
-    dados = {"inscricao": ins, "tipo_insc": tipo, "nome": nome, "data": data, "cep": cep or None,
-             "tipo_endereco": tipo_end, "endereco": endereco or None, "numero": numero,
-             "complemento": complemento or None, "bairro": txt(t.get("bairro")) or None,
-             "cidade": txt(t.get("cidade")) or (mun[1] if mun else None),
-             "uf": (txt(t.get("uf")).upper() or (mun[2] if mun else "")) or None,
-             "codigo_municipio": mun[0] if mun else None, "ibge": ibge, "cnae": cnae or None,
-             "ddd": digitos(t.get("ddd")) or None, "telefone": digitos(t.get("telefone")) or None,
-             "tipo_servico": tipo_serv, "lotacao": lot}
-    for campo, lim in ctx["limites"].items():
-        v = dados.get(campo)
-        if isinstance(v, str) and lim and len(v) > lim:
-            avisos.append(f"{campo} cortado em {lim} caracteres")
-            dados[campo] = v[:lim].rstrip()
-    status = "❌ Erro" if erros else ("⚠️ Revisar" if avisos else "✅ Pronto")
-    return {"status": status, "obs": " | ".join(erros + avisos), "dados": dados}
-
-
-# =====================================================================
-# Montagem das linhas das tabelas
-# =====================================================================
-def _vazio_padrao(col):
-    return "" if col["tipo"] in TEXTOS else (None if col["tipo"] in DATAS else 0)
-
-
-# Campos que o app só preenche em alguns casos de configuração (de-para de logradouro; vigência anterior a 12/2018).
-# Vazios no lote inteiro, saem do leiaute; os demais campos atribuídos ficam sempre no leiaute (leiaute estável).
-OPCIONAIS = {"TIPO_ENDERECO", "I_CNAE_ESOCIAL"}
-
-
-def montar_linhas(itens, encargos: dict, cfg: dict, meta: dict):
-    """itens: [(i_servicos, dados validados)]. Todos herdam os mesmos encargos da prestadora.
-    Retorna (linhas por tabela, colunas que o app atribui em cada tabela)."""
-    serv, vig = [], []
-    atrib = {T_SERV: set(), T_VIG: set()}
-    for cod, d in itens:
-        v = {c["up"]: None for c in meta[T_VIG]}
-        dados_v = {k: val for k, val in encargos.items() if k in v}
-        dados_v.update({
-            "CODI_EMP": cfg["empresa"], "I_SERVICOS": cod, "VIGENCIA": d["data"], "DESCRICAO": cfg["descricao"],
-            "TIPO": TIPO_TOMADOR, "ORIGEM_REG": ORIGEM_IMP_TABELAS, "ORIGEM_ALTERACAO": 1,
-            "COMPETENCIA_FIM_VIGENCIA": FIM_ABERTO, "I_FILIAIS": cfg["filial"],
-            "TIPO_LOTACAO_ESOCIAL": d["lotacao"], "TIPO_SERVICO_TOMADOR": d["tipo_servico"],
-            "ENVIAR_ESOCIAL_S_1020": 1,
-            "CGC": d["inscricao"], "TIPO_INSC": d["tipo_insc"], "ENDERECO": d["endereco"], "NUMERO": d["numero"],
-            "BAIRRO": d["bairro"], "CEP": d["cep"], "CIDADE": d["cidade"], "ESTADO": d["uf"],
-            "CODIGO_MUNICIPIO": d["codigo_municipio"], "TIPO_ENDERECO": d["tipo_endereco"],
-            "COMPLEMENTO": d["complemento"], "DDD": d["ddd"], "TELEFONE": d["telefone"],
-            "I_CNAE20": d["cnae"], "CODIGO_ATIVIDADE": 0,
-            "I_CNAE_ESOCIAL": d["cnae"] if (d["data"] < CORTE_CNAE_ESOCIAL and d["cnae"] in cfg["cnae_prev"]) else None,
-        })
-        v.update(dados_v)
-        s = {c["up"]: None for c in meta[T_SERV]}
-        dados_s = {"CODI_EMP": cfg["empresa"], "I_SERVICOS": cod, "NOME": d["nome"], "ORIGEM_REG": ORIGEM_IMP_TABELAS,
-                   "DATA_INICIO": d["data"], "SITUACAO": 1, "ENVIAR_ESOCIAL": 1, "CODIGO_ESOCIAL": str(cod)}
-        s.update(dados_s)
-        atrib[T_VIG].update(k for k in dados_v if k in v)
-        atrib[T_SERV].update(dados_s)
-        for linha, tab in ((s, T_SERV), (v, T_VIG)):
-            for c in meta[tab]:
-                if linha.get(c["up"]) is None and not c["nulo"] and c["padrao"] is None:
-                    linha[c["up"]] = _vazio_padrao(c)
-                    atrib[tab].add(c["up"])
-        serv.append(s)
-        vig.append(v)
-    return {T_SERV: serv, T_VIG: vig}, atrib
-
-
-# =====================================================================
-# Arquivos da importação
-# =====================================================================
-def formatar(v, col) -> str:
-    """Valor -> texto do TXT da importação (decimais embutidos, como no Acumuladores.py)."""
-    if v is None:
-        return ""
-    t = col["tipo"]
-    if t in DATAS:
-        return (v.date() if isinstance(v, dt.datetime) else v).strftime("%d/%m/%Y")
-    if t in DECIMAIS:
-        d = Decimal(str(v))
-        if col["escala"] > 0:
-            d = d * (Decimal(10) ** col["escala"])
-        return str(int(d.quantize(Decimal(1), ROUND_HALF_UP)))
-    if t in INTEIROS:
-        return str(int(v))
-    return str(v).replace("\t", " ").replace("\r", " ").replace("\n", " ")
-
-
-def _campos_leiaute(lei_tab):
-    return [(r, str(r[3]).strip().upper(), (str(r[9]).strip() or "I").upper(), str(r[10]).strip())
-            for r in lei_tab["linhas"]]
-
-
-def gerar_pacote(linhas: dict, atrib: dict, meta: dict, leiaute: dict, fks: dict, ctx: dict, destino,
-                 perfil_txt="", empresa=None):
-    """Monta o .zip (dados + leiaute ajustado + estrutura + leia-me), a lista de conferências e as informações
-    para as instruções de importação. O leiaute ajustado é estável: só depende do que o app preenche."""
-    checks, arquivos, estrutura, removidos = [], {}, [], {}
-    info = {"destino": destino, "arquivos": {}, "campos": {}, "empresa": empresa,
-            "codigos": [r["I_SERVICOS"] for r in linhas[T_SERV]]}
-
-    def add(nome, nivel, problemas):
-        ok = not problemas
-        checks.append({"Verificação": nome, "Nível": nivel,
-                       "Resultado": "✅" if ok else ("❌" if nivel == "Erro" else "⚠️"),
-                       "Detalhe": "ok" if ok else "; ".join(problemas)[:900]})
-
-    opcionais = OPCIONAIS - set(ctx.get("manter", ()))
-    for tab in TABELAS:
-        cols = {c["up"]: c for c in meta[tab]}
-        rows = linhas[tab]
-        campos = _campos_leiaute(leiaute[tab])
-        nomes_lei = {cp for _, cp, _, _ in campos}
-        add(f"{tab}: leiaute encontrado", "Erro", [] if campos else ["leiaute sem campos para esta tabela"])
-        pk_fora = [c["nome"] for c in meta[tab] if c["pk"] and c["up"] not in nomes_lei]
-        add(f"{tab}: chave primária no leiaute", "Erro", [f"falta {', '.join(pk_fora)}"] if pk_fora else [])
-
-        tirar, prob_nn, mistos_fk, mistos = set(), [], [], []
-        for _, cp, origem, _ in campos:
-            c = cols.get(cp)
-            if not c or origem == "F":
-                continue
-            vals = [r.get(cp) for r in rows]
-            vazios = sum(v is None for v in vals)
-            if cp not in atrib[tab] or (vazios == len(vals) and (cp in opcionais or cp in fks.get(tab, {}))):
-                if c["nulo"] or c["padrao"] is not None:
-                    tirar.add(cp)
-                else:
-                    prob_nn.append(c["nome"])
-            elif vazios:
-                (mistos_fk if cp in fks.get(tab, {}) else mistos).append(f"{c['nome']} ({vazios} vazio(s))")
-        removidos[tab] = tirar
-        fora = [c["nome"] for c in meta[tab] if not c["nulo"] and c["padrao"] is None and c["up"] not in nomes_lei]
-        add(f"{tab}: campos obrigatórios sem padrão estão no leiaute", "Erro",
-            [f"fora do leiaute: {', '.join(fora)}"] if fora else [])
-        add(f"{tab}: campos obrigatórios preenchidos", "Erro", [f"vazio: {', '.join(prob_nn)}"] if prob_nn else [])
-        add(f"{tab}: chave estrangeira vazia só em parte das linhas (importador gravaria 0)", "Erro",
-            [", ".join(mistos_fk) + " — gere em lotes separados"] if mistos_fk else [])
-        add(f"{tab}: campos vazios só em parte das linhas (importador grava 0 ou '')", "Aviso",
-            [", ".join(mistos)] if mistos else [])
-        fixos = [f"{cp}={fixo or '(vazio)'}" for _, cp, origem, fixo in campos
-                 if origem == "F" and cp in cols and any(r.get(cp) is not None for r in rows)]
-        add(f"{tab}: campos com valor fixo no leiaute (o valor do app não vai)", "Aviso",
-            [", ".join(fixos)] if fixos else [])
-        ignorados = [cp for _, cp, origem, _ in campos if cp not in cols and origem != "F"]
-        add(f"{tab}: campos do leiaute que não são coluna da tabela (importador ignora)", "Aviso",
-            [", ".join(ignorados)] if ignorados else [])
-
-        larg, rng = [], []
-        for r in rows:
-            for cp, v in r.items():
-                c = cols.get(cp)
-                if v is None or not c:
+# Consulta em blocos: cada execução consulta por alguns segundos e salva o progresso; o restante continua sozinho.
+if ss["fila"]:
+    total = max(ss.get("fila_total", len(ss["fila"])), len(ss["fila"]))
+    feitos = total - len(ss["fila"])
+    rapido = core.PROVEDORES["BrasilAPI"].disponivel()
+    eta = len(ss["fila"]) * (0.7 if rapido else core.PROVEDORES["CNPJá"].intervalo)
+    with st.container(border=True):
+        c1, c2 = st.columns([4, 1])
+        barra = c1.progress(feitos / total if total else 0.0,
+                            text=f"Consultando a Receita: {feitos} de {total} · faltam ~{max(1, round(eta / 60))} min"
+                            + ("" if rapido else " (BrasilAPI em pausa: usando serviço com limite de 5/min)"))
+        if ss["processando"]:
+            c2.button("⏸️ Pausar", on_click=_pausar, width="stretch")
+        else:
+            c2.button("▶️ Retomar", on_click=_retomar, type="primary", width="stretch")
+            st.caption(f"Consulta pausada: {len(ss['fila'])} tomador(es) aguardando. A lista já pode ser conferida.")
+    if ss["processando"]:
+        t0 = time.time()
+        while ss["fila"] and time.time() - t0 < ORCAMENTO_SEG:
+            chave = ss["fila"][0]
+            t = core.completar(ss["tomadores"][chave], True)
+            if not t["consultado"]:
+                ss["tentativas"][chave] = ss["tentativas"].get(chave, 0) + 1
+                if ss["tentativas"][chave] < 3:
+                    ss["fila"].append(ss["fila"].pop(0))
+                    ss["tomadores"][chave] = t
                     continue
-                if c["tipo"] in TEXTOS and c["largura"] and len(str(v)) > c["largura"]:
-                    larg.append(f"{c['nome']}={str(v)[:20]}…")
-                if c["tipo"] in LIMITES_INT:
-                    lo, hi = LIMITES_INT[c["tipo"]]
-                    if not lo <= int(v) <= hi:
-                        rng.append(f"{c['nome']}={v}")
-                if c["tipo"] in DECIMAIS and c["largura"]:
-                    if len(str(abs(int(Decimal(str(v)))))) > c["largura"] - c["escala"]:
-                        rng.append(f"{c['nome']}={v}")
-        add(f"{tab}: textos dentro do tamanho da coluna", "Erro", larg[:20])
-        add(f"{tab}: números dentro do limite da coluna", "Erro", rng[:20])
-        pk = [c["up"] for c in meta[tab] if c["pk"]]
-        chaves = [tuple(r.get(k) for k in pk) for r in rows]
-        dup = len(chaves) - len(set(chaves))
-        add(f"{tab}: chave única no arquivo", "Erro", [f"{dup} chave(s) repetida(s)"] if dup else [])
+                t["consultado"] = True
+            ss["tomadores"][chave] = t
+            ss["fila"].pop(0)
+            feitos += 1
+            barra.progress(feitos / total, text=f"Consultando a Receita: {feitos} de {total}")
+        if ss["fila"]:
+            st.rerun()
+        ss["processando"] = False
+        st.rerun()
 
-        mantidos = [(r, cp, origem) for r, cp, origem, _ in campos if cp not in tirar]
-        lidos = [(r, cp) for r, cp, origem in mantidos if origem != "F"]
-        conteudo = ["\t".join(formatar(lin.get(cp), cols[cp]) if cp in cols else "" for _, cp in lidos)
-                    for lin in rows]
-        nome_arq = leiaute[tab].get("arquivo") or f"{tab}.txt"
-        if not nome_arq.lower().endswith(".txt"):
-            nome_arq += ".txt"
-        arquivos[f"dados/{nome_arq}"] = ("\r\n".join(conteudo) + "\r\n").encode("cp1252", errors="replace")
-        info["arquivos"][tab], info["campos"][tab] = nome_arq, len(mantidos)
-        lei_lin = []
-        for seq, (r, cp, origem) in enumerate(mantidos, 1):
-            vals = list(r)
-            vals[0], vals[2] = destino, seq
-            lei_lin.append("\t".join("" if v is None else str(v) for v in vals))
-        arquivos[f"leiaute_ajustado/{tab}.txt"] = ("\r\n".join(lei_lin) + "\r\n").encode("cp1252", errors="replace")
-        for p, (r, cp) in enumerate(lidos, 1):
-            c = cols.get(cp)
-            estrutura.append([nome_arq, p, r[2], cp, (c or {}).get("tipo", ""), (c or {}).get("largura", ""),
-                              (c or {}).get("escala", ""), "S" if c and c["pk"] else "N",
-                              "S" if c and c["nulo"] else "N", "" if c else "ignorado pelo importador"])
+if not ss["tomadores"]:
+    st.info("Digite os CNPJs dos tomadores ou envie a planilha.")
+    st.stop()
+desenhar_passos(ph_passos, 4)
 
-    sem_serv = {(r["CODI_EMP"], r["I_SERVICOS"]) for r in linhas[T_VIG]} - \
-               {(r["CODI_EMP"], r["I_SERVICOS"]) for r in linhas[T_SERV]}
-    add("FOVIGENCIAS_SERVICO → FOSERVICOS: toda vigência tem o serviço no arquivo", "Erro",
-        [f"{len(sem_serv)} vigência(s) sem serviço"] if sem_serv else [])
-    m_ruins = [r["CGC"] for r in linhas[T_VIG] if r.get("CODIGO_MUNICIPIO") not in ctx["codigos_municipio"]]
-    add("Município existe na Domínio", "Erro", [f"{len(m_ruins)} linha(s)"] if m_ruins else [])
-    c_ruins = [r["CGC"] for r in linhas[T_VIG] if r.get("I_CNAE20") not in ctx["cnae20"]]
-    add("CNAE existe na Domínio", "Erro", [f"{len(c_ruins)} linha(s)"] if c_ruins else [])
-    t_ruins = [r["CGC"] for r in linhas[T_VIG] if r.get("I_TERCEIROS") not in ctx["terceiros_ids"]]
-    add("Código de terceiros existe na Domínio para o FPAS", "Erro", [f"{len(t_ruins)} linha(s)"] if t_ruins else [])
+# =====================================================================
+# Passo 4 · Conferência
+# =====================================================================
+st.subheader("Passo 4 · Conferência")
+larg = {c["up"]: c["largura"] for c in ref.meta[core.T_VIG]}
+ctx = {"ref": ref, "cadastrados": cadastrados, "cnpj_prestadora": kp, "data_padrao": data_padrao,
+       "tipo_servico": tipo_serv, "lotacao_cnpj": int(lot_cnpj), "lotacao_cpf": int(lot_cpf),
+       "de_para_logradouro": de_para, "cnae_cadastro": cnae_cad, "cnae_prestadora": prest.get("cnae"),
+       "limites": {"nome": next((c["largura"] for c in ref.meta[core.T_SERV] if c["up"] == "NOME"), 40),
+                   "endereco": larg.get("ENDERECO"), "complemento": larg.get("COMPLEMENTO"),
+                   "bairro": larg.get("BAIRRO"), "cidade": larg.get("CIDADE"), "ddd": larg.get("DDD"),
+                   "telefone": larg.get("TELEFONE")}}
 
-    with io.StringIO() as s:
-        w = csv.writer(s, delimiter=";")
-        w.writerow(["arquivo", "posicao", "seq_leiaute", "coluna", "tipo", "tamanho", "decimais", "chave",
-                    "aceita_nulo", "obs"])
-        w.writerows(estrutura)
-        arquivos["estrutura_arquivos.csv"] = s.getvalue().encode("utf-8-sig")
-    tirados = {t: sorted(v) for t, v in removidos.items() if v}
-    info["assinatura"] = hashlib.md5("|".join(
-        f"{t}:{','.join(cp for _, cp, _, _ in _campos_leiaute(leiaute[t]) if cp not in removidos[t])}"
-        for t in TABELAS).encode()).hexdigest()[:8].upper()
-    arquivos["LEIA-ME.txt"] = leia_me(info, perfil_txt).encode("cp1252", errors="replace")
-    buf = io.BytesIO()
-    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
-        for nome, conteudo in arquivos.items():
-            z.writestr(nome, conteudo)
-    return buf.getvalue(), checks, tirados, info
+EDITAVEIS = [k for k, _, _ in core.CAMPOS if k != "inscricao"]
+resultados = {}
+for chave, t in ss["tomadores"].items():
+    v = core.validar(t, ctx)
+    if chave in ss["fila"]:
+        v["status"] = ST_FILA
+    resultados[chave] = v
 
+linhas_df = []
+for chave, t in ss["tomadores"].items():
+    v = resultados[chave]
+    linhas_df.append({"chave": chave, "Exportar": bool(t.get("exportar", True)), "Status": v["status"],
+                      "Motivo": v["obs"], "Linha": str(t.get("linha") or ""),
+                      "CNPJ/CPF": core.formatar_inscricao(t["inscricao"]) or t.get("original", ""),
+                      **{core.ROTULO[k]: core.txt(t.get(k)) for k in EDITAVEIS},
+                      "Razão social (Receita)": t.get("razao", ""), "Situação": t.get("situacao", ""),
+                      "Fonte": t.get("fonte", "")})
+df = pd.DataFrame(linhas_df).set_index("chave")
 
-def _faixa(cods):
-    a, b = min(cods), max(cods)
-    return f"código {a}" if a == b else f"códigos {a} a {b}"
+contagem = {s: sum(1 for k, v in resultados.items() if v["status"] == s and ss["tomadores"][k].get("exportar", True))
+            for s in (ST_OK, ST_REV, ST_ERR, ST_FILA)}
+m = st.columns(5)
+for col, s in zip(m, (ST_OK, ST_REV, ST_ERR, ST_FILA)):
+    col.metric(s, contagem[s])
+m[4].metric("Desmarcados", sum(1 for t in ss["tomadores"].values() if not t.get("exportar", True)))
 
+filtro = st.radio("Mostrar", ["Todos", ST_OK, ST_REV, ST_ERR, ST_FILA], horizontal=True,
+                  label_visibility="collapsed")
+vis = df if filtro == "Todos" else df[df["Status"] == filtro]
+st.caption("🔒 FPAS, terceiros, RAT, INSS, SEFIP e GPS não aparecem aqui porque vêm da prestadora (Passo 2). "
+           "Corrija os dados do tomador direto na tabela; o status é recalculado na hora.")
+ed = st.data_editor(vis, key=f"ed_{hashlib.md5(vis.to_json().encode()).hexdigest()[:10]}", hide_index=True,
+                    disabled=["Status", "Motivo", "Linha", "CNPJ/CPF", "Razão social (Receita)", "Situação", "Fonte"],
+                    column_config={"Exportar": st.column_config.CheckboxColumn(),
+                                   "Motivo": st.column_config.TextColumn(width="large")},
+                    width="stretch")
+mudou = False
+for chave, row in ed.iterrows():
+    t = ss["tomadores"][chave]
+    novos = {k: core.txt(row[core.ROTULO[k]]) for k in EDITAVEIS}
+    if any(core.txt(t.get(k)) != novos[k] for k in EDITAVEIS) or bool(t.get("exportar", True)) != bool(row["Exportar"]):
+        ss["tomadores"][chave] = {**t, **novos, "exportar": bool(row["Exportar"])}
+        mudou = True
+if mudou:
+    st.rerun()
 
-def _sem_negrito(s):
-    return s.replace("**", "")
+c1, c2, c3 = st.columns(3)
+if c1.button("🔁 Consultar de novo os que falharam"):
+    for chave, v in resultados.items():
+        if "Receita:" in v["obs"] and chave not in ss["fila"]:
+            ss["fila"].append(chave)
+            ss["tentativas"].pop(chave, None)
+    ss["processando"], ss["fila_total"] = bool(ss["fila"]), len(ss["fila"])
+    st.rerun()
+if c2.button("🗑️ Limpar a lista"):
+    ss["tomadores"], ss["fila"], ss["planilha"], ss["tentativas"] = {}, [], None, {}
+    st.rerun()
+if ss["planilha"]:
+    res_linha = {t["linha"]: (resultados[k]["status"].split(" ", 1)[-1], resultados[k]["obs"])
+                 for k, t in ss["tomadores"].items() if t.get("linha")}
+    c3.download_button("📋 Devolver a planilha com Status e Motivo",
+                       core.planilha_resultado(ss["planilha"]["dados"], ss["planilha"]["nome"],
+                                               ss["planilha"]["cab"], res_linha),
+                       file_name=f"resultado_{os.path.splitext(ss['planilha']['nome'])[0]}.xlsx")
 
+itens, cod = [], int(ultimo) + 1
+for chave, t in ss["tomadores"].items():
+    v = resultados[chave]
+    if t.get("exportar", True) and v["status"] in (ST_OK, ST_REV):
+        itens.append((cod, v["dados"]))
+        v["servico"] = cod
+        cod += 1
+if not itens:
+    st.warning("Nenhum tomador pronto para o arquivo.")
+    st.stop()
+desenhar_passos(ph_passos, 5)
 
-def passos_importacao(info: dict):
-    """Passo a passo da importação na Domínio, em linguagem simples (usado na tela e no LEIA-ME).
-    Cada etapa: {'icone', 'titulo', 'quando', 'passos', 'dica'}. O **negrito** vira texto simples no LEIA-ME."""
-    lei, arq, n = info["destino"], info["arquivos"], info["campos"]
-    emp, cods = info.get("empresa"), info["codigos"]
-    a, b = min(cods), max(cods)
-    livre = f"o código {a} está livre" if a == b else f"os códigos {a} a {b} estão livres"
-    return [
-        {"icone": "🧩", "titulo": "Etapa 1 · Preparar o leiaute",
-         "quando": f"Só na primeira vez. Se você já importou o leiaute com o código {info['assinatura']}, "
-                   "pule direto para a etapa 2.",
-         "passos": [
-             f"Na Domínio, abra a importação por leiaute e escolha o leiaute **{lei}**.",
-             "Apague os campos que ele já tiver nas tabelas FOSERVICOS e FOVIGENCIAS_SERVICO.",
-             "Importe os dois arquivos da pasta **leiaute_ajustado** do .zip.",
-             f"Deixe as duas tabelas marcadas, ligadas aos arquivos **{arq[T_SERV]}** e **{arq[T_VIG]}**.",
-             f"Confira se ficaram **{n[T_SERV]} campos** em FOSERVICOS e **{n[T_VIG]} campos** em "
-             "FOVIGENCIAS_SERVICO.",
-         ],
-         "dica": "Algum campo ficou sem tipo de dado? A importação parou no meio: apague os campos da tabela e "
-                 "importe o arquivo de novo."},
-        {"icone": "📥", "titulo": "Etapa 2 · Importar os tomadores",
-         "quando": "Sempre que gerar um arquivo novo.",
-         "passos": [
-             f"Em **Arquivo > Serviços** da empresa **{emp}**, confira se {livre}.",
-             f"Abra a importação por leiaute e escolha o leiaute **{lei}**.",
-             f"Importe os arquivos da pasta **dados** do .zip, nesta ordem: **1º {arq[T_SERV]}** e "
-             f"**2º {arq[T_VIG]}**.",
-         ],
-         "dica": "A ordem importa: a vigência só entra depois que o serviço já existe."},
-        {"icone": "✅", "titulo": "Etapa 3 · Conferir na Domínio",
-         "quando": "Logo depois da importação.",
-         "passos": [
-             "Em **Arquivo > Serviços**, abra um dos tomadores importados.",
-             "Confira as guias **Geral** (CNPJ, endereço e CNAE), **eSocial** (tipo de serviço e lotação) e "
-             "**INSS** (FPAS, terceiros, RAT, SEFIP e GPS).",
-             "Vincule os colaboradores em **Processos > Outros > Alocação de Serviço**.",
-         ],
-         "dica": "O evento S-1020 vai para o eSocial quando o primeiro colaborador é vinculado ao serviço."},
-    ]
+# =====================================================================
+# Passo 5 · Arquivos
+# =====================================================================
+st.subheader("Passo 5 · Arquivos para a importação de tabelas")
+cfg = {"empresa": int(empresa), "descricao": descricao.strip() or "Cadastro inicial", "filial": int(filial),
+       "cnae_prev": ref.cnae_prev}
+linhas, atribuidos = core.montar_linhas(itens, encargos, cfg, ref.meta)
+ctx_lay = {"codigos_municipio": {v[0] for v in ref.municipios.values()}, "cnae20": ref.cnae,
+           "terceiros_ids": set(ids_terc), "manter": {"TIPO_ENDERECO"} if de_para else set()}
+pacote, checks, _tirados, info_imp = core.gerar_pacote(linhas, atribuidos, ref.meta, leiaute, ref.fks, ctx_lay,
+                                                       int(destino_lei), perfil_txt, int(empresa))
+erros = [c for c in checks if c["Nível"] == "Erro" and c["Resultado"] == "❌"]
+avisos = [c for c in checks if c["Nível"] == "Aviso" and c["Resultado"] == "⚠️"]
 
+e1, e2, e3 = st.columns(3)
+e1.metric("Tomadores no arquivo", len(itens))
+e2.metric("Códigos de serviço", f"{itens[0][0]} a {itens[-1][0]}")
+e3.metric("Fora do arquivo", len(ss["tomadores"]) - len(itens))
 
-def leia_me(info, perfil_txt):
-    cods = info["codigos"]
-    partes = [
-        "IMPORTAÇÃO DE TOMADORES DE SERVIÇO — DOMÍNIO FOLHA",
-        f"Gerado em {dt.datetime.now():%d/%m/%Y %H:%M} | Empresa {info.get('empresa')} | Leiaute {info['destino']}",
-        f"{len(cods)} tomador(es), {_faixa(cods)}.",
-        "",
-        "DADOS HERDADOS DA PRESTADORA (iguais em todos os tomadores):",
-        f"   {perfil_txt}",
-    ]
-    for e in passos_importacao(info):
-        partes += ["", e["titulo"].upper(), f"   ({e['quando']})"]
-        partes += [f"   {i}. {_sem_negrito(p)}" for i, p in enumerate(e["passos"], 1)]
-        if e.get("dica"):
-            partes.append(f"   Dica: {_sem_negrito(e['dica'])}")
-    partes += ["", "DETALHES TÉCNICOS",
-               "   Arquivos de dados: um tomador por linha, campos separados por TAB, sem cabeçalho, codificação "
-               "cp1252, datas DD/MM/AAAA e decimais sem vírgula (20,000% = 20000).",
-               "   A posição de cada campo nos arquivos está em estrutura_arquivos.csv."]
-    return "\r\n".join(partes) + "\r\n"
+# As tabelas continuam sendo montadas: são usadas na planilha de conferência
+nomes_real = {t: {c["up"]: c["nome"] for c in ref.meta[t]} for t in core.TABELAS}
+prev_tabs = {t: pd.DataFrame([{nomes_real[t][k]: v for k, v in r.items()} for r in linhas[t]]) for t in core.TABELAS}
 
+if erros:
+    st.error("⛔ O arquivo não está conforme o leiaute — download bloqueado.  \n"
+             + "  \n".join(f"• {c['Verificação']}: {c['Detalhe']}" for c in erros))
+elif contagem[ST_FILA]:
+    st.warning(f"⏳ {contagem[ST_FILA]} tomador(es) ainda aguardam consulta e ficaram fora do arquivo.")
+elif avisos or contagem[ST_REV]:
+    st.warning("⚠️ Arquivo gerado. Confira os tomadores marcados como 'Revisar' antes de importar "
+               "(os avisos de conformidade estão na aba 'conformidade' da planilha de conferência).")
+else:
+    st.success("✅ Tudo certo: o arquivo está pronto para a importação de tabelas da Domínio.")
 
-def planilha_conferencia(abas: dict) -> bytes:
-    buf = io.BytesIO()
-    with pd.ExcelWriter(buf, engine="openpyxl") as w:
-        for nome, df in abas.items():
-            df.to_excel(w, sheet_name=nome[:31], index=False)
-            ws = w.sheets[nome[:31]]
-            for c in ws[1]:
-                c.font = Font(bold=True)
-                c.alignment = Alignment(wrap_text=True)
-    return buf.getvalue()
+conf = pd.DataFrame([{"Serviço": resultados[k].get("servico", ""), "Linha": str(t.get("linha") or ""),
+                      "CNPJ/CPF": core.formatar_inscricao(t["inscricao"]) or t.get("original", ""),
+                      "Status": resultados[k]["status"], "Motivo": resultados[k]["obs"],
+                      "Nome": resultados[k]["dados"]["nome"], "CNAE": resultados[k]["dados"]["cnae"],
+                      "Município": resultados[k]["dados"]["codigo_municipio"]}
+                     for k, t in ss["tomadores"].items()])
+c1, c2 = st.columns(2)
+c1.download_button(f"⬇️ Baixar arquivos da importação ({len(itens)} tomador(es))", pacote,
+                   file_name=f"tomadores_emp{int(empresa)}_{dt.datetime.now():%Y%m%d_%H%M}.zip",
+                   mime="application/zip", disabled=bool(erros), type="primary")
+c2.download_button("📋 Planilha de conferência",
+                   core.planilha_conferencia({"tomadores": conf, "foservicos": prev_tabs[core.T_SERV],
+                                              "fovigencias_servico": prev_tabs[core.T_VIG],
+                                              "conformidade": pd.DataFrame(checks),
+                                              "heranca": pd.DataFrame([{"Herança": perfil_txt}])}),
+                   file_name=f"conferencia_tomadores_emp{int(empresa)}.xlsx")
+st.caption("O .zip traz os arquivos para importar e um LEIA-ME.txt com este mesmo passo a passo.")
+
+st.divider()
+st.subheader("📘 Como importar na Domínio")
+st.caption("São 3 etapas. A etapa 1 só é feita na primeira vez; nas próximas importações, comece pela etapa 2.")
+for etapa in core.passos_importacao(info_imp):
+    with st.container(border=True):
+        st.markdown(f"##### {etapa['icone']} {etapa['titulo']}")
+        st.caption(etapa["quando"])
+        st.markdown("\n".join(f"{i}. {p}" for i, p in enumerate(etapa["passos"], 1)))
+        if etapa.get("dica"):
+            st.info(etapa["dica"], icon="💡")
