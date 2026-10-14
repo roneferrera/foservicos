@@ -1,4 +1,3 @@
-
 """
 Importador de Tomadores de Serviço — Domínio Folha (Arquivo > Serviços)
 App web, sem acesso ao banco: gera os arquivos da importação de tabelas (FOSERVICOS + FOVIGENCIAS_SERVICO).
@@ -132,12 +131,8 @@ with st.sidebar:
         st.info("Envie o leiaute das duas tabelas.")
         st.stop()
     numero_lei = str(leiaute[core.T_SERV]["linhas"][0][0]).strip()
-    st.caption(f"Leiaute de origem {numero_lei}: {len(leiaute[core.T_SERV]['linhas'])} / "
-               f"{len(leiaute[core.T_VIG]['linhas'])} campos.")
-    destino_lei = st.number_input("Número do leiaute na Domínio (destino)", min_value=1, step=1,
-                                  help="Leiaute que vai receber o leiaute ajustado e ser usado na importação dos dados "
-                                       "(ex.: 18). Vai na primeira coluna dos arquivos de leiaute.",
-                                  **d("w_destino", value=int(numero_lei) if numero_lei.isdigit() else 1))
+    # Sem o campo na tela: usa o destino do perfil salvo ou, se não houver, o número do leiaute de origem
+    destino_lei = int(ss.get("w_destino") or (int(numero_lei) if numero_lei.isdigit() else 1))
 
     with st.expander("Opções avançadas"):
         cnae_cad = st.radio("CNAE gravado no tomador", ["tomador", "prestadora"], **d("w_cnae_cad"),
@@ -149,7 +144,6 @@ with st.sidebar:
                                          "início do endereço (ex.: 'AVENIDA PAULISTA').")
         cadastrados_txt = st.text_area("CNPJs/CPFs já cadastrados como serviço na empresa (opcional)",
                                        help="Um por linha. Eles ficam fora do arquivo, para não duplicar.")
-    st.caption(f"Referência: banco {ref.versao.get('banco', '?')} · gerada em {ref.versao.get('gerado_em', '?')}")
 
 de_para = {}
 for parte in (de_para_txt or "").replace("\n", ";").split(";"):
@@ -227,7 +221,7 @@ fpas = c1.selectbox("FPAS", opcoes_fpas, placeholder="escolha o FPAS",
                     format_func=lambda f: f"{f} — {ref.fpas.get(f, {}).get('descricao', '')[:70]}")
 if sug["fpas"]:
     c2.caption(f"Relação CNAE × FPAS da Domínio: CNAE {prest.get('cnae')} → atividade "
-               f"“{sug['atividade'] or ref.cnae.get(prest.get('cnae'), '')}” → FPAS {sug['fpas']} ({sug['ligacao']}).")
+               f""{sug['atividade'] or ref.cnae.get(prest.get('cnae'), '')}" → FPAS {sug['fpas']} ({sug['ligacao']}).")
 if fpas is None:
     for a_ in sug["alertas"]:
         st.warning(a_)
@@ -498,8 +492,8 @@ cfg = {"empresa": int(empresa), "descricao": descricao.strip() or "Cadastro inic
 linhas, atribuidos = core.montar_linhas(itens, encargos, cfg, ref.meta)
 ctx_lay = {"codigos_municipio": {v[0] for v in ref.municipios.values()}, "cnae20": ref.cnae,
            "terceiros_ids": set(ids_terc), "manter": {"TIPO_ENDERECO"} if de_para else set()}
-pacote, checks, tirados, info_imp = core.gerar_pacote(linhas, atribuidos, ref.meta, leiaute, ref.fks, ctx_lay,
-                                                      int(destino_lei), perfil_txt, int(empresa))
+pacote, checks, _tirados, info_imp = core.gerar_pacote(linhas, atribuidos, ref.meta, leiaute, ref.fks, ctx_lay,
+                                                       int(destino_lei), perfil_txt, int(empresa))
 erros = [c for c in checks if c["Nível"] == "Erro" and c["Resultado"] == "❌"]
 avisos = [c for c in checks if c["Nível"] == "Aviso" and c["Resultado"] == "⚠️"]
 
@@ -507,30 +501,19 @@ e1, e2, e3 = st.columns(3)
 e1.metric("Tomadores no arquivo", len(itens))
 e2.metric("Códigos de serviço", f"{itens[0][0]} a {itens[-1][0]}")
 e3.metric("Fora do arquivo", len(ss["tomadores"]) - len(itens))
-with st.expander(f"Conformidade com o leiaute e as tabelas da Domínio — {len(erros)} erro(s), {len(avisos)} aviso(s)",
-                 expanded=bool(erros)):
-    st.dataframe(pd.DataFrame(checks), hide_index=True, width="stretch")
-if tirados:
-    with st.expander(f"Leiaute ajustado (assinatura {info_imp['assinatura']}): "
-                     + " · ".join(f"{t} com {info_imp['campos'][t]} campos" for t in core.TABELAS)):
-        st.caption("Saem do leiaute os campos que o app não preenche (ficam nulos ou com o padrão do banco): vazio no "
-                   "TXT o importador grava 0, o que quebra as chaves estrangeiras. O leiaute ajustado é sempre o mesmo "
-                   "para a mesma configuração — importe uma vez e reaproveite nos próximos lotes.")
-        for t_, c_ in tirados.items():
-            st.markdown(f"**{t_}** — fora do leiaute: {', '.join(c_)}")
+
+# As tabelas continuam sendo montadas: são usadas na planilha de conferência
 nomes_real = {t: {c["up"]: c["nome"] for c in ref.meta[t]} for t in core.TABELAS}
 prev_tabs = {t: pd.DataFrame([{nomes_real[t][k]: v for k, v in r.items()} for r in linhas[t]]) for t in core.TABELAS}
-with st.expander("Pré-visualizar as tabelas"):
-    a1, a2 = st.tabs(list(core.TABELAS))
-    a1.dataframe(prev_tabs[core.T_SERV].astype(str), hide_index=True, width="stretch")
-    a2.dataframe(prev_tabs[core.T_VIG].astype(str), hide_index=True, width="stretch")
 
 if erros:
-    st.error("⛔ O arquivo não está conforme o leiaute (veja a conformidade acima) — download bloqueado.")
+    st.error("⛔ O arquivo não está conforme o leiaute — download bloqueado.  \n"
+             + "  \n".join(f"• {c['Verificação']}: {c['Detalhe']}" for c in erros))
 elif contagem[ST_FILA]:
     st.warning(f"⏳ {contagem[ST_FILA]} tomador(es) ainda aguardam consulta e ficaram fora do arquivo.")
 elif avisos or contagem[ST_REV]:
-    st.warning("⚠️ Arquivo gerado. Confira os avisos e os tomadores marcados como 'Revisar' antes de importar.")
+    st.warning("⚠️ Arquivo gerado. Confira os tomadores marcados como 'Revisar' antes de importar "
+               "(os avisos de conformidade estão na aba 'conformidade' da planilha de conferência).")
 else:
     st.success("✅ Tudo certo: o arquivo está pronto para a importação de tabelas da Domínio.")
 st.caption(f"Antes de importar, confira na tela de Serviços que os códigos {itens[0][0]} a {itens[-1][0]} estão "
